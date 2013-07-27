@@ -1,9 +1,16 @@
+# exchange.py
+# James Mithen
+# jamesmithen@gmail.com
+#
+# Event, Market, Selection objects
+
 import const
 
 class Event(object):
     """A top level event"""
     def __init__(self, name, myid, pid, pname=None):
-        # convert name to ascii string and ignore any funky unicode characters
+        # convert name to ascii string and ignore any funky unicode
+        # characters
         self.name = name.encode('ascii', 'ignore')
         self.id = myid
         # parent id

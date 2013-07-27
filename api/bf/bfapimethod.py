@@ -70,7 +70,7 @@ class APIgetAllMarkets(object):
         
         if const.WRITEDB:
             self.dbman.WriteMarkets(allmarkets,
-                                    result.header.timestamp)
+                                    response.header.timestamp)
         return allmarkets
 
 class APIgetMarket(object):

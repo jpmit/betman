@@ -1,59 +1,61 @@
 from betman import const, util, Event
 import datetime
-import apiparse
+import bdaqapiparse
 
-# classes that implement the read only methods,
-# in the order that they appear NewExternalAPI spec.doc
+######################################################################
+# classes that implement the read only methods, in the order that    # 
+# they appear NewExternalAPIspec.doc                                 #
+######################################################################
 
 class APIListTopLevelEvents(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ListTopLevelEventsRequest')
         # this is the default, and I don't exactly know why we would
         # want True anyway, but lets set it just in case
         self.req._WantPlayMarkets = False
         
     def call(self):
-        result = self.client.service.ListTopLevelEvents(self.req)
-        evs = []
-        for ec in result.EventClassifiers:
-            evs.append(Event(ec._Name, ec._Id, 1))
-        return evs
+        response = self.client.service.ListTopLevelEvents(self.req)
+        events = bdaqapiparse.ParseEvents(response)
+        # note that there is no database table for events at the
+        # moment, only for markets
+        return events
                 
 class APIGetEventSubTreeNoSelections(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create(('GetEventSubTreeNoSele'
                                                'ctionsRequest'))
         # may want to change this sometime
         self.req._WantPlayMarkets = False
 
-    def call(self, ids, direct=True):
+    def call(self, ids, direct=False):
         self.req.EventClassifierIds = ids
         self.req._WantDirectDescendentsOnly = direct
-        result = self.client.service.GetEventSubTreeNoSelections(self.req)
-        allmarkets =  apiparse.ParseEventSubTree(result)
+        response = self.client.service.GetEventSubTreeNoSelections(self.req)
+        allmarkets =  bdaqapiparse.ParseEventSubTree(response)
         if const.WRITEDB:
-            self.dbman.WriteMarkets(allmarkets, result.Timestamp)
+            self.dbman.WriteMarkets(allmarkets, response.Timestamp)
         return allmarkets
-                
+
+# not fully implemented (do not use)
 class APIGetEventSubTreeWithSelections(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('GetEventSubTreeWithSelectionsRequest')
-        # note that for this function (unlike NoSelections),
-        # can only go down one level
-        # i.e. can only get 'direct descendants'
+        # note that for this function (unlike NoSelections), can only
+        # go down one level i.e. can only get 'direct descendants'
         self.req._WantPlayMarkets = False
 
     def call(self, ids):
@@ -61,12 +63,13 @@ class APIGetEventSubTreeWithSelections(object):
         result = self.client.service.GetEventSubTreeWithSelections(self.req)
         return result
 
+# not fully implemented (do not use)
 class APIGetMarketInformation(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('GetMarketInformationRequest')
 
     def call(self, ids):
@@ -74,12 +77,13 @@ class APIGetMarketInformation(object):
         result = self.client.service.GetMarketInformation(self.req)
         return result
 
+# not fully implemented (do not use)
 class APIListSelectionsChangedSince(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ListSelectionsChangedSinceRequest')
 
     def call(self, seqnum):
@@ -87,12 +91,13 @@ class APIListSelectionsChangedSince(object):
         result = self.client.service.ListSelectionsChangedSince(self.req)
         return result
 
+# not fully implemented (do not use)
 class APIListMarketWithdrawalHistory(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ListMarketWithdrawalHistoryRequest')
 
     def call(self, ids):
@@ -104,9 +109,9 @@ class APIGetPrices(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('GetPricesRequest')
         self.req._ThresholdAmount = 0.0
         # -1 for all prices, 0 for no prices, or a positive
@@ -131,37 +136,17 @@ class APIGetPrices(object):
             self.dbman.WriteSelections(allselections, result.Timestamp)
         return allselections
 
-    def process(self, result):
-        # get from the raw SOAP 'object' to
-        self.lasttime = result.Timestamp
-        # go through each selection in turn keys in data are selection
-        # ID, each item in dict is itself a dictionary with the name
-        # and prices of the selection.
-        self.data = {}
-        for sel in result.MarketPrices.Selections:
-            # dictionary for this particular selection
-            seldata = {'name': sel._Name,
-                       'fprices': [],
-                       'aprices': []}
-            # note that the prices returned from BDAQ API are
-            # sorted.
-            for price in sel.ForSidePrices:
-                seldata['fprices'].append((price._Price, price._Stake))
-            for price in sel.AgainstSidePrices:
-                seldata['aprices'].append((price._Price, price._Stake))
-            # add the selection data to main dict
-            self.data[str(sel._Id)] = seldata
-        return
-
+# not fully implemented (do not use)
 class APIGetOddsLadder(object):
     pass
 
+# not fully implemented (do not use)
 class APIGetCurrentSelectionSequenceNumber(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         #self.req = None
         pass
 
@@ -169,16 +154,19 @@ class APIGetCurrentSelectionSequenceNumber(object):
         result = self.client.service.GetCurrentSelectionSequenceNumber()
         return result
 
-####################
-# These ones should be called with the secure client !!
-####################
 
+######################################################################
+# classes that implement the secure methods, in the order that they  # 
+# appear NewExternalAPIspec.doc                                      #
+######################################################################
+
+# not fully implemented (do not use)
 class APIGetAccountBalances(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         #self.req = None
         pass
 
@@ -186,12 +174,13 @@ class APIGetAccountBalances(object):
         result = self.client.service.GetAccountBalances()
         return result
 
+# not fully implemented (do not use)
 class APIListAccountPostings(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ListAccountPostingsRequest')
 
     def call(self, *args):
@@ -217,12 +206,13 @@ class APIListAccountPostings(object):
 
 # class APIChangePassword(object):
 
+# not fully implemented (do not use)
 class APIListOrdersChangedSince(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ListOrdersChangedSinceRequest')
 
     def call(self, snum):
@@ -232,12 +222,13 @@ class APIListOrdersChangedSince(object):
         result = self.client.service.ListOrdersChangedSince(self.req)
         return result
 
+# not fully implemented (do not use)
 class APIListBootstrapOrders(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ListBootstrapOrdersRequest')
         # not currently sure what the best default is here
         self.req.wantSettledOrdersOnUnsettledMarkets = True
@@ -249,12 +240,13 @@ class APIListBootstrapOrders(object):
         result = self.client.service.ListBootstrapOrders(self.req)
         return result
 
+# not fully implemented (do not use)
 class APIGetOrderDetails(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('GetOrderDetailsRequest')
 
     def call(self, oid):
@@ -262,12 +254,13 @@ class APIGetOrderDetails(object):
         result = self.client.service.GetOrderDetails(self.req)
         return result
 
+# not fully implemented (do not use)
 class APIPlaceOrdersNoReceipt(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('PlaceOrdersNoReceiptRequest')
         # if one fails, none will be placed
         self.req.WantAllOrNothingBehaviour = True
@@ -287,12 +280,13 @@ class APIPlaceOrdersNoReceipt(object):
         result = self.client.service.PlaceOrdersNoReceipt(self.req)
         return result
 
+# not fully implemented (do not use)
 class APIPlaceOrdersWithReceipt(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('PlaceOrdersWithReceiptRequest')
         # lets just do a single order at a time at the moment
         self.order = self.client.factory.create('SimpleOrderRequest')

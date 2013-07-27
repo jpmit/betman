@@ -1,4 +1,10 @@
-from betman import Market, Selection
+from betman import Market, Selection, Event
+
+def ParseEvents(resp):
+    events = []
+    for ec in resp.EventClassifiers:
+        events.append(Event(ec._Name, ec._Id, 1))
+    return events
 
 def ParsePrices(marketids, resp):
     retcode = resp.ReturnStatus._Code
@@ -90,13 +96,21 @@ def ParseEventSubTree(resp):
     # 5 - event classifier does not exist
     # 137 - maximuminputrecordsexceeded
     # 406 - punter blacklisted
-    print resp
     if retcode == 406:
         raise APIError, 'punter is blacklisted'
     
     allmarkets = []
     markets = []
-    for evclass in resp[2]:
+    # go through each event class in turn, an event class is
+    # e.g. 'Rugby Union','Formula 1', etc.
+    # slight trick here:
+    # if we only polled a single event class, then resp[2] is
+    # not a list, so we need to convert it to a list
+    if isinstance(resp[2], list):
+        data = resp[2]
+    else:
+        data = [resp[2]]
+    for evclass in data:
         ParseEventClassifier(evclass,'', markets)
         allmarkets = allmarkets + markets
     return allmarkets
@@ -107,7 +121,6 @@ def ParseEventClassifier(eclass, name='', markets=[]):
     Lions Tour -> market, but here we will just find all rugby
     union markets, regardless of their direct ancester."""
 
-    print eclass
     name = name + '|' + eclass._Name
     pid = eclass._ParentId
     myid = eclass._Id

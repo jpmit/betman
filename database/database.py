@@ -7,8 +7,9 @@ class DBException(Exception): pass
 class DBMaster(object):
     """Simple interface to the main database"""
     def __init__(self, create=False):
-        self.open()
+        self._isopen = False
         self.CreateIfNotExist()
+        self.open()
 
     def CreateIfNotExist(self):
         """Create the database if it doesn't already exist"""
@@ -16,9 +17,10 @@ class DBMaster(object):
             self.CreateTables()
 
     def open(self):
-        self.conn = sqlite3.connect(const.MASTERDB)
-        self.cursor = self.conn.cursor()
-        self._isopen = True
+        if not self._isopen:
+            self.conn = sqlite3.connect(const.MASTERDB)
+            self.cursor = self.conn.cursor()
+            self._isopen = True
 
     def close(self):
         """Closing will unlock the database"""
@@ -204,6 +206,8 @@ class DBMaster(object):
 
     def CreateTables(self):
         """Create all of the tables needed"""
+
+        self.open()
 
         # exchanges table just stores number
         self.cursor.execute(('CREATE TABLE exchanges '

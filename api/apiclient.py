@@ -1,3 +1,9 @@
+# apiclient.py
+# James Mithen
+# jamesmithen@gmail.com
+#
+# objects used in calling API functions for both BDAQ and Betfair
+
 from suds.client import Client
 from suds.sax.element import Element
 from betman import *
@@ -25,14 +31,14 @@ class BDAQClient(object):
                            headers={'user-agent': const.USERAGENT})
         # this SOAP header is required by the API in this form
         header = Element('ExternalApiHeader')
-        if self.name == _READONLY:
+        if self.name == BDAQClient._READONLY:
             # we send only the username in the SOAP header
             astring = ('version="%s" currency="GBP" languageCode="en" '
                        'username="%s" '
                        'xmlns="http://www.GlobalBettingExchange'
                        '.com/ExternalAPI/"' %(const.BDAQAPIVERSION,
                                               const.BDAQUSER))
-        if self.name == _SECURE:
+        if self.name == BDAQClient._SECURE:
             # we send the username and password in the SOAP header
             astring = ('version="%s" currency="GBP" languageCode="en" '
                        'username="%s" password="%s" '
