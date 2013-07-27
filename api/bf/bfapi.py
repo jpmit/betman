@@ -1,5 +1,14 @@
 # bfapi.py
-# 17th July 2013
+# James Mithen
+# jamesmithen@gmail.com
+#
+# My internal API encapsulating the Betfair API.  This module should
+# be imported by scripts that are requesting prices, making bets,
+# etc..  Eventually, there should be two options, using the Betfair
+# API in its entirety (a bad option due to the severe limitations on
+# number of requests of the free BF API) or instead using my web
+# scraping functionality.  The most sensible option, however, may well
+# be to use some of the BF API and some of my own web scraping methods.
 
 from betman import *
 from betman.api import apiclient
@@ -7,21 +16,26 @@ import bfapimethod
 import bfnonapimethod
 
 # create suds clients
-# read-only
+# There are 3 WSDL files:
+# * one 'global' (login, get account balances etc.)
+# * one for the UK exchange, and
+# * one for the Australian exchange
+# each gets a different handling client here.
 clglob = apiclient.BFClient('global')
 cluk = apiclient.BFClient('uk')
 claus = apiclient.BFClient('aus')
 
-# we have to login to betfair before we do anything
-# this gives us a header with session token we use
-# for all further requests
-rhead = bfapimethod.BFLogin(clglob)
-clglob.SetReqHead(rhead)
-cluk.SetReqHead(rhead)
-claus.SetReqHead(rhead)
-
-# database interface
+# database interface (this will create DB if necessary)
 dbman = database.DBMaster()
+
+# we have to login to betfair before we do anything. This gives us a
+# header with session token we use for all further BF API calls (all
+# of the other API functions need this session token)
+def Login():
+    rhead = bfapimethod.BFLogin(clglob)
+    clglob.SetReqHead(rhead)
+    cluk.SetReqHead(rhead)
+    claus.SetReqHead(rhead)
 
 # get all the root events
 GetActiveEvents = bfapimethod.APIgetActiveEventTypes(clglob).call
@@ -29,14 +43,15 @@ GetActiveEvents = bfapimethod.APIgetActiveEventTypes(clglob).call
 # get markets will get markets for the selected top level ids
 GetUKMarkets = bfapimethod.APIgetAllMarkets(cluk, dbman).call
 GetAUSMarkets = bfapimethod.APIgetAllMarkets(claus, dbman).call
-
-# selections and pricers for markets
+    
+# selections and prices for markets
 GetSelections = bfnonapimethod.nonAPIgetSelections(cluk, dbman).call
+
 #GetSelections = bfapimethod.APIgetMarket(cluk, dbman).call
 #GetPricesCompressed = bfapimethod.APIgetMarketPricesCompressed(cluk, dbman).call
 #GetPrices = bfapimethod.APIgetMarketPrices(cluk, dbman).call
 
-
+# below is for testing at the moment...
 if __name__== '__main__':
     # get top level events
     events = GetActiveEvents()

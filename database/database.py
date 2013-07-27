@@ -1,5 +1,6 @@
+import os
 import sqlite3
-from betman import *
+from betman import const, Market, Selection
 
 class DBException(Exception): pass
 
@@ -7,13 +8,12 @@ class DBMaster(object):
     """Simple interface to the main database"""
     def __init__(self, create=False):
         self.open()
+        self.CreateIfNotExist()
 
-        if create:
-            # this will raise OperationalError if table exists
-            try:
-                self.CreateTables()
-            except sqlite3.OperationalError:
-                raise DBException, 'could not create database'
+    def CreateIfNotExist(self):
+        """Create the database if it doesn't already exist"""
+        if not os.path.exists(const.MASTERDB):
+            self.CreateTables()
 
     def open(self):
         self.conn = sqlite3.connect(const.MASTERDB)
@@ -32,7 +32,7 @@ class DBMaster(object):
         if not self._isopen:
             self.open()
 
-        # insertion string
+        # insertion stringo
         qins = ('INSERT INTO matchingselections (ex1_sid, ex1_name, ex2_sid'
                 ', ex2_name) values (?,?,?,?)')
 

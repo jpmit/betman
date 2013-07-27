@@ -1,9 +1,9 @@
-import bffunctions
-from betman import *
+import bfapiparse
+from betman import const, Event 
 
 def BFLogin(clglob):
-    """Login to BF and return RequestHeader that
-    contains session id information."""
+    """Login to BF and return RequestHeader that contains session id
+    information."""
     req = clglob.client.factory.create('ns1:LoginReq')
     req.ipAddress = 0
     req.locationId = 0
@@ -28,18 +28,23 @@ def BFLogin(clglob):
 class APIgetActiveEventTypes(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
-        self.setinput()
-
-    def setinput(self):
+        self.createinput()
+        
+    def createinput(self):
         self.req = self.client.factory.create('ns1:GetEventTypesReq')
+
+    def addheader(self):
+        """The header contains the session token"""
         self.req.header = self.client.reqheader
         
     def call(self):
-        result = self.client.service.getActiveEventTypes(self.req)
-        evs = []
-        for e in result.eventTypeItems.EventType:
-            evs.append(Event(e.name, e.id, 2))
-        return evs
+        self.addheader()
+        response = self.client.service.getActiveEventTypes(self.req)
+        events = bfapiparse.ParseEvents(response)
+        # note that we don't have any database tables for events at
+        # the moment - we only write info on actual markets to the
+        # database.
+        return events
 
 # classes that can be called with either uk or aus exchange
 
@@ -47,70 +52,86 @@ class APIgetAllMarkets(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ns1:GetAllMarketsReq')
+
+    def addheader(self):
         self.req.header = self.client.reqheader
         
     def call(self, ids):
+        self.addheader()
         aofint = self.client.factory.create('ns1:ArrayOfInt')
         aofint.int = ids
         self.req.eventTypeIds = aofint
-        result = self.client.service.getAllMarkets(self.req)
-        allmarkets = bffunctions.ParseBFMarkets(result)
+        response = self.client.service.getAllMarkets(self.req)
+        allmarkets = bfapiparse.ParseMarkets(response)
         
         if const.WRITEDB:
-            self.dbman.WriteMarkets(allmarkets, result.header.timestamp)
+            self.dbman.WriteMarkets(allmarkets,
+                                    result.header.timestamp)
         return allmarkets
 
 class APIgetMarket(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ns1:GetMarketReq')
         self.req.includeCouponLinks = False
+
+    def addheader(self):
         self.req.header = self.client.reqheader
         
     def call(self, mid):
+        self.addheader()
         self.req.marketId = mid
-        result = self.client.service.getMarket(self.req)
-        return result
+        response = self.client.service.getMarket(self.req)
+        return response
 
+# not fully implemented yet (do not use)
 class APIgetMarketPricesCompressed(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ns1:GetMarketPricesCompressedReq')
+
+    def addheader(self):
         self.req.header = self.client.reqheader
         
     def call(self, mid):
+        self.addheader()
         self.req.marketId = mid
         result = self.client.service.getMarketPricesCompressed(self.req)
-        return result
+        # 
 #        allselections = bffunctions.ParseBFPrices(result)
-        
 #        if const.WRITEDB:
 #            self.dbman.WriteSelections(allselections, result.header.timestamp)
 #        return allmarkets
+        
+        return result
 
+# not fully implemented yet (do not use)
 class APIgetMarketPrices(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
-        self.setinput()
+        self.createinput()
 
-    def setinput(self):
+    def createinput(self):
         self.req = self.client.factory.create('ns1:GetMarketPricesReq')
+
+    def addheader(self):
         self.req.header = self.client.reqheader
         
     def call(self, mid):
+        self.addheader()
         self.req.marketId = mid
         result = self.client.service.getMarketPrices(self.req)
         return result

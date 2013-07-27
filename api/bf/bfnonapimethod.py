@@ -1,6 +1,9 @@
 # bfnonapimethod.py
-# web scraping functionality to replace certain annoying parts of the
-# BF API
+# James Mithen
+# jamesmithen@gmail.com
+#
+# Web scraping functionality to replace certain annoying parts of the
+# BF API.
 
 from betman import *
 import bfapiparse
@@ -8,8 +11,8 @@ import urllib2
 import datetime
 
 # for australia markets, replace uk with aus
-BASEURL = ('http://uk-api.betfair.com/www/sports/exchange/readonly/v1.0/'
-           'bymarket?currencyCode=GBP&alt=xml&locale=en_GB')
+BASEURL = ('http://uk-api.betfair.com/www/sports/exchange/readonly/'
+           'v1.0/bymarket?currencyCode=GBP&alt=xml&locale=en_GB')
 
 def example():
     exampleurl = ('http://uk-api.betfair.com/www/sports/exchange/readonly'

@@ -1,7 +1,14 @@
 Proper TODO List
 
 18th July 2013 
+
 Currently there is a 'bug' in that in the Market objects we are
 storing 'inrunning' correctly for BDAQ but for BF we are storing the
 market status in this, e.g. whether the market is 'active', that is
 accepting bets.  These are two very different things.
+
+27th July 2013
+
+Figure out a way to write code so that when importing 'bfapi.py', we
+don't login automatically, i.e. we have to call bfapi.Login() and it
+automatically updates the session token for the other methods.

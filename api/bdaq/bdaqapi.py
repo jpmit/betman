@@ -1,4 +1,4 @@
-# app.py
+# bdaqapi.py
 # 24th June 2013
 
 import bdaqapimethod
@@ -6,6 +6,9 @@ from betman import database
 from betman.api import apiclient
 
 # create suds clients
+# There is only 1 WSDL file, but this has two 'services'.  The 
+# services are for 'readonly' methods and 'secure' methods. Secure
+# methods use an https:// url and send the 
 # read-only
 rcl = apiclient.BDAQClient('readonly')
 scl = apiclient.BDAQClient('secure')

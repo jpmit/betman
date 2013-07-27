@@ -1,24 +1,52 @@
-import xml.etree.ElementTree as etree
-from betman import const, Selection
+# bfapiparse.py
+# James Mithen
+# jamesmithen@gmail.com
+#
+# functions for parsing the response that comes from the BF api
 
-def ParseSelections(mids, xmlstr):
-    root = etree.fromstring(xmlstr)
-    selections = []
-    # check we have one eventnode per mid in list
-    enodes = root[0][1][0][0]
-    #assert len(mids) == len(enodes)
-    for mnum, enode in enumerate(enodes):
-        # get one eventnode per market queried        
-        for runner in enode[1][0][3]:
-            name = runner[0][1].text
-            sid = runner[3].text
-            # exchange tag - this contains prices
-            ex = runner[1]
-            bprices = [(p[0].text, p[1].text) for p in ex[0]]
-            lprices = [(p[0].text, p[1].text) for p in ex[1]]
-            # add the selection to the list
-            # we can fill in the things currently None later on...
-            selections.append(Selection(name, sid, mids[mnum], None,
-                                        None, None, None, None,
-                                        bprices, lprices, const.BFID))
-    return selections
+from betman import const, Market, Event
+
+def ParseEvents(res):
+    events = []
+    for e in res.eventTypeItems.EventType:
+        events.append(Event(e.name, e.id, 2))
+    return events
+
+def ParseMarkets(res):
+    markets = []
+    for mdata in res.marketData.split(':')[1:]:
+        fields = mdata.split('~')
+        # we will need to remove this erroneous Group D rubbish
+        # at some point (!)        
+        # fields are (in order, see also BF documentation):
+        # [0] Market ID 
+        # [1] Market name
+        # [2] Market Type
+        # [3] Market Status
+        # [4] Event Date
+        # [5] Menu Path
+        # [6] Event Hierarchy (ids)
+        # [7] Bet Delay
+        # [8] Exchange Id (1 for UK/Worldwide, 2 for AUS)
+        # [9] ISO3 Country code
+        # [10] Last Refresh - time since cached data refreshed
+        # [11] Number of Runners
+        # [12] Number of Winners
+        # [13] Total Amount Matched
+        # [14] BSP Market
+        # [15] Turning in Play
+
+        # the full name of the market
+        name = fields[5].replace('\\','|') + '|' + fields[1]
+        myid = int(fields[0])
+        # note parent id is the root one, we are skipping any
+        # intermediate event ids
+        pid = int(fields[6].split('/')[1])
+        # are we inrunning?
+        if fields[3] == 'ACTIVE':
+            inrun = True
+        else:
+            inrun = False
+        markets.append(Market(name, myid, pid, inrun, None, const.BFID))
+
+    return markets
