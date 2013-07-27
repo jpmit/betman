@@ -1,0 +1,160 @@
+(GetPricesResponse){
+   ReturnStatus = 
+      (ReturnStatus){
+         _CallId = "11b439fb-af3f-4b2a-b092-13585ae4a135"
+         _Code = 0
+         _Description = "Success"
+      }
+   Timestamp = 2013-06-23 18:41:22.273903
+   MarketPrices = 
+      (MarketTypeWithPrices){
+         _Status = 2
+         _TotalMatchedAmount = 4793.0
+         _Name = "Win Market"
+         _IsManagedWhenInRunning = True
+         _NumberOfWinningSelections = 1
+         _IsCurrentlyInRunning = False
+         _IsPlayMarket = False
+         _IsInRunningAllowed = True
+         _WithdrawalSequenceNumber = 0
+         _MatchedMarketAgainstStake = 3252.48
+         _StartTime = 2013-06-29 10:00:00
+         _MatchedMarketForStake = 1540.89
+         _IsEnabledForMultiples = False
+         _Type = 1
+         _Id = 3201204
+         _DisplayOrder = 1
+         _InRunningDelaySeconds = 5
+         Selections[] = 
+            (SelectionTypeWithPrices){
+               _Status = 2
+               _MatchedSelectionForStake = 490.77
+               _Name = "Australia"
+               _ResetCount = 1
+               _MatchedSelectionAgainstStake = 1077.53
+               _LastMatchedOccurredAt = 2013-06-23 16:55:54.713000
+               _DeductionFactor = 0.0
+               _LastMatchedPrice = 5.2
+               _LastMatchedForSideAmount = 22.72
+               _Id = 17140160
+               ForSidePrices[] = 
+                  (PricesType){
+                     _Price = 4.8
+                     _Stake = 57.89
+                  },
+                  (PricesType){
+                     _Price = 4.2
+                     _Stake = 79.06
+                  },
+                  (PricesType){
+                     _Price = 3.8
+                     _Stake = 103.91
+                  },
+               AgainstSidePrices[] = 
+                  (PricesType){
+                     _Price = 6.4
+                     _Stake = 2.0
+                  },
+                  (PricesType){
+                     _Price = 7.4
+                     _Stake = 23.44
+                  },
+                  (PricesType){
+                     _Price = 8.6
+                     _Stake = 22.7
+                  },
+                  (PricesType){
+                     _Price = 9.8
+                     _Stake = 22.54
+                  },
+            },
+            (SelectionTypeWithPrices){
+               _Status = 2
+               _MatchedSelectionForStake = 1017.78
+               _Name = "British and Irish Lions"
+               _ResetCount = 1
+               _MatchedSelectionAgainstStake = 691.25
+               _LastMatchedOccurredAt = 2013-06-22 12:37:55.220000
+               _DeductionFactor = 0.0
+               _LastMatchedPrice = 1.25
+               _LastMatchedForSideAmount = 4.0
+               _Id = 17140161
+               ForSidePrices[] = 
+                  (PricesType){
+                     _Price = 1.26
+                     _Stake = 1.0
+                  },
+                  (PricesType){
+                     _Price = 1.25
+                     _Stake = 50.0
+                  },
+                  (PricesType){
+                     _Price = 1.19
+                     _Stake = 300.0
+                  },
+                  (PricesType){
+                     _Price = 1.13
+                     _Stake = 345.0
+                  },
+                  (PricesType){
+                     _Price = 1.07
+                     _Stake = 396.75
+                  },
+               AgainstSidePrices[] = 
+                  (PricesType){
+                     _Price = 1.31
+                     _Stake = 1.0
+                  },
+                  (PricesType){
+                     _Price = 1.32
+                     _Stake = 300.0
+                  },
+                  (PricesType){
+                     _Price = 1.38
+                     _Stake = 345.0
+                  },
+                  (PricesType){
+                     _Price = 1.44
+                     _Stake = 396.75
+                  },
+            },
+            (SelectionTypeWithPrices){
+               _Status = 2
+               _MatchedSelectionForStake = 32.34
+               _Name = "Draw"
+               _ResetCount = 1
+               _MatchedSelectionAgainstStake = 1483.7
+               _LastMatchedOccurredAt = 2013-06-22 14:26:29.517000
+               _DeductionFactor = 0.0
+               _LastMatchedPrice = 42.0
+               _LastMatchedForSideAmount = 0.5
+               _Id = 17140162
+               ForSidePrices[] = 
+                  (PricesType){
+                     _Price = 30.0
+                     _Stake = 8.0
+                  },
+                  (PricesType){
+                     _Price = 24.0
+                     _Stake = 9.2
+                  },
+                  (PricesType){
+                     _Price = 19.0
+                     _Stake = 10.58
+                  },
+               AgainstSidePrices[] = 
+                  (PricesType){
+                     _Price = 64.0
+                     _Stake = 8.5
+                  },
+                  (PricesType){
+                     _Price = 76.0
+                     _Stake = 9.2
+                  },
+                  (PricesType){
+                     _Price = 88.0
+                     _Stake = 10.58
+                  },
+            },
+      }
+ }
