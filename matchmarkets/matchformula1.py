@@ -2,8 +2,7 @@
 # 21st July 2013
 # Try to match markets between BF and BDAQ (!)
 
-import database
-import const
+from betman import database, const
 import numpy as np
 
 def level2convert(s):

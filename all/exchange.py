@@ -38,6 +38,10 @@ class Market(object):
         # is the market 'in running?'
         self.inrunning = inrunning
 
+    def geteventname(self):
+        """Return the event name, which is inside the first two |'s"""
+        return self.name.split('|')[1]
+
     def __repr__(self):
         return ' '.join([self.name, str(self.id)])
 
