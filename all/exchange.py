@@ -30,17 +30,15 @@ class Market(object):
          # will need to change this when get BF going
         self.exid = exid
         # convert name to ascii string and ignore any funky unicode characters
-        self.name = name.encode('ascii', 'ignore')        
+        self.name = name.encode('ascii', 'ignore')
+        # from name, get event name, this is inside the first two |'s
+        self.eventname =  self.name.split('|')[1]
         self.id = myid
         # parent id
         self.pid = pid
         self.pname = pname
         # is the market 'in running?'
         self.inrunning = inrunning
-
-    def geteventname(self):
-        """Return the event name, which is inside the first two |'s"""
-        return self.name.split('|')[1]
 
     def __repr__(self):
         return ' '.join([self.name, str(self.id)])

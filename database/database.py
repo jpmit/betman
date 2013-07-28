@@ -48,6 +48,52 @@ class DBMaster(object):
                 pass
         self.conn.commit()
 
+    def ReturnMarketMatches(self, elist=[]):
+        """Return market matches.  If list of event names elist is not
+        given, return all markets in marketmatches table.  If given,
+        elist should be a list of BDAQ Event names."""
+        # Note: there is definitely a much better way to accomplish
+        # what is below using joins.  Once I actually know something
+        # about SQL I shall come back to this.  Also, this is
+        # vulnerable to SQL injection...
+
+        # check database is open
+        if not self._isopen:
+            self.open()
+        
+        # first query matchingmarkets 
+        qstr = 'SELECT * FROM matchingmarkets'
+        qargs = ()
+        if elist:
+            # TODO: should check here that all the entries in elist
+            # are valid BDAQ event names
+            qargs = ['|'+elist[0]+'%']
+            likestr = ' WHERE (ex1_name LIKE ?'
+            # add
+            if len(elist) > 1:
+                for ename in elist[1:]:
+                    likestr = '{0} OR ex1_name LIKE ?'.format(likestr)
+                    qargs.append('|'+ename+'%')
+            likestr = likestr + ')'
+            qstr = qstr + likestr
+            qargs = tuple(qargs)
+
+        # get the matching markets we want
+        mm = self.cursor.execute(qstr, qargs).fetchall()
+        # exchange 1 (BDAQ) mid is first value
+        matchmarkets = []
+        for m in mm:
+            ex1mid = m[0]
+            ex2mid = m[2]
+            ex1mark = self.ReturnMarkets('SELECT * FROM markets where '
+                                         'exchange_id=? and market_id=?',
+                                         (const.BDAQID, ex1mid))
+            ex2mark = self.ReturnMarkets('SELECT * FROM markets where '
+                                         'exchange_id=? and market_id=?',
+                                         (const.BFID, ex2mid))
+            matchmarkets.append((ex1mark, ex2mark))
+        return matchmarkets
+
     def WriteMarketMatches(self, matches):
         """Write to matchingmarkets table"""
 

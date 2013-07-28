@@ -23,13 +23,11 @@ bdaqmarkets = bdaqapi.GetMarkets([ev.id for ev in bdaqevents
 bfmarkets = bfapi.GetUKMarkets([ev.id for ev in bfevents
                                 if ev.name in bfelist])
 
-# get matching markets for each event in order
-matchms = []
-for (n1, n2) in zip(bdaqelist, bfelist):
-    bdaqms = [m for m in bdaqmarkets if m.geteventname() == n1]
-    bfms = [m for m in bfmarkets if m.geteventname() == n2]
-    print bdaqms, bfms
-    matchms += (marketmatcher.match(bdaqms, bfms, n1))
+# get matching markets
+
+# write the ma
+
+# get selections for the markets that match
 
 # get matching selections for each selection in matching markets
 selectionmatcher.match(matchms)
