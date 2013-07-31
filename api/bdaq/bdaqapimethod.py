@@ -130,7 +130,7 @@ class APIGetPrices(object):
         for ids in util.chunks(mids, MAXMIDS):
             self.req.MarketIds = ids
             result = self.client.service.GetPrices(self.req)
-            selections =  apiparse.ParsePrices(ids, result)
+            selections =  bdaqapiparse.ParsePrices(ids, result)
             allselections = allselections + selections
         if const.WRITEDB:
             self.dbman.WriteSelections(allselections, result.Timestamp)

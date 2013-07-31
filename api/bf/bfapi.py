@@ -52,6 +52,7 @@ GetSelections = bfnonapimethod.nonAPIgetSelections(cluk, dbman).call
 #GetPrices = bfapimethod.APIgetMarketPrices(cluk, dbman).call
 
 # below is for testing at the moment...
+# remove this at some point
 if __name__== '__main__':
     # get top level events
     events = GetActiveEvents()

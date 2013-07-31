@@ -10,7 +10,7 @@ import betman.matchmarkets.marketmatcher as marketmatcher
 
 # names for bf and bdaq need to map
 bdaqelist = ['Rugby Union', 'Formula 1']
-bfelist = ['Rugby Union', 'Motor Sport']
+bfelist = [marketmatcher.EVENTMAP[k] for k in bdaqelist]
 
 # get top level events for BF and BDAQ
 bdaqevents = bdaqapi.GetTopLevelEvents()
@@ -24,10 +24,16 @@ bfmarkets = bfapi.GetUKMarkets([ev.id for ev in bfevents
                                 if ev.name in bfelist])
 
 # get matching markets
+matchmarks = marketmatcher.GetMatchMarkets(bdaqmarkets, bfmarkets)
+bdaqmatches = [m[0] for m in matchmarks]
+bfmatches = [m[1] for m in matchmarks]
 
-# write the ma
-
+##### TO DO - FIX GETSELECTIONS for BF (and maybe also for bdaq)
+##### XML returns Eventnode -> marketnode ->
+##### the data returned is sorted first by event id, then by market it
+##### we need to take this into account!!!
 # get selections for the markets that match
-
+bfselections = bfapi.GetSelections([m.id for m in bfmatches])
+bdaqselections = bdaqapi.GetSelections([m.id for m in bdaqmatches])
 # get matching selections for each selection in matching markets
 selectionmatcher.match(matchms)

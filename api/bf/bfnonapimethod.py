@@ -7,6 +7,7 @@
 
 from betman import *
 import bfapiparse
+import bfnonapiparse
 import urllib2
 import datetime
 
@@ -70,8 +71,11 @@ class nonAPIgetSelections(object):
         req = urllib2.Request(url, headers=headers)
         response = urllib2.urlopen(req)
         # selections for all the market ids
-        allselections = bfapiparse.ParseSelections(mids, response.read())
+        allselections = bfnonapiparse.ParseSelections(mids, response.read())
+        print allselections
         if const.WRITEDB:
+            # collapse list of lists to a flat list
+            writeselections = [i for sub in allselections for i in sub]
             # write current time as timestamp for now!
             self.dbman.WriteSelections(allselections, datetime.datetime.now())
         return allselections

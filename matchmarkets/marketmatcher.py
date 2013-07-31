@@ -5,7 +5,7 @@
 # Functionality for finding pairs of matching markets, i.e. the same
 # market on BDAQ and BF
 
-from betman import const
+from betman import const, database
 import matchformula1
 import matchrugbyunion
 import matchsoccer
@@ -55,7 +55,7 @@ def matchevent(m1s, m2s, eventname):
     """Call appropriate function to match markets m1s and m2s,
     as determined by the name"""
     if eventname not in MATCHFNS:
-        raise MatchError, "don't know how to match %s" %eventname
+        raise MatchError, "don't know how to match {0}".format(eventname)
     # this will return a list of tuples (m1,m2) where m1 and m2 are
     # the matching markets.
     return MATCHFNS[eventname](m1s, m2s)
