@@ -1,8 +1,14 @@
+# database.py
+# James Mithen
+# jamesmithen@gmail.com
+#
+# Interface for interacting with database
+
 import os
 import sqlite3
 from betman import const, Market, Selection
-
-class DBException(Exception): pass
+from betman.all.betexception import DBException
+import schemas
 
 class DBMaster(object):
     """Simple interface to the main database"""
@@ -91,7 +97,7 @@ class DBMaster(object):
             ex2mark = self.ReturnMarkets('SELECT * FROM markets where '
                                          'exchange_id=? and market_id=?',
                                          (const.BFID, ex2mid))
-            matchmarkets.append((ex1mark, ex2mark))
+            matchmarkets.append((ex1mark[0], ex2mark[0]))
         return matchmarkets
 
     def WriteMarketMatches(self, matches):
@@ -256,76 +262,37 @@ class DBMaster(object):
         self.open()
 
         # exchanges table just stores number
-        self.cursor.execute(('CREATE TABLE exchanges '
-                             '(id integer primary key, name text, url '
-                             'text)'))
+        self.cursor.execute(schemas.getschema(schemas.EXCHANGES))
         exchanges = [(const.BDAQID, 'BetDAQ', 'www.betdaq.com'),
                      (const.BFID, 'BetFair', 'www.betfair.com')]
-        self.conn.executemany('INSERT INTO exchanges values (?, ?, ?)',
+        self.conn.executemany('INSERT INTO {0} values (?, ?, ?)'.format(schemas.EXCHANGES),
                               exchanges)
 
         # matchingmarkets maps a market_id from one exchange to another
-        self.cursor.execute(('CREATE TABLE matchingmarkets '
-                             '(ex1_mid long primary key, ex1_name text,'
-                             'ex2_mid long, ex2_name text)'))
+        self.cursor.execute(schemas.getschema(schema.MATCHMARKS)
 
         # matchingselections maps a selection_id from one exchange to another
         # hopefully selections have unique numbers...
-        self.cursor.execute(('CREATE TABLE matchingselections '
-                             '(ex1_sid long primary key, ex1_name text,'
-                             'ex2_sid long NOT NULL, ex2_name text)'))
+        self.cursor.execute(schemas.getschema(schema.MATCHSELS))
 
         # markets stores information about a market (but not selections)
-        self.cursor.execute(('CREATE TABLE markets '
-                             '(exchange_id int NOT NULL, '
-                             'market_id long NOT NULL,'
-                             'market_name text, '
-                             'in_running bool, '
-                             'last_checked text)'))
+        self.cursor.execute(schemas.getschema(schema.MARKETS))
 
         # the unique index ensures we don't have more than one row
         # with the same exchange_id and market_id
-        self.cursor.execute('CREATE UNIQUE INDEX mindex ON markets'
-                            '(exchange_id, market_id)')
+        self.cursor.execute('CREATE UNIQUE INDEX mindex ON {0}'
+                            '(exchange_id, market_id)'.format(schema.MARKETS))
 
         # selections stores market selections and their prices
-        self.cursor.execute(('CREATE TABLE selections '
-                             '(exchange_id int, market_id long,'
-                             'selection_id long, name text, '
-                             'b_1 real, bvol_1 real,'
-                             'b_2 real, bvol_2 real, b_3 real,'
-                             'bvol_3 real, b_4 real, bvol_4 real,'
-                             'b_5 real, bvol_5 real, lay_1 real,'
-                             'lvol_1 real, lay_2 real, lvol_2 real,'
-                             'lay_3 real, lvol_3 real, lay_4 real,'
-                             'lvol_4 real, lay_5 real, lvol_5 real,'
-                             'last_checked text)'))
+        self.cursor.execute(schemas.getschema(schema.SELECTIONS))
 
         # same unique index idea for prices table
-        self.cursor.execute('CREATE UNIQUE INDEX pindex ON selections'
-                            '(exchange_id, market_id, selection_id)')
+        self.cursor.execute('CREATE UNIQUE INDEX pindex ON {0}'
+                            '(exchange_id, market_id, selection_id)'\
+                            .format(schema.SELECTIONS))
 
         # orders stores current orders, whether matched or not
-        self.cursor.execute(('CREATE TABLE orders '
-                             '(exchange_id int, market_id long,'
-                             'selection_id long, strategy int,'
-                             'price real, stake real, polarity int,'
-                             'matched real)'))
+        self.cursor.execute(schemas.getshema(schema.ORDERS))
 
         self.conn.commit()
         return
-
-def StorePrice(mid, timestamp, prices):
-    conn = sqlite3.connect('prices.db')
-    c = conn.cursor()
-    c.execute('INSERT INTO prices VALUES (?,?,?)',
-              (mid, timestamp, str(prices)))
-    conn.commit()
-    return
-
-def RetreiveAllPrices():
-    conn = sqlite3.connect('prices.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM prices')
-    conn.commit()
-    return c.fetchall()

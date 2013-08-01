@@ -13,7 +13,7 @@ import datetime
 
 # for australia markets, replace uk with aus
 BASEURL = ('http://uk-api.betfair.com/www/sports/exchange/readonly/'
-           'v1.0/bymarket?currencyCode=GBP&alt=xml&locale=en_GB')
+           'v1.0/bymarket?currencyCode=GBP&alt=json&locale=en_GB')
 
 def example():
     exampleurl = ('http://uk-api.betfair.com/www/sports/exchange/readonly'
@@ -59,8 +59,8 @@ class nonAPIgetSelections(object):
         markets should be all from the same event and either AUS or UK exchange.
         Otherwise, all hell will break loose...
         """
-        # for australian markets, need to write 2. rather than 1.
-        # and need different BASEURL (see top)
+        # for australian markets, need to write 2. rather than 1.  And
+        # need different BASEURL (see top)
         midstring= '%2C'.join(['1.%d' %m for m in mids])
         url = BASEURL + ('&types=RUNNER_DESCRIPTION%2CRUNNER_EXCHANGE'
                          '_PRICES_BEST'
@@ -71,11 +71,11 @@ class nonAPIgetSelections(object):
         req = urllib2.Request(url, headers=headers)
         response = urllib2.urlopen(req)
         # selections for all the market ids
-        allselections = bfnonapiparse.ParseSelections(mids, response.read())
+        allselections = bfnonapiparse.ParseJsonSelections(response.read())
         print allselections
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]
             # write current time as timestamp for now!
-            self.dbman.WriteSelections(allselections, datetime.datetime.now())
+            self.dbman.WriteSelections(writeselections, datetime.datetime.now())
         return allselections

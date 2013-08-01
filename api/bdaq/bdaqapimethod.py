@@ -133,7 +133,10 @@ class APIGetPrices(object):
             selections =  bdaqapiparse.ParsePrices(ids, result)
             allselections = allselections + selections
         if const.WRITEDB:
-            self.dbman.WriteSelections(allselections, result.Timestamp)
+            # collapse list of lists to a flat list
+            print allselections
+            writeselections = [i for sub in allselections for i in sub]
+            self.dbman.WriteSelections(writeselections, result.Timestamp)
         return allselections
 
 # not fully implemented (do not use)

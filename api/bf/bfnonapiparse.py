@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as etree
 from betman import const, Selection
+import json
 
+# obsolete - do not use, use ParseJsonSelections instead
 def ParseSelections(mids, xmlstr):
     root = etree.fromstring(xmlstr)
     selections = []
@@ -28,3 +30,46 @@ def ParseSelections(mids, xmlstr):
     # whose elements are Selection objects for the market with id
     # mids[0].
     return selections
+
+def ParseJsonSelections(jstr):
+    """Parse json data, return selections SORTED BY MARKET ID"""
+    data = json.loads(jstr)
+    selections = []
+    mids = []
+    mnum = 0
+    for event in data['eventTypes']:
+        for eventnode in event['eventNodes']:
+            for market in eventnode['marketNodes']:
+                # take away the 1. or 2. at start of market id; this
+                # corresponds to UK and AUS exchange respectively
+                mid = market['marketId'].split('.')[1]
+                mids.append(mid)
+                # list of selections for this market
+                selections.append([])
+                for runner in market['runners']:
+                    name = runner['description']['runnerName']
+                    sid = runner['selectionId']
+                    if 'availableToBack' in runner['exchange']:
+                        back = [(b['price'], b['size']) for b in
+                                runner['exchange']['availableToBack']]
+                    if 'availableToLay' in runner['exchange']:
+                        lay = [(la['price'], la['size']) for la in
+                               runner['exchange']['availableToLay']]
+                    # create new selection for this market
+                    selections[mnum].append(Selection(name, sid, mid,
+                                                      None, None, None,
+                                                      None, None, back,
+                                                      lay, const.BFID))
+
+                # next market
+                mnum = mnum + 1
+    # sort selections by market id.  this is so that when we call this
+    # function, we know what we are getting back.  If we don't do
+    # this, we will get selections in an order decided by BF,
+    # i.e. ordered by eventtype.
+    mids, selections = zip(*sorted(zip(mids, selections)))
+    return list(selections)
+
+                    
+    
+    

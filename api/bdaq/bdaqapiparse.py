@@ -26,6 +26,8 @@ def ParsePrices(marketids, resp):
 
     allselections = []
     for (mid, mprice) in zip(marketids, resp.MarketPrices):
+        # list of selections for this marketid
+        allselections.append([])
         # go through each selection for the market
         # for some reason the API is returning every selection
         # twice, although this could be an error with the SOAP
@@ -77,13 +79,13 @@ def ParsePrices(marketids, resp):
                 lastmatchoccur = sel._LastMatchedOccurredAt
                 lastmatchprice = sel._LastMatchedPrice
                 lastmatchamount = sel._LastMatchedForSideAmount
-            allselections.append(Selection(sel._Name, sel._Id, mid,
-                                           sel._MatchedSelectionForStake,
-                                           sel._MatchedSelectionAgainstStake,
-                                           lastmatchoccur,
-                                           lastmatchprice,
-                                           lastmatchamount,
-                                           bprices, lprices))
+            allselections[-1].append(Selection(sel._Name, sel._Id, mid,
+                                               sel._MatchedSelectionForStake,
+                                               sel._MatchedSelectionAgainstStake,
+                                               lastmatchoccur,
+                                               lastmatchprice,
+                                               lastmatchamount,
+                                               bprices, lprices))
     return allselections
 
 def ParseEventSubTree(resp):

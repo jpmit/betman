@@ -28,11 +28,11 @@ matchmarks = marketmatcher.GetMatchMarkets(bdaqmarkets, bfmarkets)
 bdaqmatches = [m[0] for m in matchmarks]
 bfmatches = [m[1] for m in matchmarks]
 
-##### TO DO - FIX GETSELECTIONS for BF (and maybe also for bdaq)
-##### XML returns Eventnode -> marketnode ->
-##### the data returned is sorted first by event id, then by market it
-##### we need to take this into account!!!
 # get selections for the markets that match
+# NOTE: For the BF api, we will get the selections back ordered by
+# market ID.  For the BDAQ api, we will get selections back in order
+# called.
+# TODO - don't call this with duplicate market id's
 bfselections = bfapi.GetSelections([m.id for m in bfmatches])
 bdaqselections = bdaqapi.GetSelections([m.id for m in bdaqmatches])
 # get matching selections for each selection in matching markets
