@@ -36,5 +36,3 @@ bfselections = bfapi.GetSelections([m.id for m in bfmatches])
 bdaqselections = bdaqapi.GetSelections([m.id for m in bdaqmatches])
 # get matching selections for each selection in matching markets
 matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)
-
-# Next, get prices for all matching selections

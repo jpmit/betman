@@ -4,5 +4,6 @@
 #
 # Exception classes for the entire code
 
-class DBException(Exception): pass
+class DBError(Exception): pass
 
+class DBCorruptError(DBError) : pass

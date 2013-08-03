@@ -6,9 +6,9 @@
 
 import os
 import sqlite3
-from betman import const, Market, Selection
-from betman.all.betexception import DBException
-import schemas
+from betman import const, Market, Selection, util
+from betman.all.betexception import DBError, DBCorruptError
+import schema
 
 class DBMaster(object):
     """Simple interface to the main database"""
@@ -41,10 +41,11 @@ class DBMaster(object):
             self.open()
 
         # insertion stringo
-        qins = ('INSERT INTO matchingselections (ex1_sid, ex1_name, ex2_sid'
-                ', ex2_name) values (?,?,?,?)')
+        qins = ('INSERT INTO {0} (ex1_sid, ex1_name, ex2_sid'
+                ', ex2_name) values (?,?,?,?)'.\
+                format(schema.MATCHSELS))
 
-        for s1,s2 in selmatches:
+        for (s1,s2) in selmatches:
             data = (s1.id, s1.name, s2.id, s2.name)
             try:
                 self.cursor.execute(qins, data)
@@ -68,7 +69,7 @@ class DBMaster(object):
             self.open()
         
         # first query matchingmarkets 
-        qstr = 'SELECT * FROM matchingmarkets'
+        qstr = 'SELECT * FROM {0}'.format(schema.MATCHMARKS)
         qargs = ()
         if elist:
             # TODO: should check here that all the entries in elist
@@ -91,14 +92,65 @@ class DBMaster(object):
         for m in mm:
             ex1mid = m[0]
             ex2mid = m[2]
-            ex1mark = self.ReturnMarkets('SELECT * FROM markets where '
-                                         'exchange_id=? and market_id=?',
+            ex1mark = self.ReturnMarkets('SELECT * FROM {0} where '
+                                         'exchange_id=? and market_id=?'\
+                                         .format(schema.MARKETS),
                                          (const.BDAQID, ex1mid))
-            ex2mark = self.ReturnMarkets('SELECT * FROM markets where '
-                                         'exchange_id=? and market_id=?',
+            ex2mark = self.ReturnMarkets('SELECT * FROM {0} where '
+                                         'exchange_id=? and market_id=?'\
+                                         .format(schema.MARKETS),
                                          (const.BFID, ex2mid))
+            # check our queries worked.  If they didn't, then the
+            # database is corrupted, since the market is listed in the
+            # matching markets table but not in the markets table.
+            for em, eid in zip([ex1mark, ex2mark], [ex1mid, ex2mid]):
+                if not em:
+                    raise DBCorruptError, ('market id {0} not found in '
+                                           'table {1}'\
+                                           .format(eid, schema.MARKETS))
+                
             matchmarkets.append((ex1mark[0], ex2mark[0]))
         return matchmarkets
+
+    def ReturnSelectionMatches(self):
+        """Return all selection matches."""
+        # Note: there is definitely a much better way to accomplish
+        # what is below using joins.  Once I actually know something
+        # about SQL I shall come back to this.
+
+        # check database is open
+        if not self._isopen:
+            self.open()
+        
+        # first query matching selection table
+        qstr = 'SELECT * FROM {0}'.format(schema.MATCHSELS)
+        qargs = ()
+
+        # get the matching selections we want
+        msels = self.cursor.execute(qstr, qargs).fetchall()
+        matchsels = []
+        for s in msels:
+            ex1sid = s[0]
+            ex2sid = s[2]
+            ex1sel = self.ReturnSelections('SELECT * FROM {0} where '
+                                           'exchange_id=? and selection_id=?'\
+                                           .format(schema.SELECTIONS),
+                                           (const.BDAQID, ex1sid))
+            ex2sel = self.ReturnSelections('SELECT * FROM {0} where '
+                                           'exchange_id=? and selection_id=?'\
+                                           .format(schema.SELECTIONS),
+                                           (const.BFID, ex2sid))
+            # check our queries worked.  If they didn't, then the
+            # database is corrupted, since the selection is listed in the
+            # matching selections table but not in the markets table.
+            for es, eid in zip([ex1sel, ex2sel], [ex1sid, ex2sid]):
+                if not es:
+                    raise DBCorruptError, ('selection id {0} not found in '
+                                           'table {1}'\
+                                           .format(eid, schema.SELECTIONS))
+            
+            matchsels.append((ex1sel[0], ex2sel[0]))
+        return matchsels
 
     def WriteMarketMatches(self, matches):
         """Write to matchingmarkets table"""
@@ -109,8 +161,8 @@ class DBMaster(object):
 
         # insertion string
         qins = ('INSERT INTO {0} (ex1_mid, ex1_name, ex2_mid'
-                ', ex2_name) values (?,?,?,?)'.format(schemas.\
-                                                      MATCHMARKS)
+                ', ex2_name) values (?,?,?,?)'.format(schema.\
+                                                      MATCHMARKS))
 
         for m1,m2 in matches:
             data = (m1.id, m1.name, m2.id, m2.name)
@@ -131,7 +183,7 @@ class DBMaster(object):
 
         # insertion string
         qins = ('INSERT INTO {0} (ex1_sid, ex1_name, ex2_sid'
-                ', ex2_name) values (?,?,?,?)'.format(schemas.\
+                ', ex2_name) values (?,?,?,?)'.format(schema.\
                                                       MATCHSELS))
 
         for m1,m2 in matches:
@@ -155,13 +207,13 @@ class DBMaster(object):
         # we insert it, otherwise we update (since inrunning could have
         # changed).  This is probably not the most efficient way of
         # accomplishing that.
-        qins = ('INSERT INTO selections (exchange_id, market_id, '
+        qins = ('INSERT INTO {0} (exchange_id, market_id, '
                 'selection_id, name, b_1, bvol_1, b_2, bvol_2, b_3, '
                 'bvol_3, b_4, bvol_4, b_5, bvol_5, lay_1, lvol_1, '
                 'lay_2, lvol_2, lay_3, lvol_3, lay_4, lvol_4, '
                 'lay_5, lvol_5, last_checked) values '
                 '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,'
-                ' ?, ?, ?, ?, ?, ?, ?)')
+                ' ?, ?, ?, ?, ?, ?, ?)'.format(schema.SELECTIONS))
         qupd = ('UPDATE selections SET b_1=?, bvol_1=?, b_2=?, bvol_2=?, '
                 'b_3=?, bvol_3=?, b_4=?, bvol_4=?, b_5=?, bvol_5=?, '
                 'lay_1=?, lvol_1=?, lay_2=?, lvol_2=?, lay_3=?, lvol_3=?, '
@@ -195,9 +247,9 @@ class DBMaster(object):
             res = self.cursor.execute(sqlstr, sqlargs)
         except sqlite3.OperationalError:
             # query string was malformed somehow
-            raise DBException, 'received malformed SQL statement'
+            raise DBError, 'received malformed SQL statement'
         except ValueError:
-            raise DBException, ('wrong parameters passed to SQL '
+            raise DBError, ('wrong parameters passed to SQL '
                                 'statement')
         mdata = res.fetchall()
         # create Market objects from results of market data
@@ -223,9 +275,9 @@ class DBMaster(object):
                 res = self.cursor.execute(sqlstr)
         except sqlite3.OperationalError:
             # query string was malformed somehow
-            raise DBException, 'received malformed SQL statement'
+            raise DBError, 'received malformed SQL statement'
         except ValueError:
-            raise DBException, ('wrong parameters passed to SQL '
+            raise DBError, ('wrong parameters passed to SQL '
                                 'statement')
         seldata = res.fetchall()
         # create Selection objects from results
@@ -241,7 +293,7 @@ class DBMaster(object):
                                 # backprices and volumes
                                 [y for y in util.pairwise(s[4:14])],
                                 # layprices and volumes
-                                [y for y in util.pairwise(s[15:25])],
+                                [y for y in util.pairwise(s[14:24])],
                                 s[0])
                       for s in seldata]
         
@@ -285,21 +337,21 @@ class DBMaster(object):
         self.open()
 
         # exchanges table just stores number
-        self.cursor.execute(schemas.getschema(schemas.EXCHANGES))
+        self.cursor.execute(schema.getschema(schema.EXCHANGES))
         exchanges = [(const.BDAQID, 'BetDAQ', 'www.betdaq.com'),
                      (const.BFID, 'BetFair', 'www.betfair.com')]
-        self.conn.executemany('INSERT INTO {0} values (?, ?, ?)'.format(schemas.EXCHANGES),
+        self.conn.executemany('INSERT INTO {0} values (?, ?, ?)'.format(schema.EXCHANGES),
                               exchanges)
 
         # matchingmarkets maps a market_id from one exchange to another
-        self.cursor.execute(schemas.getschema(schema.MATCHMARKS))
+        self.cursor.execute(schema.getschema(schema.MATCHMARKS))
 
         # matchingselections maps a selection_id from one exchange to another
         # hopefully selections have unique numbers...
-        self.cursor.execute(schemas.getschema(schema.MATCHSELS))
+        self.cursor.execute(schema.getschema(schema.MATCHSELS))
 
         # markets stores information about a market (but not selections)
-        self.cursor.execute(schemas.getschema(schema.MARKETS))
+        self.cursor.execute(schema.getschema(schema.MARKETS))
 
         # the unique index ensures we don't have more than one row
         # with the same exchange_id and market_id
@@ -307,7 +359,7 @@ class DBMaster(object):
                             '(exchange_id, market_id)'.format(schema.MARKETS))
 
         # selections stores market selections and their prices
-        self.cursor.execute(schemas.getschema(schema.SELECTIONS))
+        self.cursor.execute(schema.getschema(schema.SELECTIONS))
 
         # same unique index idea for prices table
         self.cursor.execute('CREATE UNIQUE INDEX pindex ON {0}'
@@ -315,7 +367,7 @@ class DBMaster(object):
                             .format(schema.SELECTIONS))
 
         # orders stores current orders, whether matched or not
-        self.cursor.execute(schemas.getshema(schema.ORDERS))
+        self.cursor.execute(schema.getschema(schema.ORDERS))
 
         self.conn.commit()
         return

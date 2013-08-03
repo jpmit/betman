@@ -5,12 +5,12 @@
 # Schemas for SQL tables. These are stored here for easy access in
 # case of future modification.
 
-from betman.all.betexception import DBException
+from betman.all.betexception import DBError
 
 # table names
 EXCHANGES = 'exchanges'
 MATCHMARKS = 'matchmarkets'
-MATCHSELS = 'matchingselections'
+MATCHSELS = 'matchselections'
 MARKETS = 'markets'
 SELECTIONS = 'selections'
 ORDERS = 'orders'

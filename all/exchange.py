@@ -53,8 +53,10 @@ class Selection(object):
                  lastmatchedprice, lastmatchedamount, backprices,
                  layprices, exid=const.BDAQID):
         self.exid = exid
-        # store everything that comes from bdaq API
-        self.name = name
+        # store everything from BDAQ API below
+        # convert name to ascii string and ignore any funky unicode
+        # characters
+        self.name = name.encode('ascii', 'ignore')        
         self.id = myid # selection id
         self.mid = marketid # market id I belong to
         self.matchedback = mback        
@@ -80,6 +82,14 @@ class Selection(object):
         # pad prices with None
         app = [(None, None)] * (num - nprices)
         return prices + app
+
+    def best_back(self):
+        """Return best back price, or 1.0 if no price"""
+        return max(1.0, self.backprices[0][0])
+
+    def best_lay(self):
+        """Return best lay price, or 1000.0 if no price"""
+        return min(1000.0, self.layprices[0][0])
 
     def __repr__(self):
         return ' '.join([self.name, str(self.id)])

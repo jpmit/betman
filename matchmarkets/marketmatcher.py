@@ -86,8 +86,13 @@ def GetMatchMarkets(m1s, m2s):
 def _matchselection(sel, sellist):
     """Return selection in sellist that 'matches' sel, or None if
     no match found"""
+    # some of the BF names have trailing spaces, e.g. 'Sebastian
+    # Vettel '.  This is clearly a bit cheeky.  Lets strip any
+    # whitespace at start and end of name, and for both exchanges.
+    selname = sel.name.strip()
+    print selname
     for s in sellist:
-        if s.name == sel.name:
+        if s.name.strip() == selname:
             return s
     return None
 

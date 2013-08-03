@@ -140,7 +140,6 @@ class APIGetPrices(object):
             allselections = allselections + selections
         if const.WRITEDB:
             # collapse list of lists to a flat list
-            print allselections
             writeselections = [i for sub in allselections for i in sub]
             self.dbman.WriteSelections(writeselections, result.Timestamp)
         return allselections
@@ -285,7 +284,6 @@ class APIPlaceOrdersNoReceipt(object):
         # see 'ordertest.py' for what the dict should contain
         self.makeorder(order)
         self.req.Orders.Order = [self.order]
-        print self.req
         result = self.client.service.PlaceOrdersNoReceipt(self.req)
         return result
 
@@ -309,7 +307,6 @@ class APIPlaceOrdersWithReceipt(object):
         # see 'ordertest.py' for what the dict should contain
         self.makeorder(order)
         self.req.Orders.Order = [self.order]
-        print self.req
         result = self.client.service.PlaceOrdersWithReceipt(self.req)
         return result
 
