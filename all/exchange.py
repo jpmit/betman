@@ -29,7 +29,8 @@ class Market(object):
                  exid = const.BDAQID):
          # will need to change this when get BF going
         self.exid = exid
-        # convert name to ascii string and ignore any funky unicode characters
+        # convert name to ascii string and ignore any funky unicode
+        # characters
         self.name = name.encode('ascii', 'ignore')
         # from name, get event name, this is inside the first two |'s
         self.eventname =  self.name.split('|')[1]

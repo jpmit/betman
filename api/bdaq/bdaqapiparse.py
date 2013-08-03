@@ -1,4 +1,4 @@
-from betman import Market, Selection, Event
+from betman import util, Market, Selection, Event
 
 def ParseEvents(resp):
     events = []
@@ -20,8 +20,6 @@ def ParsePrices(marketids, resp):
         raise APIError, 'punter is blacklisted'
 
     # check market prices is right length
-    print len(resp.MarketPrices)
-    print resp
     assert len(resp.MarketPrices) == len(marketids)
 
     allselections = []
@@ -115,7 +113,10 @@ def ParseEventSubTree(resp):
     for evclass in data:
         ParseEventClassifier(evclass,'', markets)
         allmarkets = allmarkets + markets
-    return allmarkets
+    # hack: currently markets are duplicated multiple times; we want
+    # only unique markets here
+    umarkets = util.unique(allmarkets)
+    return umarkets
 
 def ParseEventClassifier(eclass, name='', markets=[]):
     """Get Markets from a Top Level Event, e.g. 'Rugby Union'.

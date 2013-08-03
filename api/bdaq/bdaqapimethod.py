@@ -42,6 +42,12 @@ class APIGetEventSubTreeNoSelections(object):
         self.req._WantDirectDescendentsOnly = direct
         response = self.client.service.GetEventSubTreeNoSelections(self.req)
         allmarkets =  bdaqapiparse.ParseEventSubTree(response)
+        # TODO:
+        # the markets in allmarkets are currently ordered by
+        # Event ID.  But we may have passed the event ids in a
+        # different order.  Let's reorder the markets so that they are
+        # in the event id order as passed to this function (parameter
+        # ids).
         if const.WRITEDB:
             self.dbman.WriteMarkets(allmarkets, response.Timestamp)
         return allmarkets

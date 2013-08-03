@@ -108,8 +108,9 @@ class DBMaster(object):
             self.open()
 
         # insertion string
-        qins = ('INSERT INTO matchingmarkets (ex1_mid, ex1_name, ex2_mid'
-                ', ex2_name) values (?,?,?,?)')
+        qins = ('INSERT INTO {0} (ex1_mid, ex1_name, ex2_mid'
+                ', ex2_name) values (?,?,?,?)'.format(schemas.\
+                                                      MATCHMARKS)
 
         for m1,m2 in matches:
             data = (m1.id, m1.name, m2.id, m2.name)
@@ -117,6 +118,28 @@ class DBMaster(object):
                 self.cursor.execute(qins, data)
             except sqlite3.IntegrityError:
                 # already have matching market (hopefully this same
+                # one!) in database
+                pass
+        self.conn.commit()
+
+    def WriteSelectionMatches(self, matches):
+        """Write to matchingmarkets table"""
+
+        # check database is open
+        if not self._isopen:
+            self.open()
+
+        # insertion string
+        qins = ('INSERT INTO {0} (ex1_sid, ex1_name, ex2_sid'
+                ', ex2_name) values (?,?,?,?)'.format(schemas.\
+                                                      MATCHSELS))
+
+        for m1,m2 in matches:
+            data = (m1.id, m1.name, m2.id, m2.name)
+            try:
+                self.cursor.execute(qins, data)
+            except sqlite3.IntegrityError:
+                # already have matching selection (hopefully this same
                 # one!) in database
                 pass
         self.conn.commit()
@@ -269,7 +292,7 @@ class DBMaster(object):
                               exchanges)
 
         # matchingmarkets maps a market_id from one exchange to another
-        self.cursor.execute(schemas.getschema(schema.MATCHMARKS)
+        self.cursor.execute(schemas.getschema(schema.MATCHMARKS))
 
         # matchingselections maps a selection_id from one exchange to another
         # hopefully selections have unique numbers...
