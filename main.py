@@ -9,7 +9,7 @@ from betman.api.bdaq import bdaqapi
 import betman.matchmarkets.marketmatcher as marketmatcher
 
 # names for bf and bdaq need to map
-bdaqelist = ['Rugby Union', 'Formula 1']
+bdaqelist = ['Rugby Union', 'Formula 1','Soccer']
 bfelist = [marketmatcher.EVENTMAP[k] for k in bdaqelist]
 
 # get top level events for BF and BDAQ
