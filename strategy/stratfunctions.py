@@ -4,6 +4,7 @@
 #
 # strategy functions
 
+from betman import database
 import stratdata
 
 # commission on winnings taken from both exchanges. The strategies can
@@ -26,6 +27,13 @@ def is_lay_arb(sel1, sel2):
         # exchange and buy back at oback
         oback = s2.best_back()
         if oback > olay/((1 - _COMMISSION)*(1 - _COMMISSION)):
+            # get the market name and print it out:
+            mark1 = database.DBMaster().ReturnMarkets('SELECT * FROM markets WHERE market_id = ?',
+                                                     (s1.mid,))[0]
+            mark2 = database.DBMaster().ReturnMarkets('SELECT * FROM markets WHERE market_id = ?',
+                                                     (s2.mid,))[0]
+            print mark1.name
+            print mark2.name
             print olay, s1.name, s1.exid, oback
 
 

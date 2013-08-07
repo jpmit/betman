@@ -35,18 +35,17 @@ class DBMaster(object):
 
     def WriteSelectionMatches(self, selmatches):
         """Write to matchingselections table"""
-
         # check database is open
         if not self._isopen:
             self.open()
-
-        # insertion stringo
-        qins = ('INSERT INTO {0} (ex1_sid, ex1_name, ex2_sid'
-                ', ex2_name) values (?,?,?,?)'.\
+        print 'here'
+        # insertion string
+        qins = ('INSERT INTO {0} (ex1_mid, ex1_sid, ex1_name, ex2_mid, ex2_sid'
+                ', ex2_name) values (?,?,?,?,?,?)'.\
                 format(schema.MATCHSELS))
-
+        
         for (s1,s2) in selmatches:
-            data = (s1.id, s1.name, s2.id, s2.name)
+            data = (s1.mid, s1.id, s1.name, s2.mid, s2.id, s2.name)
             try:
                 self.cursor.execute(qins, data)
             except sqlite3.IntegrityError:
@@ -130,16 +129,18 @@ class DBMaster(object):
         msels = self.cursor.execute(qstr, qargs).fetchall()
         matchsels = []
         for s in msels:
-            ex1sid = s[0]
-            ex2sid = s[2]
+            ex1mid = s[0]
+            ex1sid = s[1]
+            ex2mid = s[3]
+            ex2sid = s[4]
             ex1sel = self.ReturnSelections('SELECT * FROM {0} where '
-                                           'exchange_id=? and selection_id=?'\
+                                           'exchange_id=? and market_id=? and selection_id=?'\
                                            .format(schema.SELECTIONS),
-                                           (const.BDAQID, ex1sid))
+                                           (const.BDAQID, ex1mid, ex1sid))
             ex2sel = self.ReturnSelections('SELECT * FROM {0} where '
-                                           'exchange_id=? and selection_id=?'\
+                                           'exchange_id=? and market_id=? and selection_id=?'\
                                            .format(schema.SELECTIONS),
-                                           (const.BFID, ex2sid))
+                                           (const.BFID, ex2mid, ex2sid))
             # check our queries worked.  If they didn't, then the
             # database is corrupted, since the selection is listed in the
             # matching selections table but not in the markets table.
@@ -170,28 +171,6 @@ class DBMaster(object):
                 self.cursor.execute(qins, data)
             except sqlite3.IntegrityError:
                 # already have matching market (hopefully this same
-                # one!) in database
-                pass
-        self.conn.commit()
-
-    def WriteSelectionMatches(self, matches):
-        """Write to matchingmarkets table"""
-
-        # check database is open
-        if not self._isopen:
-            self.open()
-
-        # insertion string
-        qins = ('INSERT INTO {0} (ex1_sid, ex1_name, ex2_sid'
-                ', ex2_name) values (?,?,?,?)'.format(schema.\
-                                                      MATCHSELS))
-
-        for m1,m2 in matches:
-            data = (m1.id, m1.name, m2.id, m2.name)
-            try:
-                self.cursor.execute(qins, data)
-            except sqlite3.IntegrityError:
-                # already have matching selection (hopefully this same
                 # one!) in database
                 pass
         self.conn.commit()
@@ -350,6 +329,11 @@ class DBMaster(object):
         # hopefully selections have unique numbers...
         self.cursor.execute(schema.getschema(schema.MATCHSELS))
 
+        # the unique index ensures we don't have more than one row
+        # with the same exchange_id and market_id
+        self.cursor.execute('CREATE UNIQUE INDEX sindex ON {0}'
+                            '(ex1_mid, ex1_sid)'.format(schema.MATCHSELS))
+
         # markets stores information about a market (but not selections)
         self.cursor.execute(schema.getschema(schema.MARKETS))
 
@@ -361,7 +345,7 @@ class DBMaster(object):
         # selections stores market selections and their prices
         self.cursor.execute(schema.getschema(schema.SELECTIONS))
 
-        # same unique index idea for prices table
+        # same unique index idea for selections table
         self.cursor.execute('CREATE UNIQUE INDEX pindex ON {0}'
                             '(exchange_id, market_id, selection_id)'\
                             .format(schema.SELECTIONS))

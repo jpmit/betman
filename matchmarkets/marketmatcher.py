@@ -90,7 +90,7 @@ def _matchselection(sel, sellist):
     # Vettel '.  This is clearly a bit cheeky.  Lets strip any
     # whitespace at start and end of name, and for both exchanges.
     selname = sel.name.strip()
-    print selname
+    #print selname
     for s in sellist:
         if s.name.strip() == selname:
             return s
@@ -122,4 +122,5 @@ def GetMatchSelections(m1sels, m2sels):
         database.DBMaster().WriteSelectionMatches(matchsels)
 
     return matchsels
+
         

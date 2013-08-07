@@ -21,8 +21,8 @@ _SQLSCHEMA = {EXCHANGES:  ('(id integer primary key, name text, url '
               MATCHMARKS: ('(ex1_mid long primary key, '
                            'ex1_name text, ex2_mid long, '
                            'ex2_name text)'),
-              MATCHSELS:  ('(ex1_sid long primary key, ex1_name text,'
-                           'ex2_sid long NOT NULL, ex2_name text)'),
+              MATCHSELS:  ('(ex1_mid long NOT NULL, ex1_sid long NOT NULL, ex1_name text,'
+                           ' ex2_mid long NOT NULL, ex2_sid long NOT NULL, ex2_name text)'),
               MARKETS:    ('(exchange_id int NOT NULL, market_id long '
                            'NOT NULL, market_name text, in_running bool, '
                            'last_checked text)'),
