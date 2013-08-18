@@ -357,6 +357,9 @@ class DBMaster(object):
         # orders stores current orders, whether matched or not
         self.cursor.execute(schema.getschema(schema.ORDERS))
 
+        # matchorders stores pairs of orders
+        self.cursor.execute(schema.getschema(schema.MATCHORDERS))
+
         self.conn.commit()
         return
 
