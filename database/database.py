@@ -8,6 +8,7 @@ import os
 import sqlite3
 from betman import const, Market, Selection, util
 from betman.all.betexception import DBError, DBCorruptError
+from betman.matchmarkets.matchconst import EVENTMAP
 import schema
 
 class DBMaster(object):
@@ -60,8 +61,7 @@ class DBMaster(object):
         elist should be a list of BDAQ Event names."""
         # Note: there is definitely a much better way to accomplish
         # what is below using joins.  Once I actually know something
-        # about SQL I shall come back to this.  Also, this is
-        # vulnerable to SQL injection...
+        # about SQL I shall come back to this.
 
         # check database is open
         if not self._isopen:
@@ -71,11 +71,15 @@ class DBMaster(object):
         qstr = 'SELECT * FROM {0}'.format(schema.MATCHMARKS)
         qargs = ()
         if elist:
-            # TODO: should check here that all the entries in elist
-            # are valid BDAQ event names
+            # check here that all the entries in elist are valid BDAQ
+            # event names
+            for e in elist:
+                if e not in EVENTMAP:
+                    raise DBError, '{0} is not a valid event'.format(e)
+            
             qargs = ['|'+elist[0]+'%']
             likestr = ' WHERE (ex1_name LIKE ?'
-            # add
+            # add the other events
             if len(elist) > 1:
                 for ename in elist[1:]:
                     likestr = '{0} OR ex1_name LIKE ?'.format(likestr)
@@ -353,5 +357,35 @@ class DBMaster(object):
         # orders stores current orders, whether matched or not
         self.cursor.execute(schema.getschema(schema.ORDERS))
 
+        self.conn.commit()
+        return
+
+    # TODO - Nothing below here is implemented yet.
+    def check_ext(self):
+        """External checks (makes API requests)"""
+        return
+
+    def check_match_tables(self):
+        # check that the markets in MATCHMARKETS table are all
+        # valid.  For markets that are not, we
+        # i) delete the row from MATCHMARKETS table.
+        # ii) delete any matching selection rows from MATCHSELS.
+        return
+
+    def cleanse(self):
+        """Cleanse the database.
+        WARNING: this deletes rows from various tables!"""
+
+        # delete all markets from MARKETS table if they are not also
+        # in MATCHMARKS table (we only care about the matching
+        # markets).
+        # First get market ids of all markets in MATCHMARKS
+
+        self.cursor.execute('DELETE FROM {0}'.format(schema.MARKETS))
+
+        # delete all selections from SELECTIONS table (we only care
+        # about the matching selections in MATCHSELS).
+        self.cursor.execute('DELETE FROM {0}'.format(schema.SELECTIONS))
+        
         self.conn.commit()
         return

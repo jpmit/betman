@@ -31,21 +31,20 @@ def ParseSelections(mids, xmlstr):
     # mids[0].
     return selections
 
-def ParseJsonSelections(jstr):
-    """Parse json data, return selections SORTED BY MARKET ID"""
+def ParseJsonSelections(jstr, ids):
+    """Parse json data, return selections SORTED BY LIST ids"""
     data = json.loads(jstr)
-    selections = []
-    mids = []
-    mnum = 0
+    # selections dictionary stores market id as key, list of
+    # selections as value.
+    selections = {}
     for event in data['eventTypes']:
         for eventnode in event['eventNodes']:
             for market in eventnode['marketNodes']:
                 # take away the 1. or 2. at start of market id; this
                 # corresponds to UK and AUS exchange respectively
-                mid = market['marketId'].split('.')[1]
-                mids.append(mid)
+                mid = int(market['marketId'].split('.')[1])
                 # list of selections for this market
-                selections.append([])
+                selections[mid] = []
                 for runner in market['runners']:
                     name = runner['description']['runnerName']
                     sid = runner['selectionId']
@@ -56,19 +55,17 @@ def ParseJsonSelections(jstr):
                         lay = [(la['price'], la['size']) for la in
                                runner['exchange']['availableToLay']]
                     # create new selection for this market
-                    selections[mnum].append(Selection(name, sid, mid,
-                                                      None, None, None,
-                                                      None, None, back,
-                                                      lay, const.BFID))
+                    selections[mid].append(Selection(name, sid, mid,
+                                                     None, None, None,
+                                                     None, None, back,
+                                                     lay, const.BFID))
+    # return selections ordered by list ids (passed as an argument).
+    # this is so that when we call this function, we know what we are
+    # getting back.  If we don't do this, we will get selections in an
+    # order decided by BF, i.e. ordered by eventtype.
+    allselections = [selections[mid] for mid in ids]
+    return allselections
 
-                # next market
-                mnum = mnum + 1
-    # sort selections by market id.  this is so that when we call this
-    # function, we know what we are getting back.  If we don't do
-    # this, we will get selections in an order decided by BF,
-    # i.e. ordered by eventtype.
-    mids, selections = zip(*sorted(zip(mids, selections)))
-    return list(selections)
 
                     
     

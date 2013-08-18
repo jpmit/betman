@@ -3,6 +3,7 @@
 # jamesmithen@gmail.com
 #
 # get markets from BDAQ and BF
+# this makes requests using the APIs
 
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
@@ -28,11 +29,10 @@ matchmarks = marketmatcher.GetMatchMarkets(bdaqmarkets, bfmarkets)
 bdaqmatches = [m[0] for m in matchmarks]
 bfmatches = [m[1] for m in matchmarks]
 
-# get selections for the markets that match
-# NOTE: For the BF api, we will get the selections back ordered by
-# market ID.  For the BDAQ api, we will get selections back in order
-# called.
+# get selections for the markets that match.  Note f2or both apis (BF
+# and BDAQ), we will get selections back in order called.
 bfselections = bfapi.GetSelections([m.id for m in bfmatches])
 bdaqselections = bdaqapi.GetSelections([m.id for m in bdaqmatches])
 # get matching selections for each selection in matching markets
-matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)
+matchsels = marketmatcher.GetMatchSelections(bdaqselections,
+                                             bfselections)

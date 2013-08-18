@@ -69,10 +69,10 @@ class APIGetEventSubTreeWithSelections(object):
         result = self.client.service.GetEventSubTreeWithSelections(self.req)
         return result
 
-# not fully implemented (do not use)
 class APIGetMarketInformation(object):
-    def __init__(self, apiclient):
+    def __init__(self, apiclient, dbman):
         self.client = apiclient.client
+        self.dbman = dbman
         self.createinput()
 
     def createinput(self):
@@ -136,6 +136,7 @@ class APIGetPrices(object):
         for ids in util.chunks(mids, MAXMIDS):
             self.req.MarketIds = ids
             result = self.client.service.GetPrices(self.req)
+            print result
             selections =  bdaqapiparse.ParsePrices(ids, result)
             allselections = allselections + selections
         if const.WRITEDB:

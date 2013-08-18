@@ -70,7 +70,7 @@ class nonAPIgetSelections(object):
         req = urllib2.Request(url, headers=headers)
         response = urllib2.urlopen(req)
         # selections for all the market ids
-        allselections = bfnonapiparse.ParseJsonSelections(response.read())
+        allselections = bfnonapiparse.ParseJsonSelections(response.read(), mids)
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]

@@ -23,3 +23,5 @@ GetTopLevelEvents = bdaqapimethod.APIListTopLevelEvents(rcl).call
 GetMarkets = bdaqapimethod.APIGetEventSubTreeNoSelections(rcl, dbman).call
 # selections and pricers for markets
 GetSelections = bdaqapimethod.APIGetPrices(rcl, dbman).call
+
+GetMarketInformation = bdaqapimethod.APIGetMarketInformation(rcl, dbman).call

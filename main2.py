@@ -2,7 +2,8 @@
 # James Mithen
 # jamesmithen@gmail.com
 #
-# get markets from database
+# Get markets from database
+# This doesn't make any requests using the APIs
 
 from betman import database
 from betman.strategy.stratfunctions import crossmarket, is_lay_arb
