@@ -5,11 +5,17 @@
 # Classes for crossexchange strategy
 
 import stratdata
+from betman.all import order
 
 # commission on winnings taken from both exchanges. The strategies can
 # easily be generalised to the case when the commissions for BDAQ and
 # BF are different.
 _COMMISSION = 0.05
+
+# Default size lay bet
+_DEFAULTLAY = 0.5
+# Default size back bet (we will have to change this to be correct)
+_DEFAULTBACK = 0.01
 
 # CrossExchangeStrategy could maybe inherit from a general strategy
 # class later on.
@@ -37,6 +43,12 @@ class CrossExchangeStrategy(object):
         self.olay = olay
         self.oback = oback
         self.instant = False
+        
+        # create both back and lay orders
+        self.border = order.PlaceOrder(sback.exid, sback.id, _DEFAULTBACK,
+                                  self.oback, 1)
+        self.lorder = order.PlaceOrder(slay.exid, slay.id, _DEFAULTLAY,
+                                  self.olay, 2)        
 
     def print_opp(self):
         """Print details of opportunity"""

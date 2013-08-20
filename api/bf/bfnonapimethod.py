@@ -59,18 +59,29 @@ class nonAPIgetSelections(object):
         markets should be all from the same event and either AUS or UK exchange.
         Otherwise, all hell will break loose...
         """
-        # for australian markets, need to write 2. rather than 1.  And
-        # need different BASEURL (see top)
-        midstring= '%2C'.join(['1.%d' %m for m in mids])
-        url = BASEURL + ('&types=RUNNER_DESCRIPTION%2CRUNNER_EXCHANGE'
-                         '_PRICES_BEST'
-                         '&marketIds={0}'.format(midstring))
-        # really all this should be set by urlclient pass to constructor
-        headers = { 'User-Agent' : const.USERAGENT }
-        req = urllib2.Request(url, headers=headers)
-        response = urllib2.urlopen(req)
-        # selections for all the market ids
-        allselections = bfnonapiparse.ParseJsonSelections(response.read(), mids)
+        # unsure what MAXMIDS should be.  BF returns HTTP 400 return
+        # code if we ask for too much data, so try limiting to 50
+        # market ids
+        MAXMIDS = 50
+        # HTTP headers
+        headers = { 'User-Agent' : const.USERAGENT }        
+        allselections = []
+        for ids in util.chunks(mids, MAXMIDS):
+            # for australian markets, need to write 2. rather than 1.  And
+            # need different BASEURL (see top)
+            midstring= '%2C'.join(['1.%d' %m for m in ids])
+            url = BASEURL + ('&types=RUNNER_DESCRIPTION%2CRUNNER_EXCHANGE'
+                             '_PRICES_BEST'
+                             '&marketIds={0}'.format(midstring))
+            # really all this should be set by urlclient pass to constructor
+            if const.DEBUG:
+                print 'BF Selection URL: {0}'.format(url)
+
+            req = urllib2.Request(url, headers=headers)
+            response = urllib2.urlopen(req)
+            # selections for all the market ids
+            selections = bfnonapiparse.ParseJsonSelections(response.read(), ids)
+            allselections = allselections + selections
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]

@@ -25,3 +25,6 @@ GetMarkets = bdaqapimethod.APIGetEventSubTreeNoSelections(rcl, dbman).call
 GetSelections = bdaqapimethod.APIGetPrices(rcl, dbman).call
 
 GetMarketInformation = bdaqapimethod.APIGetMarketInformation(rcl, dbman).call
+
+# make order
+PlaceOrder = bdaqapimethod.APIPlaceOrdersNoReceipt(scl, dbman).call

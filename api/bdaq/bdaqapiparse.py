@@ -1,4 +1,19 @@
-from betman import util, Market, Selection, Event
+from betman import const, util, Market, Selection, Event
+from betman.all.order import Order
+
+def ParseOrder(resp, plorder):
+    """Parse a single order, return order object"""
+    retcode = resp.ReturnStatus._Code
+    tstamp = resp.Timestamp
+
+    # should check the return status here
+    oref = resp.OrderHandles.OrderHandle[0]
+
+    # create and return order object
+    order = Order(const.BDAQID, plorder.sid, plorder.stake,
+                  plorder.price, plorder.polarity, oref)
+
+    return order
 
 def ParseEvents(resp):
     events = []

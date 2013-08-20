@@ -136,7 +136,6 @@ class APIGetPrices(object):
         for ids in util.chunks(mids, MAXMIDS):
             self.req.MarketIds = ids
             result = self.client.service.GetPrices(self.req)
-            print result
             selections =  bdaqapiparse.ParsePrices(ids, result)
             allselections = allselections + selections
         if const.WRITEDB:
@@ -263,10 +262,10 @@ class APIGetOrderDetails(object):
         result = self.client.service.GetOrderDetails(self.req)
         return result
 
-# not fully implemented (do not use)
 class APIPlaceOrdersNoReceipt(object):
-    def __init__(self, apiclient):
+    def __init__(self, apiclient, dbman):
         self.client = apiclient.client
+        self.dbman = dbman
         self.createinput()
 
     def createinput(self):
@@ -276,22 +275,30 @@ class APIPlaceOrdersNoReceipt(object):
         # lets just do a single order at a time at the moment
         self.order = self.client.factory.create('SimpleOrderRequest')
 
-    def makeorder(self, odict):
-        for k in odict:
-            setattr(self.order, k, odict[k])
+    def makeorder(self, order):
+        self.order._SelectionId = order.sid
+        self.order._Stake = order.stake
+        self.order._Price = order.price
+        self.order._Polarity = order.polarity
+        # we probably need to look at the market information to put
+        # this stuff in correctly
+        self.order._ExpectedSelectionResetCount = 1
+        self.order. _ExpectedWithdrawalSequenceNumber = 0,         
+        self.order._CancelOnInRunning = True
+        self.order._CancelIfSelectionReset = True        
 
     def call(self, order):
-        # order passed should be a dict with keys
-        # see 'ordertest.py' for what the dict should contain
+        # order passed should be a PlaceOrder object
         self.makeorder(order)
         self.req.Orders.Order = [self.order]
         result = self.client.service.PlaceOrdersNoReceipt(self.req)
-        return result
+        return bdaqapiparse.ParseOrder(result, order)
 
 # not fully implemented (do not use)
 class APIPlaceOrdersWithReceipt(object):
-    def __init__(self, apiclient):
+    def __init__(self, apiclient, dbman):
         self.client = apiclient.client
+        self.dbman = dbman
         self.createinput()
 
     def createinput(self):
@@ -299,9 +306,17 @@ class APIPlaceOrdersWithReceipt(object):
         # lets just do a single order at a time at the moment
         self.order = self.client.factory.create('SimpleOrderRequest')
 
-    def makeorder(self, odict):
-        for k in odict:
-            setattr(self.order, k, odict[k])
+    def makeorder(self, order):
+        self.order._SelectionId = order.sid
+        self.order._Stake = order.stake
+        self.order._Price = order.price
+        self.order._Polarity = order.polarity
+        # we probably need to look at the market information to put
+        # this stuff in correctly
+        self.order._ExpectedSelectionResetCount = 1
+        self.order. _ExpectedWithdrawalSequenceNumber = 0,         
+        self.order._CancelOnInRunning = True
+        self.order._CancelIfSelectionReset = True        
 
     def call(self, order):
         # order passed should be a dict with keys

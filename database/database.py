@@ -379,12 +379,15 @@ class DBMaster(object):
         """Cleanse the database.
         WARNING: this deletes rows from various tables!"""
 
-        # delete all markets from MARKETS table if they are not also
-        # in MATCHMARKS table (we only care about the matching
-        # markets).
-        # First get market ids of all markets in MATCHMARKS
+        # delete everything from tables:
+        # MATCHMARKS
+        # MATCHSELS
+        # MARKETS
+        # SELECTIONS
 
-        self.cursor.execute('DELETE FROM {0}'.format(schema.MARKETS))
+        for tname in [schema.MATCHMARKS, schema.MATCHSELS,
+                      schema.MARKETS, schema.SELECTIONS]:
+            self.cursor.execute('DELETE FROM {0}'.format(tname))
 
         # delete all selections from SELECTIONS table (we only care
         # about the matching selections in MATCHSELS).

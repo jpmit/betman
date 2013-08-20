@@ -8,6 +8,9 @@
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 import betman.matchmarkets.marketmatcher as marketmatcher
+from betman import database
+
+dbman = database.DBMaster()
 
 # names for bf and bdaq need to map
 bdaqelist = ['Rugby Union', 'Formula 1','Soccer']
