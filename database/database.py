@@ -13,6 +13,15 @@ import schema
 
 class DBMaster(object):
     """Simple interface to the main database"""
+
+    # singleton design pattern
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(DBMaster, cls).__new__(cls, *args,
+                                                         **kwargs)
+        return cls._instance
+
     def __init__(self, create=False):
         self._isopen = False
         self.CreateIfNotExist()

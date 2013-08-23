@@ -11,6 +11,7 @@ import betman.matchmarkets.marketmatcher as marketmatcher
 from betman import database
 
 dbman = database.DBMaster()
+dbman.cleanse()
 
 # names for bf and bdaq need to map
 bdaqelist = ['Rugby Union', 'Formula 1','Soccer']

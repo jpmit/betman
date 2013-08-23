@@ -4,11 +4,16 @@
 
 # base classes for Strategy, StrategyGroup, StateMachine etc.
 
+from betman import const
+
 class Strategy(object):
     """Base class - a strategy should inherit from this."""
     def __init__(self):
         self.brain = StateMachine()
-    pass
+        
+    def get_marketids(self):
+        """Return market ids involved in strategy.  These should be
+        returned as a dict with keys const.BDAQID and const.BFID"""
 
 class StrategyGroup(object):
     """Stores a group (i.e. one or more) of strategies."""
@@ -22,7 +27,22 @@ class StrategyGroup(object):
         """Update all strategies in the group"""
         for strat in self.strategies:
             strat.update()
-        
+
+    def get_marketids(self):
+        """Return market ids of all strategies."""
+        mids = {const.BDAQID: [], const.BFID: []}
+        for strat in self.strategies:
+            # get mid dictionary for strat
+            mdict = strat.get_marketids()
+            for k in mids.keys():
+                mids[k] = mids[k] + mdict[k]
+        # make sure the lists in dict mids contain each market id only
+        # once.
+        for k in mids.keys():
+            # quick and dirty way to make list entries unique (note
+            # this does not preserve order).
+            mids[k] = list(set(mids[k]))
+        return mids
 
 class State(object):
     """Base class - a state should inherit from this."""
@@ -64,6 +84,10 @@ class StateMachine(object):
         if self.active_state is not None:
             self.active_state.exit_actions()
 
+        if const.DEBUG:
+            cname = (self.active_state.name if
+                     self.active_state is not None else 'None')
+        print "changing state from '{0}' to '{1}'".\
+              format(cname, new_state_name)
         self.active_state = self.states[new_state_name]
         self.active_state.entry_actions()
-

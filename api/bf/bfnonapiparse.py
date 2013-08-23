@@ -51,9 +51,15 @@ def ParseJsonSelections(jstr, ids):
                     if 'availableToBack' in runner['exchange']:
                         back = [(b['price'], b['size']) for b in
                                 runner['exchange']['availableToBack']]
+                    else:
+                        # no odds available to back
+                        back = [(None, None)]
                     if 'availableToLay' in runner['exchange']:
                         lay = [(la['price'], la['size']) for la in
                                runner['exchange']['availableToLay']]
+                    else:
+                        # no odds available to lay
+                        lay = [(None, None)]                        
                     # create new selection for this market
                     selections[mid].append(Selection(name, sid, mid,
                                                      None, None, None,

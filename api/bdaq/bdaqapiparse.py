@@ -1,8 +1,12 @@
 from betman import const, util, Market, Selection, Event
 from betman.all.order import Order
+from betman.all import const
+from betman.all.betexception import APIError
 
 def ParseOrder(resp, plorder):
     """Parse a single order, return order object"""
+    if const.DEBUG:
+        print resp
     retcode = resp.ReturnStatus._Code
     tstamp = resp.Timestamp
 

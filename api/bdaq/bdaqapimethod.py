@@ -1,5 +1,6 @@
-from betman import const, util, Event
 import datetime
+import time
+from betman import const, util, Event
 import bdaqapiparse
 
 ######################################################################
@@ -112,9 +113,12 @@ class APIListMarketWithdrawalHistory(object):
         return result
 
 class APIGetPrices(object):
-    def __init__(self, apiclient, dbman):
+    def __init__(self, apiclient, dbman, throttl=0):
         self.client = apiclient.client
         self.dbman = dbman
+        # time to wait between consecutive calls when calling multiple
+        # times.
+        self.throttl = throttl
         self.createinput()
 
     def createinput(self):
@@ -138,6 +142,8 @@ class APIGetPrices(object):
             result = self.client.service.GetPrices(self.req)
             selections =  bdaqapiparse.ParsePrices(ids, result)
             allselections = allselections + selections
+            # sleep for some time before calling API again
+            time.sleep(self.throttl)
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]

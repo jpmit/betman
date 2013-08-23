@@ -13,3 +13,5 @@ class DBError(BetmanError): pass
 class DBCorruptError(DBError) : pass
 
 class DataError(BetmanError): pass
+
+class APIError(BetmanError): pass
