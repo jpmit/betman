@@ -8,7 +8,8 @@
 # API in its entirety (a bad option due to the severe limitations on
 # number of requests of the free BF API) or instead using my web
 # scraping functionality.  The most sensible option, however, may well
-# be to use some of the BF API and some of my own web scraping methods.
+# be to use some of the BF API and some of my own web scraping
+# methods.
 
 from betman import *
 from betman.api import apiclient
@@ -50,32 +51,10 @@ GetSelections = bfnonapimethod.nonAPIgetSelections(cluk, dbman).call
 #GetSelections = bfapimethod.APIgetMarket(cluk, dbman).call
 #GetPricesCompressed = bfapimethod.APIgetMarketPricesCompressed(cluk, dbman).call
 #GetPrices = bfapimethod.APIgetMarketPrices(cluk, dbman).call
+PlaceBets = bfapimethod.APIplaceBets(cluk, dbman).call
 
-# below is for testing at the moment...
-# remove this at some point
-if __name__== '__main__':
-    # get top level events
-    events = GetActiveEvents()
+# cancel bets doesn't seem to be working at the moment...
+CancelBets = bfapimethod.APIcancelBets(cluk, dbman).call
 
-    # lets limit to Motor Sport and Rugby Union for now
-    elist =  ['Motor Sport','Rugby Union']
-    events = [ev for ev in events if ev.name in elist]
-
-    # get the market info for all of the markets we want
-    ukmarkets = GetUKMarkets([ev.id for ev in events])
-    ausmarkets = GetAUSMarkets([ev.id for ev in events])
-    markets = ukmarkets + ausmarkets
-
-    # get selections and prices for all markets
-    # can use m.selections for a market object after this call
-
-    # ANNOYING !!! need to call getselections below to get selection
-    # names and ids (and called only once per 12 seconds max!!!)
-    selections = GetSelections(109590806)
-    # Then need to call one of the two functions below
-    # can call getprices compressed 60 times p/m and getprices 10
-    # times p/m (!!!!) this is for all markets....
-    compressedoutput = GetPricesCompressed(109590806)
-    output = GetPrices(109590806)
-    selection = bfnonapimethod.GetSelections([109590806])
-    dbman.close()
+# this only checks if matched or unmatched at the moment
+GetBetStatus = bfapimethod.APIgetMUBets(cluk, dbman).call

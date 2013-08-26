@@ -4,7 +4,74 @@
 #
 # functions for parsing the response that comes from the BF api
 
-from betman import const, Market, Event
+from betman import const, Market, Event, order
+from betman.all.betexception import APIError
+
+def ParsegetMUBets(res, orders):
+
+    ecode = res.header.errorCode
+    tstamp = res.header.timestamp
+    
+    if ecode != 'OK':
+        raise APIError, 'getMUBets error, errorcode {0}'.format(ecode)
+
+    assert len(res.bets.MUBet) == len(orders)
+
+    allorders = []
+    for o, r in zip(orders, res.bets.MUBet):
+
+        if r.betStatus == 'U':
+            status = order.UNMATCHED
+            matched = o.stake
+            unmatched = 0.0
+        elif r.betStatus == 'M':
+            status = order.MATCHED
+            matched = 0.0
+            unmatched = o.stake
+        else:
+            raise APIError, 'Received unknown order status {0}'.\
+                  format(r.betStatus)
+        
+        odict = {'status': status,
+                 'matchedstake' : matched,
+                 'unmatchedstake' : unmatched}
+
+        allorders.append(order.Order(const.BFID, o.sid, o.stake,
+                                     o.price, o.polarity, **odict))
+
+    return allorders
+
+def ParseplaceBets(res, olist):
+
+    ecode = res.header.errorCode
+    tstamp = res.header.timestamp
+    
+    if ecode != 'OK':
+        raise APIError, 'placeBets error, errorcode {0}'.format(ecode)
+
+    # check that we have one result for each order executed
+    assert len(res.betResults.PlaceBetsResult) == len(olist)
+
+    allorders = []
+    # go through all results in turn and add to allorders list
+    for betres, o in zip(res.betResults.PlaceBetsResult, olist):
+        # order id
+        oref = betres.betId
+        # check if we were matched
+        matched = betres.sizeMatched
+        if matched == o.stake:
+            status = order.MATCHED
+        else:
+            status = order.UNMATCHED
+
+        odict = {'mid': o.mid, 'oref': oref, 'status': status,
+                 'matchedstake': matched, 'unmatchedstake':
+                 o.stake - matched}
+        o = order.Order(const.BFID, o.sid, o.stake, o.price,
+                        o.polarity, **odict)
+        allorders.append(o)
+    
+    return allorders
 
 def ParseEvents(res):
     events = []

@@ -2,6 +2,8 @@
 # James Mithen
 # jamesmithen@gmail.com
 
+# The BetDaq API functions.
+
 import bdaqapimethod
 from betman import database
 from betman.api import apiclient
@@ -40,4 +42,4 @@ PlaceOrders = bdaqapimethod.APIPlaceOrdersNoReceipt(scl, dbman).call
 GetAccountBalances = bdaqapimethod.APIGetAccountBalances(scl, dbman).call
 
 #ListAccountPostings = bdaqapimethod.APIListAccountPostings(scl).call
-ListBootstrapOrders = APIListBootstrapOrders(scl).call
+ListBootstrapOrders = bdaqapimethod.APIListBootstrapOrders(scl).call

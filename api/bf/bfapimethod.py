@@ -73,6 +73,148 @@ class APIgetAllMarkets(object):
                                     response.header.timestamp)
         return allmarkets
 
+class APIplaceBets(object):
+    def __init__(self, apiclient, dbman):
+        self.client = apiclient.client
+        self.dbman = dbman
+        self.createinput()
+
+    def createinput(self):
+        self.req = self.client.factory.create('ns1:PlaceBetsReq')
+
+    def addheader(self):
+        self.req.header = self.client.reqheader
+
+    def makebetlist(self, orderlist):
+        blist = []
+
+        for o in orderlist:
+            # single PlaceBets object
+            pbet = self.client.factory.create('ns1:PlaceBets')
+            # I don't really know what asianLineId is
+            pbet.asianLineId = 0
+            # back or lay
+            if o.polarity == 1:
+                pbet.betType.value = 'B'
+            elif o.polarity == 2:
+                pbet.betType.value = 'L'
+            # this can be "E" - exchange bet, "M" - market on close SP
+            # bet, "L" Limit on close SP bet or "NONE".
+            pbet.betCategoryType.value = 'E'
+            # this can be "NONE" - normal exchange or SP bet.
+            # Unmatched exchanged bets are lapsed when market turns in
+            # play.  Can also be "IP" - in play persistence or "SP" - Moc
+            # Starting Price (see BF API docs for more info).
+            pbet.betPersistenceType.value = 'NONE'
+            pbet.marketId = o.mid
+            pbet.price = o.price
+            pbet.selectionId = o.sid
+            pbet.size = o.stake
+            # maximum amount of money want to risk for BSP bet (???
+            # see BF API docs).
+            pbet.bspLiability = 0.0 
+            blist.append(pbet)
+        return blist
+        
+    def call(self, orderlist):
+        self.addheader()
+        self.req.bets.PlaceBets = self.makebetlist(orderlist)
+
+        response = self.client.service.placeBets(self.req)
+        allorders = bfapiparse.ParseplaceBets(response, orderlist)
+        
+        if const.WRITEDB:
+            self.dbman.WriteOrders(allorders,
+                                   response.header.timestamp)
+        return allorders
+
+# cancelBets doesn't seem to be working
+class APIcancelBets(object):
+    def __init__(self, apiclient, dbman):
+        self.client = apiclient.client
+        self.dbman = dbman
+        self.createinput()
+
+    def createinput(self):
+        self.req = self.client.factory.create('ns1:CancelBetsReq')
+
+    def addheader(self):
+        self.req.header = self.client.reqheader
+
+    def getcbets(self, betids):
+        cbets = []
+        for b in betids:
+            cbet = self.client.factory.create('ns1:CancelBets')
+            cbet.betId = b
+            cbets.append(cbet)
+        return cbets
+        
+    def call(self, betids):
+        self.addheader()
+        self.req.bets.CancelBets = self.getcbets(betids)
+        print self.req
+        response = self.client.service.cancelBets(self.req)
+        
+        if const.WRITEDB:
+            # need to update the order here!
+            pass
+
+        return response
+
+class APIgetMUBets(object):
+    def __init__(self, apiclient, dbman):
+        self.client = apiclient.client
+        self.dbman = dbman
+        self.createinput()
+
+    def createinput(self):
+        self.req = self.client.factory.create('ns1:GetMUBetsReq')
+
+    def addheader(self):
+        self.req.header = self.client.reqheader
+
+    def fillreq(self, betids, marketid):
+        # can be C - cancelled, L - lapsed, M - Matched, MU - Matched
+        # and Unmatched, S - Settled, U - Unmatched, V - Voided.
+        self.req.betStatus = 'MU'
+        # if marketid is non-zero, then betids is ignored
+        self.req.marketId = marketid
+        # can include 200 betids maximum
+        self.req.betIds.betId = betids
+        # can be BET_ID - order by bet id, CANCELLED_DATE - order by
+        # cancelled date, MARKET_NAME - order by market name,
+        # MATCHED_DATE - order by Matched date, NONE - default order
+        # or PLACED_DATE - order by placed date.  This probably
+        # shouldn't matter too much since I'll parse the output
+        # anyhow.
+        self.req.orderBy.value = 'MATCHED_DATE'
+        # can be 'ASC' - ascending or 'DESC' - descending.
+        self.req.sortOrder.value = 'ASC'
+        # I think this is the maximum but docs are unclear.
+        self.req.recordCount = 200
+        self.req.startRecord = 0
+        # apparently we don't need to set matchedSince...
+        # self.matchedSince = 
+        # not sure what I should go for here...
+        self.req.excludeLastSecond = False        
+        
+    def call(self, orders, marketid=0):
+        # Note, this method will work with BF API if orders=[]. Then
+        # we will return all matched and unmatched bets.  However,
+        # bfapiparse.ParsegetMUBets will have to be modified to make
+        # this work.
+        self.addheader()
+        betids = [o.oref for o in orders]
+        self.fillreq(betids, marketid)
+
+        response = self.client.service.getMUBets(self.req)
+        allorders = bfapiparse.ParsegetMUBets(response, orders)
+        if const.WRITEDB:
+            # need to update the order here!
+            pass
+
+        return allorders
+
 class APIgetMarket(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client

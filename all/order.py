@@ -35,6 +35,8 @@ class Order(object):
             # matchedstake - amount of order matched
             # unmatchedstake - amount of order unmatched
             # strategy - integer for strategy number
+            # mid - market id (needed for placing bets with BF, but
+            #                  not with BDAQ!)
             setattr(self, kw, kwargs[kw])
 
 ## class PlaceOrder(object):
