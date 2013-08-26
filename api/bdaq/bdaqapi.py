@@ -28,12 +28,16 @@ GetTopLevelEvents = bdaqapimethod.APIListTopLevelEvents(rcl).call
 # get markets will get 'subtree' and parse it for markets
 GetMarkets = bdaqapimethod.APIGetEventSubTreeNoSelections(rcl, dbman).call
 # selections and pricers for markets
+# TODO: GetSelections does not seem to work when called for a single mid
 GetSelections = bdaqapimethod.APIGetPrices(rcl, dbman, PRICETHROTTLE).call
 
 GetMarketInformation = bdaqapimethod.APIGetMarketInformation(rcl, dbman).call
 
-# make order
-PlaceOrder = bdaqapimethod.APIPlaceOrdersNoReceipt(scl, dbman).call
+# make order(s)
+PlaceOrders = bdaqapimethod.APIPlaceOrdersNoReceipt(scl, dbman).call
 
 # account information
 GetAccountBalances = bdaqapimethod.APIGetAccountBalances(scl, dbman).call
+
+#ListAccountPostings = bdaqapimethod.APIListAccountPostings(scl).call
+ListBootstrapOrders = APIListBootstrapOrders(scl).call

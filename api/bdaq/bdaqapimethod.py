@@ -194,6 +194,9 @@ class APIGetAccountBalances(object):
         return accinfo
 
 # not fully implemented (do not use)
+# this one lists extra details about account, mainly orders settled
+# between two dates.
+
 class APIListAccountPostings(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
@@ -213,11 +216,11 @@ class APIListAccountPostings(object):
             else:
                 self.req._Endtime = datetime.datetime.now()
         else:
-            # no args supplied, default starttime to 1 day ago,
+            # no args supplied, default starttime to 7 days ago,
             # endtime to now
             self.req._EndTime = datetime.datetime.now()
             self.req._StartTime = (self.req._EndTime -
-                                  datetime.timedelta(days=1))
+                                  datetime.timedelta(days=7))
         result = self.client.service.ListAccountPostings(self.req)
         return result
 
@@ -227,21 +230,39 @@ class APIListAccountPostings(object):
 
 # not fully implemented (do not use)
 class APIListOrdersChangedSince(object):
-    def __init__(self, apiclient):
+    def __init__(self, apiclient, dbman):
         self.client = apiclient.client
+        self.dbman = dbman
         self.createinput()
 
     def createinput(self):
         self.req = self.client.factory.create('ListOrdersChangedSinceRequest')
 
-    def call(self, snum):
+    def call(self):
+        global ORDER_SEQUENCE_NUMBER
         # the sequence number should come in the first instance from
-        # the bootstrap which is next class
-        self.req.SequenceNumber = snum
-        result = self.client.service.ListOrdersChangedSince(self.req)
-        return result
+        # the bootstrap, see class APIListBootstrapOrders
+        self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
+        if const.DEBUG:
+            print 'Calling ListOrders with sequence number: {0}'\
+                  .format(self.req.SequenceNumber)
+        
+        allorders, snum = self.client.service.ListOrdersChangedSince(self.req)
+        # set order sequence number to the maximum one returned by API
+        if const.DEBUG:
+            print 'Setting sequence number to: {0}'\
+                  .format(snum)
+        ORDER_SEQUENCE_NUMBER = snum
+        # update changed orders
+        if const.WRITEDB:
+            pass
+        
+        return allorders
 
-# not fully implemented (do not use)
+# this sequence number is updated by both APIListOrdersChangedSince
+# (above) and APIListBootstrapOrders (below).
+ORDER_SEQUENCE_NUMBER = -1
+
 class APIListBootstrapOrders(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
@@ -249,14 +270,17 @@ class APIListBootstrapOrders(object):
 
     def createinput(self):
         self.req = self.client.factory.create('ListBootstrapOrdersRequest')
-        # not currently sure what the best default is here
-        self.req.wantSettledOrdersOnUnsettledMarkets = True
+        # this is probably the best default here (see BDAQ documentation)
+        self.req.wantSettledOrdersOnUnsettledMarkets = False
 
     def call(self, snum=-1):
         # the sequence number should come in the first instance from
         # the bootstrap which is next class
         self.req.SequenceNumber = snum
         result = self.client.service.ListBootstrapOrders(self.req)
+        # assign sequence number we get back to ORDER_SEQUENCE_NUMBER
+        global ORDER_SEQUENCE_NUMBER
+        ORDER_SEQUENCE_NUMBER = result._MaximumSequenceNumber
         return result
 
 # not fully implemented (do not use)
@@ -283,27 +307,37 @@ class APIPlaceOrdersNoReceipt(object):
         self.req = self.client.factory.create('PlaceOrdersNoReceiptRequest')
         # if one fails, none will be placed
         self.req.WantAllOrNothingBehaviour = True
-        # lets just do a single order at a time at the moment
-        self.order = self.client.factory.create('SimpleOrderRequest')
 
-    def makeorder(self, order):
-        self.order._SelectionId = order.sid
-        self.order._Stake = order.stake
-        self.order._Price = order.price
-        self.order._Polarity = order.polarity
-        # we probably need to look at the market information to put
-        # this stuff in correctly
-        self.order._ExpectedSelectionResetCount = 1
-        self.order. _ExpectedWithdrawalSequenceNumber = 0,         
-        self.order._CancelOnInRunning = True
-        self.order._CancelIfSelectionReset = True        
+    def makeorderlist(self, orderlist):
+        olist = []
 
-    def call(self, order):
-        # order passed should be a PlaceOrder object
-        self.makeorder(order)
-        self.req.Orders.Order = [self.order]
+        for o in orderlist:
+            # make a single order object
+            order = self.client.factory.create('SimpleOrderRequest')
+
+            order._SelectionId = o.sid
+            order._Stake = o.stake
+            order._Price = o.price
+            order._Polarity = o.polarity
+            # we probably need to look at the market information to put
+            # this stuff in correctly
+            order._ExpectedSelectionResetCount = 1
+            order. _ExpectedWithdrawalSequenceNumber = 0,         
+            order._CancelOnInRunning = True
+            order._CancelIfSelectionReset = True
+
+            olist.append(order)
+        return olist
+
+    def call(self, orderlist):
+        assert isinstance(orderlist, list)
+        # make BDAQ representation of orders from orderlist past
+        self.req.Orders.Order = self.makeorderlist(orderlist)
         result = self.client.service.PlaceOrdersNoReceipt(self.req)
-        return bdaqapiparse.ParseOrder(result, order)
+        allorders = bdaqapiparse.ParsePlaceOrdersNoReceipt(result, orderlist)
+        if const.WRITEDB:
+            self.dbman.WriteOrders(allorders, result.Timestamp)
+        return allorders
 
 # not fully implemented (do not use)
 class APIPlaceOrdersWithReceipt(object):

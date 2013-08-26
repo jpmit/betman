@@ -163,10 +163,10 @@ class CXStrategy(strategy.Strategy):
         self.instant = False
         
         # create both back and lay orders
-        self.border = order.PlaceOrder(sback.exid, sback.id, _DEFAULTBACK,
-                                       self.oback, 1)
-        self.lorder = order.PlaceOrder(slay.exid, slay.id, _DEFAULTLAY,
-                                       self.olay, 2)
+        self.border = order.Order(sback.exid, sback.id, _DEFAULTBACK,
+                                  self.oback, 1)
+        self.lorder = order.Order(slay.exid, slay.id, _DEFAULTLAY,
+                                  self.olay, 2)
 
     def update(self):
         # update prices of selections from DB

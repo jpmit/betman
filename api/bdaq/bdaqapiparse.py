@@ -1,23 +1,33 @@
-from betman import const, util, Market, Selection, Event
-from betman.all.order import Order
+from betman import const, util, Market, Selection, Event, order
 from betman.all import const
 from betman.all.betexception import APIError
 
-def ParseOrder(resp, plorder):
+def ParsePlaceOrdersNoReceipt(resp, olist):
     """Parse a single order, return order object"""
     if const.DEBUG:
         print resp
     retcode = resp.ReturnStatus._Code
     tstamp = resp.Timestamp
 
-    # should check the return status here
-    oref = resp.OrderHandles.OrderHandle[0]
+    # check the return status here
+    if retcode != 0:
+        # will have to diagnose this in more detail if/when it happens.
+        raise APIError, ('Did not place order(s) succesfully, '
+                         'return code {0}'.format(retcode))
 
-    # create and return order object
-    order = Order(const.BDAQID, plorder.sid, plorder.stake,
-                  plorder.price, plorder.polarity, oref)
+    # list of order refs - I am presuming BDAQ returns them in the order
+    # the orders were given!
+    orefs = resp.OrderHandles.OrderHandle
 
-    return order
+    # create and return order object.  Note we set status to UNMATCHED,
+    # and unmatched stake and matched stake accordingly.
+    allorders = [order.Order(const.BDAQID, o.sid, o.stake, o.price,
+                             o.polarity, **{'oref': ref, 'status': order.UNMATCHED,
+                                            'matchedstake': 0.0,
+                                            'unmatchedstake': o.stake})
+                 for (o, ref) in zip(olist, orefs)]
+
+    return allorders
 
 def ParseEvents(resp):
     events = []
@@ -188,3 +198,51 @@ def ParseGetAccountBalances(resp):
     # Return tuple of _AvailableFunds, _Balance, _Credit, _Exposure
     return (resp._AvailableFunds, resp._Balance,
             resp._Credit, resp._Exposure)
+
+def ParseListOrdersChangedSince(resp):
+    """Returns list of orders that have changed"""
+    retcode = resp.ReturnStatus._Code
+    tstamp = resp.Timestamp
+
+    # check the Return Status is zero (success)
+    # and not:
+    # 406 - punter blacklisted
+    if retcode == 406:
+        raise APIError, 'punter is blacklisted'
+
+    if not hasattr(resp, 'Orders'):
+        # no orders have changed
+        return []
+
+    # store the sequence numbers of the orders: we need to return the
+    # maximum sequence number so that the next time we call the API
+    # function we won't return this again!
+    seqnums = []
+
+    allorders = []
+    for order in resp.Orders.Order:
+
+        # From API docs, order _Status can be
+        # 1 - Unmatched.  Order has SOME amount available for matching.
+        # 2 - Matched (but not settled).
+        # 3 - Cancelled (at least some part of the order was unmatched).
+        # 4 - Settled.
+        # 5 - Void.
+        # 6 - Suspended.  At least some part unmatched but is suspended.
+
+        # Note: at the moment we are not storing all of the data that
+        # comes from the BDAQ API function, only the information that
+        # seems useful...
+        odict = {'status': order._Status,
+                 'matchedstake' : order._MatchedStake,
+                 'unmatchedstake': order._UnmatchedStake}
+
+        allorders.append(order.Order(const.BDAQID, order._SelectionID,
+                                     order._MatchedStake + order._UnmatchedStake,
+                                     order._RequestedPrice, order._Polarity,
+                                     order._Id, **odict))
+        # store sequence number
+        seqnums.append(order._SequenceNumber)
+
+    return allorders, max(seqnums)
+

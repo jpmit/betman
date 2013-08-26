@@ -6,7 +6,7 @@
 
 import os
 import sqlite3
-from betman import const, Market, Selection, util
+from betman import const, Market, Selection, util, order
 from betman.all.betexception import DBError, DBCorruptError
 from betman.matchmarkets.matchconst import EVENTMAP
 import schema
@@ -315,12 +315,13 @@ class DBMaster(object):
         # we insert it, otherwise we update (since inrunning could have
         # changed).  This is probably not the most efficient way of
         # accomplishing that.
-        qins = ('INSERT INTO markets (exchange_id, '
+        qins = ('INSERT INTO {0} (exchange_id, '
                 'market_id, market_name, in_running,'
                 'last_checked) values '
-                '(?, ?, ?, ?, ?)')
-        qupd = ('UPDATE markets SET in_running=?,last_checked=? '
-                'WHERE exchange_id=? and market_id=?')
+                '(?, ?, ?, ?, ?)'.format(schema.MARKETS))
+        qupd = ('UPDATE {0} SET in_running=?,last_checked=? '
+                'WHERE exchange_id=? and market_id=?'.\
+                format(schema.MARKETS))
         
         for m in markets:
             try:
@@ -333,6 +334,46 @@ class DBMaster(object):
                                            m.id))
         self.conn.commit()
 
+    def WriteOrders(self, olist, tstamp):
+        """Write to orders table"""
+
+        # check  database is open
+        if not self._isopen:
+            self.open()
+
+        # if a row doesn't exist with this order id we insert it,
+        # otherwise we update.  This is probably not the most
+        # efficient way of accomplishing that.
+        qins = ('INSERT INTO {0} (order_id, '
+                'exchange_id, market_id, selection_id,'
+                'strategy, price, stake, polarity, matched,'
+                'unmatched, status, tstamp) values '
+                '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'.\
+                format(schema.ORDERS))
+        qupd = ('UPDATE {0} SET matched=?, unmatched=?, status=?,'
+                'tstamp=? WHERE order_id=?').format(schema.ORDERS)
+        
+        for o in olist:
+            # get default values for things not guaranteed to exist
+            matched = getattr(o, 'matched', 0.0)
+            unmatched = getattr(o, 'matched', o.stake)            
+            status = getattr(o, 'status', order.UNMATCHED)
+            strategy = getattr(o, 'strategy', None)
+            
+            try:
+
+                # we don't know the market id at the moment!!!
+                self.cursor.execute(qins, (o.oref, o.exid, None,
+                                           o.sid, strategy, o.price,
+                                           o.stake, o.polarity, matched,
+                                           unmatched, status, tstamp))
+            except sqlite3.IntegrityError:
+                # already have order_id. Update matched amount,
+                # unmatched amount, status and timestamp.
+                self.cursor.execute(qupd, (matched, unmatched, status,
+                                           tstamp, o.oref))
+        self.conn.commit()
+        
     def CreateTables(self):
         """Create all of the tables needed"""
 
@@ -342,8 +383,8 @@ class DBMaster(object):
         self.cursor.execute(schema.getschema(schema.EXCHANGES))
         exchanges = [(const.BDAQID, 'BetDAQ', 'www.betdaq.com'),
                      (const.BFID, 'BetFair', 'www.betfair.com')]
-        self.conn.executemany('INSERT INTO {0} values (?, ?, ?)'.format(schema.EXCHANGES),
-                              exchanges)
+        self.conn.executemany('INSERT INTO {0} values (?, ?, ?)'.\
+                              format(schema.EXCHANGES), exchanges)
 
         # matchingmarkets maps a market_id from one exchange to another
         self.cursor.execute(schema.getschema(schema.MATCHMARKS))
