@@ -229,6 +229,16 @@ class DBMaster(object):
                 self.cursor.execute(qupd, data[4:] + (s.exid, s.mid, s.id))
         self.conn.commit()
 
+    def WriteAccountBalance(self, exid, accinfo, tstamp):
+        """Write account balance information to accountinfo table"""
+        assert len(accinfo) == 4
+        self.cursor.execute(('INSERT INTO {0} (exchange_id, available, '
+                            'balance, credit, exposure, tstamp) values'
+                            '(?, ?, ?, ?, ?, ?)'.format(schema.ACCOUNTINFO)),
+                            (exid, accinfo[0], accinfo[1], accinfo[2],
+                             accinfo[3], tstamp))
+        self.conn.commit()
+
     def ReturnMarkets(self, sqlstr, sqlargs):
         """
         Execute query sqlquery, which should return a list of Markets.
@@ -368,6 +378,9 @@ class DBMaster(object):
 
         # matchorders stores pairs of orders
         self.cursor.execute(schema.getschema(schema.MATCHORDERS))
+
+        # accountinfo stores balance, available funds etc
+        self.cursor.execute(schema.getschema(schema.ACCOUNTINFO))
 
         self.conn.commit()
         return

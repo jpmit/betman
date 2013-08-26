@@ -34,3 +34,6 @@ GetMarketInformation = bdaqapimethod.APIGetMarketInformation(rcl, dbman).call
 
 # make order
 PlaceOrder = bdaqapimethod.APIPlaceOrdersNoReceipt(scl, dbman).call
+
+# account information
+GetAccountBalances = bdaqapimethod.APIGetAccountBalances(scl, dbman).call

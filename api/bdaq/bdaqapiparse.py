@@ -157,3 +157,34 @@ def ParseEventClassifier(eclass, name='', markets=[]):
                                       mtype._Id,
                                       pid,
                                       mtype._IsCurrentlyInRunning))
+
+def ParseGetAccountBalances(resp):
+    """Returns account balance information by parsing output from BDAQ
+    API function GetAccountBalances."""
+    # sample resp object we need to parse here:
+    # (GetAccountBalancesResponse){
+    #   _Currency = "GBP"
+    #   _AvailableFunds = 173.38
+    #   _Balance = 211.88
+    #   _Credit = 0.0
+    #   _Exposure = 38.5
+    #   ReturnStatus = 
+    #      (ReturnStatus){
+    #         _CallId = "5b40549c-1ec0-4cd4-ae16-14ff3fc9fe59"
+    #         _Code = 0
+    #         _Description = "Success"
+    #       }
+    #    Timestamp = 2013-08-26 12:21:31.955115
+    # }
+    retcode = resp.ReturnStatus._Code
+    tstamp = resp.Timestamp
+
+    # check the Return Status is zero (success)
+    # and not:
+    # 406 - punter blacklisted
+    if retcode == 406:
+        raise APIError, 'punter is blacklisted'
+
+    # Return tuple of _AvailableFunds, _Balance, _Credit, _Exposure
+    return (resp._AvailableFunds, resp._Balance,
+            resp._Credit, resp._Exposure)

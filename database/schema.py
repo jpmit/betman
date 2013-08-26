@@ -15,6 +15,7 @@ MARKETS = 'markets'
 SELECTIONS = 'selections'
 ORDERS = 'orders'
 MATCHORDERS = 'matchorders'
+ACCOUNTINFO = 'accountinfo'
 
 # keys are table name, value is schema
 _SQLSCHEMA = {EXCHANGES:  ('(id integer primary key, name text, url '
@@ -54,7 +55,13 @@ _SQLSCHEMA = {EXCHANGES:  ('(id integer primary key, name text, url '
                            'polarity int NOT NULL,matched real, '
                            'status int NOT NULL)'),
               MATCHORDERS: ('(order1_id int NOT NULL primary key, '
-                            'order2_id int NOT NULL)')
+                            'order2_id int NOT NULL)'),
+              ACCOUNTINFO: ('(exchange_id int NOT NULL, '
+                            'available real NOT NULL,'
+                            'balance real NOT NULL,'
+                            'credit  real NOT NULL,'
+                            'exposure real NOT NULL,'
+                            'tstamp text)')
               }
 
 def getschema(tname):

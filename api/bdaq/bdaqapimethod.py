@@ -174,19 +174,24 @@ class APIGetCurrentSelectionSequenceNumber(object):
 # appear NewExternalAPIspec.doc                                      #
 ######################################################################
 
-# not fully implemented (do not use)
 class APIGetAccountBalances(object):
-    def __init__(self, apiclient):
+    def __init__(self, apiclient, dbman):
         self.client = apiclient.client
-        self.createinput()
+        self.dbman = dbman
 
     def createinput(self):
-        #self.req = None
         pass
 
     def call(self):
         result = self.client.service.GetAccountBalances()
-        return result
+        # accountinfo returns a tuple (_AvailableFunds, _Balance,
+        #                              _Credit, _Exposure)
+        accinfo = bdaqapiparse.ParseGetAccountBalances(result)
+        if const.WRITEDB:
+            self.dbman.WriteAccountBalance(const.BDAQID, accinfo,
+                                           result.Timestamp)
+
+        return accinfo
 
 # not fully implemented (do not use)
 class APIListAccountPostings(object):
