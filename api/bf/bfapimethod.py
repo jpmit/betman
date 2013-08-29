@@ -199,8 +199,8 @@ class APIgetMUBets(object):
         self.req.excludeLastSecond = False        
         
     def call(self, orders, marketid=0):
-        # Note, this method will work with BF API if orders=[]. Then
-        # we will return all matched and unmatched bets.  However,
+        # Note, the actual API call will work if orders=[]. Then we
+        # will return all matched and unmatched bets.  However,
         # bfapiparse.ParsegetMUBets will have to be modified to make
         # this work.
         self.addheader()

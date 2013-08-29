@@ -46,3 +46,6 @@ BFID = 2
 # note this is hard-coded into the database schema so
 # don't change this number.
 NUMPRICES = 5
+
+# practice mode, don't actually place any bets
+PRACTICEMODE = True

@@ -11,13 +11,18 @@
 # 4 - Settled.
 # 5 - Void.
 # 6 - Suspended.  At least some part unmatched but is suspended.
-# here we use the same numbering scheme:
+# here we use the same numbering scheme, but we add staus 'NOTPLACED'
+# for our own internal use.
+NOTPLACED = 0
 UNMATCHED = 1
 MATCHED = 2
 CANCELLED = 3
 SETTLED = 4
 VOID = 5
 SUSPENDED = 6
+# polarity
+BACK = 1
+LAY = 2
 
 class Order(object):
     """Returned after an order is placed"""
@@ -27,6 +32,10 @@ class Order(object):
         self.stake = stake
         self.price = price
         self.polarity = polarity # 1 for back, 2 for lay
+
+        # the status set here is the default and it will be
+        # overwritten by the dict kwargs.
+        self.status = NOTPLACED
 
         for kw in kwargs:
             # notable kwargs (and therefore possible instance attributes) are:
@@ -38,6 +47,15 @@ class Order(object):
             # mid - market id (needed for placing bets with BF, but
             #                  not with BDAQ!)
             setattr(self, kw, kwargs[kw])
+
+    def __repr__(self):
+        return '{0} {1} ${2} {3}'.format('BACK' if self.polarity == 1
+                                         else 'LAY', self.sid,
+                                         self.stake, self.price)
+
+    def __str__(self):
+        return self.__repr__()
+    
 
 ## class PlaceOrder(object):
 ##     """PlaceOrder holds info necessary to place an order"""

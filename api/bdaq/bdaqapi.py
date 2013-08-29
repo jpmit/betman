@@ -12,7 +12,7 @@ from betman.api import apiclient
 
 # time in seconds to sleep between calling APIGetPrices (when called
 # with > 50 market ids).
-PRICETHROTTLE = 3
+PRICETHROTTLE = 60
 
 # create suds clients
 # There is only 1 WSDL file, but this has two 'services'.  The 
@@ -43,3 +43,5 @@ GetAccountBalances = bdaqapimethod.APIGetAccountBalances(scl, dbman).call
 
 #ListAccountPostings = bdaqapimethod.APIListAccountPostings(scl).call
 ListBootstrapOrders = bdaqapimethod.APIListBootstrapOrders(scl).call
+
+ListBlacklistInformation = bdaqapimethod.APIListBlacklistInformation(scl).call

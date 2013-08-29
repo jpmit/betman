@@ -138,6 +138,8 @@ class APIGetPrices(object):
         allselections = []
         # split up mids into groups of size MAXMIDS
         for ids in util.chunks(mids, MAXMIDS):
+            if const.DEBUG:
+                print 'calling GetPrices'
             self.req.MarketIds = ids
             result = self.client.service.GetPrices(self.req)
             selections =  bdaqapiparse.ParsePrices(ids, result)
@@ -379,7 +381,13 @@ class APIPlaceOrdersWithReceipt(object):
 
 #class APICancelAllOrders(object):
 
-#class APIListBlackListInformation(object):
+class APIListBlacklistInformation(object):
+    def __init__(self, apiclient):
+        self.client = apiclient.client
+
+    def call(self):
+        result = self.client.service.ListBlacklistInformation()
+        return result
 
 ####################
 # Suspending orders

@@ -5,7 +5,7 @@
 import numpy as np
 import pylab as P
 
-s_L = 5.00
+s_L = 1.00
 c_L = 0.05
 c_B = 0.05
 o_L = 4.8

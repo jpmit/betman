@@ -10,10 +10,20 @@ class Strategy(object):
     """Base class - a strategy should inherit from this."""
     def __init__(self):
         self.brain = StateMachine()
+
+        # orders to place
+        self.toplace = {const.BDAQID: [], const.BFID: []}
         
     def get_marketids(self):
         """Return market ids involved in strategy.  These should be
         returned as a dict with keys const.BDAQID and const.BFID"""
+        pass
+
+    def get_orderids(self):
+        """Return a list of order ids involved with a strategy.  These
+        should be returned as a dict with keys const.BDAQID and
+        const.BFID"""
+        pass
 
 class StrategyGroup(object):
     """Stores a group (i.e. one or more) of strategies."""
@@ -25,8 +35,33 @@ class StrategyGroup(object):
 
     def update(self):
         """Update all strategies in the group"""
+        # update does the thinking and also updates any internal
+        # strategy objects, e.g. refreshing the prices using the
+        # database, the status of orders, etc.
         for strat in self.strategies:
             strat.update()
+
+    def get_orderids(self):
+        """Order ids for all strategies in the group used for checking
+        order status.  This shouldn't return order ids which we
+        already know are matched."""
+        oids = {const.BDAQID: [], const.BFID: []}
+        for strat in self.strategies:
+            # get mid dictionary for strat
+            odict = strat.get_orderids()
+            for k in odict:
+                oids[k] = oids[k] + odict[k]
+        return oids
+
+    def get_orders_to_place(self):
+        toplace = {const.BDAQID: [], const.BFID: []}
+        for strat in self.strategies:
+            # get order dictionary for each strat
+            pldict = strat.toplace
+            for k in pldict:
+                toplace[k] = toplace[k] + pldict[k]
+        
+        return toplace
 
     def get_marketids(self):
         """Return market ids of all strategies."""
@@ -34,11 +69,11 @@ class StrategyGroup(object):
         for strat in self.strategies:
             # get mid dictionary for strat
             mdict = strat.get_marketids()
-            for k in mids.keys():
+            for k in mids:
                 mids[k] = mids[k] + mdict[k]
         # make sure the lists in dict mids contain each market id only
         # once.
-        for k in mids.keys():
+        for k in mids:
             # quick and dirty way to make list entries unique (note
             # this does not preserve order).
             mids[k] = list(set(mids[k]))
