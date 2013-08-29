@@ -20,6 +20,9 @@ class BetMain(object):
         # orders that are not yet matched are stored.
         self.orderdict = {const.BDAQID: [], const.BFID: []}
 
+        # call the API functions to refresh prices etc.
+        self.on_startup()
+
     def load_strategies(self):
         """Load strategies."""
         
@@ -43,7 +46,14 @@ class BetMain(object):
 
     def update_order_information(self):
         """Get information on all current orders."""
-        odict = self.stratgroup.get_orderids()        
+        odict = self.stratgroup.get_orders()
+
+        # this should automatically keep track of a 'sequence number',
+        # so that we are updating information about all orders
+        bdaqapi.ListOrdersChangedSince()
+        # check we actually have some BF orders under consideration.
+        if odict[const.BFID]:
+            bfapi.GetBetStatus(odict[const.BFID])
 
     def make_orders(self):
         """Make outstanding orders for all strategies"""
@@ -53,13 +63,38 @@ class BetMain(object):
         print odict
 
         if not const.PRACTICEMODE:
-            bdaqapi.APIPlaceOrdersNoReceipt(odict[const.BDAQID])
-            bfapi.APIPlaceOrders(odict[const.BFID])
+            # are there any BDAQ orders pending?
+            if odict[const.BDAQID]:
+                # place the orders
+                bdaqapi.PlaceOrders(odict[const.BDAQID])
+            
+            # Annoying!  The BF API only allows us to make bets for
+            # one market at a time (although we can make multiple bets
+            # - up to 60 apparently - for each market.
+            if odict[const.BFID]:
+                for plorder in odict[const.BFID]:
+                    bfapi.PlaceBets([plorder])
+
+    def on_startup(self):
+        # put all this stuff in __init__ eventually??
+        
+        # bootstrap BDAQ order information (we don't need to do this
+        # for BF).
+        ords = bdaqapi.ListBootstrapOrders()
+        while ords:
+            ords = bdaqapi.ListBootstrapOrders()
+
+        # need to login to BF api (we don't need to do this for BF).
+        bfapi.Login()
+
+        #  update market prices
+        self.update_market_prices()
 
     def main_loop(self):
-        # will want to be able to break out of this loop somehow
-        #while True:
-        for i in range(3):
+        #for i in range(3):
+        # first tick initializes clock
+        self.clock.tick()
+        while True:                    
             if const.DEBUG:
                 print '-'*32
             
@@ -78,5 +113,5 @@ class BetMain(object):
             self.update_order_information()
         
 #if __name__=='__main__':
-bm = BetMain(30)
-#bm.main_loop()
+bm = BetMain(20)
+bm.main_loop()

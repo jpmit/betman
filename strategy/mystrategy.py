@@ -13,12 +13,11 @@ from betman.api.bdaq import bdaqapi
 # commission on winnings taken from both exchanges. The strategies can
 # easily be generalised to the case when the commissions for BDAQ and
 # BF are different.
-_COMMISSION = 0.05
+_COMMISSION = {const.BDAQID: 0.05, const.BFID: 0.05}
 
-# Default size lay bet for both exchanges
-_DEFAULTLAY = 0.5
-# Default size back bet (we will have to change this to be correct)
-_DEFAULTBACK = 0.5
+# min bets on each exchange in GBP.  Note once we have improved
+# placing bets on BF, we can have minimum bet of 0.01 on BF!
+_MINBETS = {const.BDAQID: 0.5, const.BFID: 2.0}
 
 class CXStrategy(strategy.Strategy):
     """
@@ -62,20 +61,25 @@ class CXStrategy(strategy.Strategy):
         self.brain.set_state(noopp_state.name)
 
     def get_marketids(self):
-        """Return dictionary of all market ids involved in strategy"""
+        """Return dictionary of all market ids involved in strategy."""
         return {const.BDAQID: [self.sel1.mid],
                 const.BFID: [self.sel2.mid]}
 
-    def get_orderids(self):
-        """Return dictionary of all order ids involved in strategy"""
+    def get_orders(self):
+        """Return dictionary of all order objects involved in
+        strategy.  This is needed so that we can check the status of
+        the orders (we only in fact really need this for the BF
+        orders)"""
         odict = {const.BDAQID: [], const.BFID: []}
-        # note: we only care about checking the order status if we don't know
-        # for sure whether or not it is matched.
+        # note: we only care about checking the order status if we
+        # don't know for sure whether or not it is matched. We also
+        # only care about the order if it has been placed, in fact we
+        # need it to have been placed in order to update its status.
         if hasattr(self, 'border'):
-            if self.border.status != order.MATCHED:
+            if self.border.status != order.MATCHED and self.border.status != order.NOTPLACED:
                 odict[self.border.exid].append(self.border)
         if hasattr(self, 'lorder'):
-            if self.lorder.status != order.MATCHED:
+            if self.lorder.status != order.MATCHED and self.lorder.status != order.NOTPLACED:
                 odict[self.lorder.exid].append(self.lorder)
         return odict
         
@@ -95,6 +99,9 @@ class CXStrategy(strategy.Strategy):
             oback = s2.best_back()
 
             if self._backlay(oback, olay):
+                # TODO: the odds are good enough, we just need to check if
+                # the volume is there.
+                #bstake, lstake = 
                 self.store_opportunity(s1, s2, olay, oback, True)
                 return True
         return False
@@ -116,7 +123,7 @@ class CXStrategy(strategy.Strategy):
                 return True
         return False
 
-    def _store_opportunity(self, slay, sback, olay, oback):
+    def store_opportunity(self, slay, sback, olay, oback):
         """Store details of betting opportunity"""
         self.opp = True
         self.slay = slay
@@ -137,29 +144,42 @@ class CXStrategy(strategy.Strategy):
 
         # create both back and lay orders.         
         self.border = order.Order(sback.exid, sback.id, bstake,
-                                  self.oback, 1)
+                                  self.oback, 1, **{'mid': sback.mid})
         self.lorder = order.Order(slay.exid, slay.id, lstake,
-                                  self.olay, 2)
+                                  self.olay, 2, **{'mid': slay.mid})
 
     def get_stakes(self, bexid, oback, lexid, olay):
         """Return back and lay stakes."""
-        # let's choose to back the minimum amount possible so we take
-        # all our winnings NOW (see strategy notes).
 
-        bmin = 
-        
+        # let's choose to back the minimum amount possible so we take
+        # all our winnings NOW (see strategy notes). This means that
+        # laystake/backstake = oback/olay * (1 - commisionback) (see
+        # notes):
+        lbratio = (oback/olay)* (1 - _COMMISSION[bexid])        
+
+        backstake = max(_MINBETS[bexid], _MINBETS[lexid]/lbratio)
+        laystake = lbratio*backstake
+        print backstake, laystake
+        # watch out for rounding errors, we may want to be a bit
+        # careful here.
+        return round(backstake,2), round(laystake,2)
 
     def make_back_order(self):
         """Place the back order"""
         if self.border.exid == const.BDAQID:
             # call bdaq api method
-            print "placing BDAQ back: {0} @ {1}".format(self.sback.name,
-                                                        self.oback)
+            print "placing BDAQ back: {0} @ {1} for ${2}".format(self.sback.name,
+                                                                 self.oback,
+                                                                 self.border.stake)
+            # this just puts it in the list to be placed.  The
+            # actually placement is done by the main program.
             self.toplace[const.BDAQID] = [self.border]
         else:
             # call BF api method
-            print "placing BF back: {0} @ {1}".format(self.sback.name,
-                                                      self.oback)
+            print "placing BF back: {0} @ {1} for ${2}".format(self.sback.name,
+                                                               self.oback,
+                                                               self.border.stake)
+            # this just puts it in the list to be placed.            
             self.toplace[const.BFID] = [self.border]
 
 
@@ -168,48 +188,39 @@ class CXStrategy(strategy.Strategy):
         if self.lorder.exid == const.BDAQID:
             # call bdaq api method
             # dummy for now
-            print "placing BDAQ lay: {0} @ {1}".format(self.slay.name,
-                                                       self.olay)
+            print "placing BDAQ lay: {0} @ {1} for ${2}".format(self.slay.name,
+                                                                self.olay,
+                                                                self.lorder.stake)
             self.toplace[const.BDAQID] = [self.lorder]
         else:
-            print "placing BF lay: {0} @ {1}".format(self.slay.name,
-                                                       self.olay)
+            print "placing BF lay: {0} @ {1} for ${2}".format(self.slay.name,
+                                                              self.olay,
+                                                              self.lorder.stake)
             self.toplace[const.BFID] = [self.lorder]
             # call BF api method
             pass
 
     def back_order_matched(self):
         """Return true if the back order has been matched, else false"""
-        return True
+        if self.border.status == order.MATCHED:
+            return True
+        return False
 
     def lay_order_matched(self):
         """Return true if the lay order has been matched, else false"""
-        return True
+        if self.lorder.status == order.MATCHED:
+            return True
+        return False
     
     def _backlay(self, bprice, lprice):
         """Return True if back-lay strategy profitable, else False"""
-        if bprice > lprice / ((1.0 - _COMMISSION)*(1.0 - _COMMISSION)):
+        if bprice > lprice / ((1.0 - _COMMISSION[const.BDAQID])*\
+                              (1.0 - _COMMISSION[const.BFID])):
             # only interested in opportunities for which lay odds are
             # less than 20 for now.
             if lprice < 20:
                 return True
         return False
-
-    def store_opportunity(self, slay, sback, olay, oback,
-                          instant = False):
-        """Store details of betting opportunity"""
-        self.opp = True
-        self.slay = slay
-        self.sback = sback
-        self.olay = olay
-        self.oback = oback
-        self.instant = False
-        
-        # create both back and lay orders
-        self.border = order.Order(sback.exid, sback.id, _DEFAULTBACK,
-                                  self.oback, 1)
-        self.lorder = order.Order(slay.exid, slay.id, _DEFAULTLAY,
-                                  self.olay, 2)
 
     def update(self):
         # important: clear the list of orders to be placed so that we don't
@@ -231,8 +242,20 @@ class CXStrategy(strategy.Strategy):
                                                 (self.sel2.exid,
                                                  self.sel2.mid,
                                                  self.sel2.id))[0]
-        # update status of any orders from DB
-        
+        # update status of any orders from DB (only orders that have
+        # actually been placed.
+        if hasattr(self, 'border') and self.border.status != order.NOTPLACED:
+            self.border = self.dbman.ReturnOrders(('SELECT * FROM orders '
+                                                  'where exchange_id = ? and '
+                                                  'order_id = ?'),
+                                                  self.border.exid,
+                                                  self.border.oref)
+        if hasattr(self, 'lorder') and self.lorder.status != order.NOTPLACED:
+            self.lorder = self.dbman.ReturnOrders(('SELECT * FROM orders '
+                                                  'where exchange_id = ? and '
+                                                  'order_id = ?'),
+                                                  self.lorder.exid,
+                                                  self.lorder.oref)
         
         # AI
         self.brain.update()

@@ -19,8 +19,8 @@ class Strategy(object):
         returned as a dict with keys const.BDAQID and const.BFID"""
         pass
 
-    def get_orderids(self):
-        """Return a list of order ids involved with a strategy.  These
+    def get_orders(self):
+        """Return a list of orders involved with a strategy.  These
         should be returned as a dict with keys const.BDAQID and
         const.BFID"""
         pass
@@ -41,14 +41,14 @@ class StrategyGroup(object):
         for strat in self.strategies:
             strat.update()
 
-    def get_orderids(self):
+    def get_orders(self):
         """Order ids for all strategies in the group used for checking
         order status.  This shouldn't return order ids which we
         already know are matched."""
         oids = {const.BDAQID: [], const.BFID: []}
         for strat in self.strategies:
             # get mid dictionary for strat
-            odict = strat.get_orderids()
+            odict = strat.get_orders()
             for k in odict:
                 oids[k] = oids[k] + odict[k]
         return oids

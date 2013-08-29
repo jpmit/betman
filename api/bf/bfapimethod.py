@@ -121,6 +121,8 @@ class APIplaceBets(object):
         self.req.bets.PlaceBets = self.makebetlist(orderlist)
 
         response = self.client.service.placeBets(self.req)
+        if const.DEBUG:
+            print response
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
         
         if const.WRITEDB:
@@ -208,11 +210,12 @@ class APIgetMUBets(object):
         self.fillreq(betids, marketid)
 
         response = self.client.service.getMUBets(self.req)
+        if const.DEBUG:
+            print response
         allorders = bfapiparse.ParsegetMUBets(response, orders)
         if const.WRITEDB:
-            # need to update the order here!
-            pass
-
+            self.dbman.WriteOrders(allorders, response.header.timestamp)
+  
         return allorders
 
 class APIgetMarket(object):

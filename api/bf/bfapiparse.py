@@ -15,6 +15,7 @@ def ParsegetMUBets(res, orders):
     if ecode != 'OK':
         raise APIError, 'getMUBets error, errorcode {0}'.format(ecode)
 
+    print len(res.bets.MUBet), len(orders)
     assert len(res.bets.MUBet) == len(orders)
 
     allorders = []
@@ -48,6 +49,9 @@ def ParseplaceBets(res, olist):
     
     if ecode != 'OK':
         raise APIError, 'placeBets error, errorcode {0}'.format(ecode)
+
+    if const.DEBUG:
+        print res
 
     # check that we have one result for each order executed
     assert len(res.betResults.PlaceBetsResult) == len(olist)

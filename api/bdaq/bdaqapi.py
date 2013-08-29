@@ -42,6 +42,11 @@ PlaceOrders = bdaqapimethod.APIPlaceOrdersNoReceipt(scl, dbman).call
 GetAccountBalances = bdaqapimethod.APIGetAccountBalances(scl, dbman).call
 
 #ListAccountPostings = bdaqapimethod.APIListAccountPostings(scl).call
-ListBootstrapOrders = bdaqapimethod.APIListBootstrapOrders(scl).call
+
+# details of orders
+# call ListBootstrapOrders repeatedly at startup
+ListBootstrapOrders = bdaqapimethod.APIListBootstrapOrders(scl, dbman).call
+
+ListOrdersChangedSince = bdaqapimethod.APIListOrdersChangedSince(scl, dbman).call
 
 ListBlacklistInformation = bdaqapimethod.APIListBlacklistInformation(scl).call

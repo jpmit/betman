@@ -71,7 +71,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
               # 2 - WAITING
               # 3 - MATCHED
               # 4 - CANCELLED
-              ORDERS:     ('(order_id     int  primary key, '
+              ORDERS:     ('(order_id     int  NOT NULL, '
                            ' exchange_id  int  NOT NULL,'
                            ' market_id    long,         '
                            ' selection_id long NOT NULL,'

@@ -264,6 +264,36 @@ class DBMaster(object):
         
         return markets
 
+    def ReturnOrders(self, sqlstr, sqlargs=None):
+        """
+        Execute query sqlquery, which should return a list of Orders.
+        This convenience function will convert the database
+        representation to a list of Order objects.
+        """
+        try:
+            res = self.cursor.execute(sqlstr, sqlargs)
+        except sqlite3.OperationalError:
+            # query string was malformed somehow
+            raise DBError, 'received malformed SQL statement'
+        except ValueError:
+            raise DBError, ('wrong parameters passed to SQL '
+                                'statement')
+        odata = res.fetchall()
+        # create Order objects from results of market data
+        # pid and pname both None since we are not storing this info
+        # in the database!
+        # Note also we need to convert sqlite int into bool for
+        # inrunning status of market.
+        orders = [Order(o[1], o[3], o[6], o[5], o[7], **{'oref': o[0],
+                                                         'status': o[10],
+                                                         'matchedstake': o[8],
+                                                         'unmatchedstake': o[9],
+                                                         'strategy': o[4],
+                                                         'mid': o[2]})
+                  for o in odata]
+        
+        return orders
+
     def ReturnSelections(self, sqlstr, sqlargs=None):
         """
         Execute query sqlquery, which should return a list of
@@ -362,7 +392,7 @@ class DBMaster(object):
             # we only know the market id for BF not BDAQ (due to API
             # differences)
             mid = getattr(o, 'mid', None)
-            
+
             try:
                 self.cursor.execute(qins, (o.oref, o.exid, mid,
                                            o.sid, strategy, o.price,
@@ -417,6 +447,11 @@ class DBMaster(object):
 
         # orders stores current orders, whether matched or not
         self.cursor.execute(schema.getschema(schema.ORDERS))
+
+        # same unique index idea for orders table
+        self.cursor.execute('CREATE UNIQUE INDEX oindex ON {0}'
+                            '(exchange_id, order_id)'\
+                            .format(schema.ORDERS))
 
         # matchorders stores pairs of orders
         self.cursor.execute(schema.getschema(schema.MATCHORDERS))

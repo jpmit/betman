@@ -2,6 +2,47 @@ from betman import const, util, Market, Selection, Event, order
 from betman.all import const
 from betman.all.betexception import APIError
 
+def ParseListBootstrapOrders(resp):
+    """
+    Parse a single order, return order object.  Note there are a few
+    things the API is returning that we are ignoring here.
+    """
+
+    retcode = resp.ReturnStatus._Code
+    tstamp = resp.Timestamp
+
+    # check the return status here
+    if retcode != 0:
+        # will have to diagnose this in more detail if/when it happens.
+        raise APIError, ('Error with ListBootstrapOrders '
+                         'return code {0}'.format(retcode))
+
+    # no orders returned; end of bootstrapping process.
+    if not hasattr(resp, 'Orders'):
+        return []
+
+    # create and return list of order objects.    
+    allorders = []
+    for o in resp.Orders.Order:
+        sid = o._SelectionId
+        ustake = o._UnmatchedStake
+        mstake = o._MatchedStake
+        stake = ustake + mstake
+        # note we also get back '_MatchedPrice' if matched; this could
+        # be better than '_RequestedPrice'.
+        price = o._RequestedPrice
+        pol = o._Polarity
+        oref = o._Id
+        status = o._Status
+        
+        allorders.append(order.Order(const.BDAQID, sid, stake, price,
+                                     pol, **{'oref': oref,
+                                             'status': status,
+                                             'matchedstake': mstake,
+                                             'unmatchedstake': ustake}))
+
+    return allorders
+
 def ParsePlaceOrdersNoReceipt(resp, olist):
     """Parse a single order, return order object"""
     if const.DEBUG:
@@ -207,8 +248,11 @@ def ParseListOrdersChangedSince(resp):
     # check the Return Status is zero (success)
     # and not:
     # 406 - punter blacklisted
+    # 310 - sequence number less than zero
     if retcode == 406:
         raise APIError, 'punter is blacklisted'
+    elif retcode == 310:
+        raise APIError, 'sequence number cannot be less than zero'
 
     if not hasattr(resp, 'Orders'):
         # no orders have changed
@@ -220,7 +264,7 @@ def ParseListOrdersChangedSince(resp):
     seqnums = []
 
     allorders = []
-    for order in resp.Orders.Order:
+    for o in resp.Orders.Order:
 
         # From API docs, order _Status can be
         # 1 - Unmatched.  Order has SOME amount available for matching.
@@ -233,16 +277,17 @@ def ParseListOrdersChangedSince(resp):
         # Note: at the moment we are not storing all of the data that
         # comes from the BDAQ API function, only the information that
         # seems useful...
-        odict = {'status': order._Status,
-                 'matchedstake' : order._MatchedStake,
-                 'unmatchedstake': order._UnmatchedStake}
+        odict = {'oref': o._Id,
+                 'status': o._Status,
+                 'matchedstake' : o._MatchedStake,
+                 'unmatchedstake': o._UnmatchedStake}
 
-        allorders.append(order.Order(const.BDAQID, order._SelectionID,
-                                     order._MatchedStake + order._UnmatchedStake,
-                                     order._RequestedPrice, order._Polarity,
-                                     order._Id, **odict))
+        allorders.append(order.Order(const.BDAQID, o._SelectionId,
+                                     o._MatchedStake + o._UnmatchedStake,
+                                     o._RequestedPrice, o._Polarity,
+                                     **odict))
         # store sequence number
-        seqnums.append(order._SequenceNumber)
+        seqnums.append(o._SequenceNumber)
 
     return allorders, max(seqnums)
 

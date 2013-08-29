@@ -137,15 +137,16 @@ class APIGetPrices(object):
         MAXMIDS = 50 # set by BDAQ API
         allselections = []
         # split up mids into groups of size MAXMIDS
-        for ids in util.chunks(mids, MAXMIDS):
+        for (callnum, ids) in enumerate(util.chunks(mids, MAXMIDS)):
             if const.DEBUG:
                 print 'calling GetPrices'
             self.req.MarketIds = ids
             result = self.client.service.GetPrices(self.req)
             selections =  bdaqapiparse.ParsePrices(ids, result)
             allselections = allselections + selections
-            # sleep for some time before calling API again
-            time.sleep(self.throttl)
+            if callnum > 0:
+                # sleep for some time before calling API again
+                time.sleep(self.throttl)
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]
@@ -240,34 +241,51 @@ class APIListOrdersChangedSince(object):
     def createinput(self):
         self.req = self.client.factory.create('ListOrdersChangedSinceRequest')
 
-    def call(self):
+    def call(self, seqnum=None):
         global ORDER_SEQUENCE_NUMBER
         # the sequence number should come in the first instance from
         # the bootstrap, see class APIListBootstrapOrders
-        self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
+        if seqnum:
+            self.req.SequenceNumber = seqnum
+        else:
+            self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
         if const.DEBUG:
             print 'Calling ListOrders with sequence number: {0}'\
                   .format(self.req.SequenceNumber)
         
-        allorders, snum = self.client.service.ListOrdersChangedSince(self.req)
+        resp = self.client.service.ListOrdersChangedSince(self.req)
+
+        if const.DEBUG:
+            print resp
+
+        data = bdaqapiparse.ParseListOrdersChangedSince(resp)
+        if not data:
+            # should be returning an empty list here, i.e. no orders
+            # changed since last call.
+            return data
+        # if we did get some orders changed, the data consists of the
+        # order information and the new max sequence number.
+        orders, snum = data
         # set order sequence number to the maximum one returned by API
+        ORDER_SEQUENCE_NUMBER = snum        
         if const.DEBUG:
             print 'Setting sequence number to: {0}'\
                   .format(snum)
-        ORDER_SEQUENCE_NUMBER = snum
+
         # update changed orders
         if const.WRITEDB:
-            pass
-        
-        return allorders
+            self.dbman.WriteOrders(orders, resp.Timestamp)
+        return orders
 
 # this sequence number is updated by both APIListOrdersChangedSince
 # (above) and APIListBootstrapOrders (below).
 ORDER_SEQUENCE_NUMBER = -1
 
 class APIListBootstrapOrders(object):
-    def __init__(self, apiclient):
+    def __init__(self, apiclient, dbman):
         self.client = apiclient.client
+        self.dbman = dbman
+        
         self.createinput()
 
     def createinput(self):
@@ -278,12 +296,15 @@ class APIListBootstrapOrders(object):
     def call(self, snum=-1):
         # the sequence number should come in the first instance from
         # the bootstrap which is next class
-        self.req.SequenceNumber = snum
+        global ORDER_SEQUENCE_NUMBER
+        self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
         result = self.client.service.ListBootstrapOrders(self.req)
         # assign sequence number we get back to ORDER_SEQUENCE_NUMBER
-        global ORDER_SEQUENCE_NUMBER
         ORDER_SEQUENCE_NUMBER = result._MaximumSequenceNumber
-        return result
+        allorders = bdaqapiparse.ParseListBootstrapOrders(result)
+        if const.WRITEDB:
+            self.dbman.WriteOrders(allorders, result.Timestamp)
+        return allorders
 
 # not fully implemented (do not use)
 class APIGetOrderDetails(object):
