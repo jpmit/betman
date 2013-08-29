@@ -138,15 +138,16 @@ class APIGetPrices(object):
         allselections = []
         # split up mids into groups of size MAXMIDS
         for (callnum, ids) in enumerate(util.chunks(mids, MAXMIDS)):
-            if const.DEBUG:
-                print 'calling GetPrices'
             self.req.MarketIds = ids
-            result = self.client.service.GetPrices(self.req)
-            selections =  bdaqapiparse.ParsePrices(ids, result)
-            allselections = allselections + selections
             if callnum > 0:
                 # sleep for some time before calling API again
                 time.sleep(self.throttl)
+            if const.DEBUG:
+                print 'calling GetPrices'                
+            result = self.client.service.GetPrices(self.req)
+            selections =  bdaqapiparse.ParsePrices(ids, result)
+            allselections = allselections + selections
+
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]

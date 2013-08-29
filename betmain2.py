@@ -35,7 +35,7 @@ class BetMain(object):
         # alter the prices so that we get instant opp!!
         msels[0][0].backprices[0] = (1.50, 10)
         msels[0][1].layprices[0] = (1.01, 10)        
-        for m in msels[:50]:
+        for m in msels[:100]:
             self.stratgroup.add(betman.strategy.mystrategy.\
                                 CXStrategy(m[0], m[1]))
 
