@@ -8,6 +8,10 @@
 MINODDS = 1.0
 MAXODDS = 1000.0
 
+# consecutive odds for min odds (again same for both exchanges).  This
+# is useful for knowing when the order book is empty.
+MINODDSPLUS1 = 1.01
+
 # Allowed odds for BDAQ data
 # --------------------------
 # Increments below obtained by testing betdaq.com on 4th August

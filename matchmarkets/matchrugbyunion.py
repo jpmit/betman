@@ -6,25 +6,24 @@ from betman import database, const
 import numpy as np
 import re
 
+# hard coded mappings between BDAQ and BF.  Key is BDAQ name, value if BF name
+_HARDCODED = {#'The Rugby Championship : Outright', 
+              'Heineken Cup : Outright' : 'Heineken Cup 2013/14',
+              'Aviva Premiership : Outright' : 'Aviva Premiership 2013/14',
+              'RBS Six Nations 2014 : Outright' : 'RBS 6 Nations 2014',
+              'RaboDirect Pro 12 : Grand Final Winner' : 'RaboDirect 2013/14'}
+
 def level2convert(s):
+    # any hardcoded names at this level
+    if s in _HARDCODED:
+        return _HARDCODED[s]
+
     # first remove anything in brackets, including spaces around
     # brackets
     s = re.sub(r' *\(.*?\) *', '', s)
-    # strip a colon, anything following and any spaces before...
-    s = re.sub(r' *:.*', '', s)    
-    # next replace any numbers from 1 to 9
-    rep = {'One': '1',
-           'Two': '2',
-           'Three': '3',
-           'Four': '4',
-           'Five': '5',
-           'Six': '6',
-           'Seven': '7',
-           'Eight': '8',
-           'Nine': '9'}
-    for r in rep:
-        s = s.replace(r, rep[r])
-        s = s.replace(r.lower(), rep[r])
+    # remove any times
+    s = re.sub(r'[0-9][0-9]:[0-9][0-9]\s', '', s)
+
     return s
 
 def MatchRugbyUnion(BDAQMarkets, BFMarkets):
@@ -32,7 +31,7 @@ def MatchRugbyUnion(BDAQMarkets, BFMarkets):
     markets"""
     # conversion from bdaq to bf market names; keys are bdaq market
     # names
-    mname = {'Win Market': ['Outright Winner'],
+    mname = {'Win Market': ['Outright Winner','Grand Final Winner'],
              'Match Odds': ['Match Odds'],
              'Half-Time/Full-Time': ['Half-Time/Full-Time'],
              'First Scoring Play': ['First Scoring Play']
@@ -44,6 +43,7 @@ def MatchRugbyUnion(BDAQMarkets, BFMarkets):
             sp2 = m2.name.split('|')
             if sp2[-1] in mname.get(sp1[-1],[]):
                 # go to level up
+                #print level2convert(sp1[-2]), sp2[-2]
                 if (level2convert(sp1[-2]) == sp2[-2]):
                     matches.append((m1,m2))
                     break

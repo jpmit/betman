@@ -10,24 +10,28 @@ from betman import const, Selection
 
 def ParsenonAPIGetPrices(resp, mids):
     """Return Selections for json string resp"""
-    if const.DEBUG:
-        print resp
+
     # get the raw data from BDAQ in a dictionary.
     jsondata = json.loads(correct_json(resp))
 
     # go through each market in turn and get the selections.  Note
     # there is more information returned than we are tracking here.
-    allselections = []
-    for (m,mark) in zip(mids, jsondata['ArrayOfEventClassifier']['EventClassifier']):
+    selections = {}
+    for mark in jsondata['ArrayOfEventClassifier']['EventClassifier']:
+        # get market id
+        markmid = mark['mkt']['mId']
         # list of selections for this marketid
-        allselections.append([])        
+        selections[markmid] = []
+        
         # the mkt key contains everything we want
         for sel in mark['mkt']['sel']:
             name = sel['sN'].encode('ascii')
             sid = sel['sId']
+            # each selection also contains a market id.  This should
+            # be the same as markmid above!
             mid = sel['mId']
-            # check that this is the marketid we were expecting
-            assert (m == mid)
+            assert (mid == markmid)
+
             if hasattr(sel, 'fSO'):
                 bprices = [(p['p'], p['rA']) for p in sel['fSO']]
             else:
@@ -39,13 +43,24 @@ def ParsenonAPIGetPrices(resp, mids):
 
             # add the selection.  Note we are not getting amounts
             # matched etc. at the moment.
-            allselections[-1].append(Selection(name, sid, mid,
-                                               None,
-                                               None,
-                                               None,
-                                               None,
-                                               None,
-                                               bprices, lprices))
+            selections[markmid].append(Selection(name, sid, mid,
+                                                 None,
+                                                 None,
+                                                 None,
+                                                 None,
+                                                 None,
+                                                 bprices, lprices))
+    if const.DEBUG:
+        # check how many markets we got selections for
+        print ('got selections for '
+               '{0} of {1} markets'.format(len(selections.keys()),
+                                           len(mids)))
+            
+    # return selections ordered by list ids (passed as an argument).
+    # this is so that when we call this function, we know what we are
+    # getting back.  If we don't do this, we will get selections in an
+    # order decided by BDAQ, i.e. ordered by eventtype.
+    allselections = [selections[mid] for mid in mids]            
     return allselections
     
 def correct_json(jstr):

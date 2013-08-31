@@ -2,12 +2,19 @@
 # James Mithen
 # jamesmithen@gmail.com
 #
-# Main betting script.
+# Main betting program.
 
+import time
 import betman
 from betman import const
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
+
+# in practicemode, we won't place any bets
+PRACTICEMODE = False
+
+# can choose whether or not to use BDAQ API for prices
+USEBDAQAPI = False
 
 class BetMain(object):
     def __init__(self, deltat):
@@ -41,19 +48,26 @@ class BetMain(object):
 
     def update_market_prices(self):
         """Get new prices and write to the database."""
-        bdaqapi.GetSelections(self.marketids[const.BDAQID])
+        if USEBDAQAPI:
+            bdaqapi.GetSelections(self.marketids[const.BDAQID])
+        else:
+            bdaqapi.GetSelectionsnonAPI(self.marketids[const.BDAQID])            
+            
         bfapi.GetSelections(self.marketids[const.BFID])
 
     def update_order_information(self):
         """Get information on all current orders."""
         odict = self.stratgroup.get_orders()
 
-        # this should automatically keep track of a 'sequence number',
-        # so that we are updating information about all orders
-        bdaqapi.ListOrdersChangedSince()
-        # check we actually have some BF orders under consideration.
-        if odict[const.BFID]:
-            bfapi.GetBetStatus(odict[const.BFID])
+        if not PRACTICEMODE:
+            # this should automatically keep track of a 'sequence
+            # number', so that we are updating information about all
+            # orders
+            bdaqapi.ListOrdersChangedSince()
+            # check we actually have some BF orders under
+            # consideration.
+            if odict[const.BFID]:
+                bfapi.GetBetStatus(odict[const.BFID])
 
     def make_orders(self):
         """Make outstanding orders for all strategies"""
@@ -62,7 +76,7 @@ class BetMain(object):
         odict = self.stratgroup.get_orders_to_place()
         print odict
 
-        if not const.PRACTICEMODE:
+        if not PRACTICEMODE:
             # are there any BDAQ orders pending?
             if odict[const.BDAQID]:
                 # place the orders
@@ -96,6 +110,7 @@ class BetMain(object):
         self.clock.tick()
         while True:                    
             if const.DEBUG:
+                print time.asctime()
                 print '-'*32
             
             # update the strategies: refresh prices of any selections
@@ -108,10 +123,11 @@ class BetMain(object):
             
             self.clock.tick()
 
-            # call BF and BDAQ API functions to get prices and update order information
+            # call BF and BDAQ API functions to get prices and update
+            # order information
             self.update_market_prices()
             self.update_order_information()
         
-#if __name__=='__main__':
-bm = BetMain(20)
-bm.main_loop()
+if __name__=='__main__':
+    bm = BetMain(20)
+    bm.main_loop()

@@ -47,6 +47,4 @@ BFID = 2
 # don't change this number.
 NUMPRICES = 5
 
-# practice mode, don't actually place any bets
-PRACTICEMODE = False
 

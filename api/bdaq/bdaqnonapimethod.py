@@ -7,6 +7,7 @@
 
 from betman import const, util
 import bdaqnonapiparse
+import datetime
 
 class nonAPIGetPrices(object):
     def __init__(self, urlclient, dbman):
@@ -27,7 +28,7 @@ class nonAPIGetPrices(object):
         for ids in util.chunks(mids, MAXMIDS):
             # for australian markets, need to write 2. rather than 1.  And
             # need different BASEURL (see top)
-            midstring= '&mid=' + '&mid='.join(['{0}'.format(m) for m in mids])
+            midstring= '&mid=' + '&mid='.join(['{0}'.format(m) for m in ids])
             url = self.client.pricesurl + midstring + '&ccyCode=GBP'
             if const.DEBUG:
                 print 'BDAQ Selection URL: {0}'.format(url)
@@ -35,11 +36,9 @@ class nonAPIGetPrices(object):
             # make the HTTP request
             response = self.client.call(url)
 
-            if const.DEBUG:
-                return bdaqnonapiparse.ParsenonAPIGetPrices(response.read(), ids)
-
             # selections for all the market ids
-            selections = bdaqnonapiparse.ParsenonAPIGetPrices(response.read(), ids)
+            selections = bdaqnonapiparse.ParsenonAPIGetPrices(response.read(),
+                                                              ids)
             allselections = allselections + selections
         if const.WRITEDB:
             # collapse list of lists to a flat list

@@ -7,7 +7,7 @@
 
 import strategy
 from betman import const, database
-from betman.all import order
+from betman.all import order, exchangedata
 from betman.api.bdaq import bdaqapi
 
 # commission on winnings taken from both exchanges. The strategies can
@@ -217,8 +217,10 @@ class CXStrategy(strategy.Strategy):
         if bprice > lprice / ((1.0 - _COMMISSION[const.BDAQID])*\
                               (1.0 - _COMMISSION[const.BFID])):
             # only interested in opportunities for which lay odds are
-            # less than 20 for now.
-            if lprice < 20:
+            # less than 20 for now and for which lay price is greater
+            # than the min odds (i.e. order book is non-empty on this
+            # side).
+            if lprice < 20 and lprice > exchangedata.MINODDSPLUS1:
                 return True
         return False
 
