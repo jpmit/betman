@@ -63,22 +63,21 @@ class nonAPIgetSelections(object):
         # code if we ask for too much data, so try limiting to 50
         # market ids
         MAXMIDS = 50
-        # HTTP headers
-        headers = { 'User-Agent' : const.USERAGENT }        
         allselections = []
         for ids in util.chunks(mids, MAXMIDS):
             # for australian markets, need to write 2. rather than 1.  And
             # need different BASEURL (see top)
-            midstring= '%2C'.join(['1.%d' %m for m in ids])
-            url = BASEURL + ('&types=RUNNER_DESCRIPTION%2CRUNNER_EXCHANGE'
-                             '_PRICES_BEST'
-                             '&marketIds={0}'.format(midstring))
-            # really all this should be set by urlclient pass to constructor
+            midstring= '%2C'.join(['{0}.{1}'.format(self.client.mprefix,
+                                                    m) for m in ids])
+            url = self.client.pricesurl + ('&types=RUNNER_DESCRIPTION%2CRUNNER_EXCHANGE'
+                                           '_PRICES_BEST'
+                                           '&marketIds={0}'.format(midstring))
             if const.DEBUG:
                 print 'BF Selection URL: {0}'.format(url)
 
-            req = urllib2.Request(url, headers=headers)
-            response = urllib2.urlopen(req)
+            # make the HTTP request
+            response = self.client.call(url)
+
             # selections for all the market ids
             selections = bfnonapiparse.ParseJsonSelections(response.read(), ids)
             allselections = allselections + selections

@@ -1,3 +1,9 @@
+# bdaqapiparse.py
+# James Mithen
+# jamesmithen@gmail.com
+#
+# Functions for parsing output of BDAQ API calls.
+
 from betman import const, util, Market, Selection, Event, order
 from betman.all import const
 from betman.all.betexception import APIError

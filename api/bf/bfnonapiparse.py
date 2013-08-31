@@ -71,8 +71,3 @@ def ParseJsonSelections(jstr, ids):
     # order decided by BF, i.e. ordered by eventtype.
     allselections = [selections[mid] for mid in ids]
     return allselections
-
-
-                    
-    
-    

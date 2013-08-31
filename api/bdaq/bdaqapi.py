@@ -5,6 +5,7 @@
 # The BetDaq API functions.
 
 import bdaqapimethod
+import bdaqnonapimethod
 from betman import database
 from betman.api import apiclient
 
@@ -19,8 +20,9 @@ PRICETHROTTLE = 10
 # services are for 'readonly' methods and 'secure' methods. Secure
 # methods use an https:// url and send the 
 # read-only
-rcl = apiclient.BDAQClient('readonly')
-scl = apiclient.BDAQClient('secure')
+rcl = apiclient.BDAQAPIClient('readonly')
+scl = apiclient.BDAQAPIClient('secure')
+ncl = apiclient.BDAQnonAPIClient()
 
 # database interface
 dbman = database.DBMaster()
@@ -32,6 +34,7 @@ GetMarkets = bdaqapimethod.APIGetEventSubTreeNoSelections(rcl, dbman).call
 # selections and pricers for markets
 # TODO: GetSelections does not seem to work when called for a single mid
 GetSelections = bdaqapimethod.APIGetPrices(rcl, dbman, PRICETHROTTLE).call
+GetSelectionsnonAPI = bdaqnonapimethod.nonAPIGetPrices(ncl, dbman).call
 
 GetMarketInformation = bdaqapimethod.APIGetMarketInformation(rcl, dbman).call
 

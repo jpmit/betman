@@ -36,6 +36,6 @@ bfmatches = [m[1] for m in matchmarks]
 # get selections for the markets that match.  Note f2or both apis (BF
 # and BDAQ), we will get selections back in order called.
 bfselections = bfapi.GetSelections([m.id for m in bfmatches])
-bdaqselections = bdaqapi.GetSelections([m.id for m in bdaqmatches])
+bdaqselections = bdaqapi.GetSelectionsnonAPI([m.id for m in bdaqmatches])
 # get matching selections for each selection in matching markets
 matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)

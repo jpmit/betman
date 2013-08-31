@@ -22,9 +22,10 @@ import bfnonapimethod
 # * one for the UK exchange, and
 # * one for the Australian exchange
 # each gets a different handling client here.
-clglob = apiclient.BFClient('global')
-cluk = apiclient.BFClient('uk')
-claus = apiclient.BFClient('aus')
+clglob = apiclient.BFAPIClient('global')
+cluk = apiclient.BFAPIClient('uk')
+claus = apiclient.BFAPIClient('aus')
+cluknonapi = apiclient.BFnonAPIClient('uk')
 
 # database interface (this will create DB if necessary)
 dbman = database.DBMaster()
@@ -45,8 +46,9 @@ GetActiveEvents = bfapimethod.APIgetActiveEventTypes(clglob).call
 GetUKMarkets = bfapimethod.APIgetAllMarkets(cluk, dbman).call
 GetAUSMarkets = bfapimethod.APIgetAllMarkets(claus, dbman).call
     
-# selections and prices for markets
-GetSelections = bfnonapimethod.nonAPIgetSelections(cluk, dbman).call
+# selections and prices for markets - not using the API
+GetSelections = bfnonapimethod.nonAPIgetSelections(cluknonapi,
+                                                   dbman).call
 
 #GetSelections = bfapimethod.APIgetMarket(cluk, dbman).call
 #GetPricesCompressed = bfapimethod.APIgetMarketPricesCompressed(cluk, dbman).call
