@@ -55,6 +55,8 @@ def ParsenonAPIGetPrices(resp, mids):
         print ('got selections for '
                '{0} of {1} markets'.format(len(selections.keys()),
                                            len(mids)))
+        # note, if we didn't get all markets, probably some have been
+        # cancelled/finished etc.
             
     # return selections ordered by list ids (passed as an argument).
     # this is so that when we call this function, we know what we are
