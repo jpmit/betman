@@ -1,6 +1,7 @@
 import datetime
 import time
 from betman import const, util, Event
+from betman.all import betlog
 import bdaqapiparse
 
 ######################################################################
@@ -20,6 +21,7 @@ class APIListTopLevelEvents(object):
         self.req._WantPlayMarkets = False
         
     def call(self):
+        betlog.betlog.info('BDAQ API ListTopLevelEvents')
         response = self.client.service.ListTopLevelEvents(self.req)
         events = bdaqapiparse.ParseEvents(response)
         # note that there is no database table for events at the
@@ -41,6 +43,7 @@ class APIGetEventSubTreeNoSelections(object):
     def call(self, ids, direct=False):
         self.req.EventClassifierIds = ids
         self.req._WantDirectDescendentsOnly = direct
+        betlog.betlog.info('BDAQ API GetEventSubTreeNoSelections')        
         response = self.client.service.GetEventSubTreeNoSelections(self.req)
         allmarkets =  bdaqapiparse.ParseEventSubTree(response)
         # TODO:

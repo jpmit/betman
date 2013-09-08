@@ -35,6 +35,9 @@ BFPASS = 'Bamb0[]zle'
 # path to database
 MASTERDB = '/home/jm0037/python/bdaq/code/betman/database/masterdb.db'
 
+# path to log files
+LOGDIR = '/home/jm0037/python/bdaq/code/betman/logs/'
+
 # write to database after results of every API call?
 WRITEDB = True
 
@@ -46,5 +49,3 @@ BFID = 2
 # note this is hard-coded into the database schema so
 # don't change this number.
 NUMPRICES = 5
-
-

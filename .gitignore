@@ -1,0 +1,9 @@
+*~
+*.pyc
+other/
+logs/
+# sqlite database
+*.db
+# emacs creates these filenames with '#' in them
+\#*
+.\#*

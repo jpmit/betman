@@ -105,7 +105,7 @@ class BetMain(object):
         self.update_market_prices()
 
     def main_loop(self):
-        #for i in range(3):
+
         # first tick initializes clock
         self.clock.tick()
         while True:                    
