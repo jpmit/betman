@@ -9,16 +9,19 @@ import betman
 from betman import const
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
+from betman.all import betlog
 
 # in practicemode, we won't place any bets
 PRACTICEMODE = False
 
-# can choose whether or not to use BDAQ API for prices
+# can choose whether or not to use BDAQ API for prices (we don't use
+# the BF API automatically).
 USEBDAQAPI = False
 
 class BetMain(object):
     def __init__(self, deltat):
         """deltat is time between price refreshes in seconds."""
+        
         self.load_strategies()
         # market ids for all strategies (for updating prices)
         self.marketids = self.stratgroup.get_marketids()
@@ -37,8 +40,8 @@ class BetMain(object):
 
         # add strategies here
         msels = betman.database.DBMaster().ReturnSelectionMatches()
-        if const.DEBUG:
-            print "Found {0} strategies".format(len(msels))
+
+        betlog.betlog.debug("Found {0} strategies".format(len(msels)))
         # alter the prices so that we get instant opp!!
         msels[0][0].backprices[0] = (1.50, 10)
         msels[0][1].layprices[0] = (1.01, 10)        
@@ -51,7 +54,8 @@ class BetMain(object):
         if USEBDAQAPI:
             bdaqapi.GetSelections(self.marketids[const.BDAQID])
         else:
-            bdaqapi.GetSelectionsnonAPI(self.marketids[const.BDAQID])            
+            bdaqapi.GetSelectionsnonAPI(self.marketids[const.BDAQID])
+
             
         bfapi.GetSelections(self.marketids[const.BFID])
 
@@ -74,7 +78,7 @@ class BetMain(object):
         # get dictionary of outstanding orders for all strategies.
         # Keys are const.BDAQID and const.BFID
         odict = self.stratgroup.get_orders_to_place()
-        print odict
+        betlog.betlog.debug('making orders: {0}'.format(odict))
 
         if not PRACTICEMODE:
             # are there any BDAQ orders pending?
@@ -108,10 +112,10 @@ class BetMain(object):
 
         # first tick initializes clock
         self.clock.tick()
-        while True:                    
-            if const.DEBUG:
-                print time.asctime()
-                print '-'*32
+        while True:
+            # print intro stuff
+            print time.asctime()
+            print '-'*32
             
             # update the strategies: refresh prices of any selections
             # from DB - these will have come from

@@ -51,8 +51,7 @@ def ParseListBootstrapOrders(resp):
 
 def ParsePlaceOrdersNoReceipt(resp, olist):
     """Parse a single order, return order object"""
-    if const.DEBUG:
-        print resp
+    
     retcode = resp.ReturnStatus._Code
     tstamp = resp.Timestamp
 
@@ -296,4 +295,3 @@ def ParseListOrdersChangedSince(resp):
         seqnums.append(o._SequenceNumber)
 
     return allorders, max(seqnums)
-

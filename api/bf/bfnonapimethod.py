@@ -10,6 +10,7 @@ import bfapiparse
 import bfnonapiparse
 import urllib2
 import datetime
+from betman.all import betlog
 
 # for australia markets, replace uk with aus
 BASEURL = ('http://uk-api.betfair.com/www/sports/exchange/readonly/'
@@ -72,10 +73,11 @@ class nonAPIgetSelections(object):
             url = self.client.pricesurl + ('&types=RUNNER_DESCRIPTION%2CRUNNER_EXCHANGE'
                                            '_PRICES_BEST'
                                            '&marketIds={0}'.format(midstring))
-            if const.DEBUG:
-                print 'BF Selection URL: {0}'.format(url)
+
+            betlog.betlog.debug('BF Selection URL: {0}'.format(url))
 
             # make the HTTP request
+            betlog.betlog.info('calling BF nonAPI getSelections')            
             response = self.client.call(url)
 
             # selections for all the market ids

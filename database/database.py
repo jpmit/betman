@@ -205,28 +205,38 @@ class DBMaster(object):
                 'lay_2, lvol_2, lay_3, lvol_3, lay_4, lvol_4, '
                 'lay_5, lvol_5, last_checked) values '
                 '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,'
-                ' ?, ?, ?, ?, ?, ?, ?)'.format(schema.SELECTIONS))
-        qupd = ('UPDATE selections SET b_1=?, bvol_1=?, b_2=?, bvol_2=?, '
+                ' ?, ?, ?, ?, ?, ?, ?)')
+        qupd = ('UPDATE {0} SET b_1=?, bvol_1=?, b_2=?, bvol_2=?, '
                 'b_3=?, bvol_3=?, b_4=?, bvol_4=?, b_5=?, bvol_5=?, '
                 'lay_1=?, lvol_1=?, lay_2=?, lvol_2=?, lay_3=?, lvol_3=?, '
                 'lay_4=?, lvol_4=?, lay_5=?, lvol_5=?, last_checked=? '
-                'WHERE exchange_id=? and market_id=? and selection_id=?')
-        
-        for s in selections:
-            data = (s.exid, s.mid, s.id, s.name, s.padback[0][0],
-                    s.padback[0][1],
-                    s.padback[1][0], s.padback[1][1], s.padback[2][0],
-                    s.padback[2][1], s.padback[3][0], s.padback[3][1],
-                    s.padback[4][0], s.padback[4][1], s.padlay[0][0],
-                    s.padlay[0][1], s.padlay[1][0], s.padlay[1][1],
-                    s.padlay[2][0], s.padlay[2][1], s.padlay[3][0],
-                    s.padlay[3][1], s.padlay[4][0], s.padlay[4][1], tstamp)
+                'WHERE exchange_id=? and market_id=? and selection_id=?'\
+                .format(schema.SELECTIONS))
+
+        # all the data to insert
+        alldata = [(s.exid, s.mid, s.id, s.name, s.padback[0][0],
+                   s.padback[0][1],
+                   s.padback[1][0], s.padback[1][1], s.padback[2][0],
+                   s.padback[2][1], s.padback[3][0], s.padback[3][1],
+                   s.padback[4][0], s.padback[4][1], s.padlay[0][0],
+                   s.padlay[0][1], s.padlay[1][0], s.padlay[1][1],
+                   s.padlay[2][0], s.padlay[2][1], s.padlay[3][0],
+                   s.padlay[3][1], s.padlay[4][0], s.padlay[4][1], tstamp)
+                   for s in selections]
+
+        # write to the current selections table; we have to do this
+        # one entry at a time
+        for d in alldata:
             try:
-                self.cursor.execute(qins, data)
+                self.cursor.execute(qins.format(schema.SELECTIONS), d)
             except sqlite3.IntegrityError:
                 # already have (exchange_id, market_id, selection_id)
                 # update prices
-                self.cursor.execute(qupd, data[4:] + (s.exid, s.mid, s.id))
+                self.cursor.execute(qupd, d[4:] + d[:3])
+
+        # write to the historical prices table
+        self.cursor.executemany(qins.format(schema.HISTPRICES), alldata)
+            
         self.conn.commit()
 
     def WriteAccountBalance(self, exid, accinfo, tstamp):
@@ -458,6 +468,9 @@ class DBMaster(object):
 
         # accountinfo stores balance, available funds etc
         self.cursor.execute(schema.getschema(schema.ACCOUNTINFO))
+
+        # hist prices stores historical price information
+        self.cursor.execute(schema.getschema(schema.HISTPRICES))
 
         self.conn.commit()
         return

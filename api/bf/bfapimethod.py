@@ -1,5 +1,6 @@
 import bfapiparse
-from betman import const, Event 
+from betman import const, Event
+from betman.all import betlog
 
 def BFLogin(clglob):
     """Login to BF and return RequestHeader that contains session id
@@ -13,6 +14,7 @@ def BFLogin(clglob):
     req.vendorSoftwareId = 0
 
     # call the login service
+    betlog.betlog.info('calling BF API Login')
     res = clglob.client.service.login(req)
 
     # we need the session token from the response
@@ -39,6 +41,7 @@ class APIgetActiveEventTypes(object):
         
     def call(self):
         self.addheader()
+        betlog.betlog.info('calling BF API getActiveEventTypes')        
         response = self.client.service.getActiveEventTypes(self.req)
         events = bfapiparse.ParseEvents(response)
         # note that we don't have any database tables for events at
@@ -65,6 +68,7 @@ class APIgetAllMarkets(object):
         aofint = self.client.factory.create('ns1:ArrayOfInt')
         aofint.int = ids
         self.req.eventTypeIds = aofint
+        betlog.betlog.info('calling BF API getAllMarkets')         
         response = self.client.service.getAllMarkets(self.req)
         allmarkets = bfapiparse.ParseMarkets(response)
         
@@ -119,10 +123,8 @@ class APIplaceBets(object):
     def call(self, orderlist):
         self.addheader()
         self.req.bets.PlaceBets = self.makebetlist(orderlist)
-
+        betlog.betlog.info('calling BF API placeBets')
         response = self.client.service.placeBets(self.req)
-        if const.DEBUG:
-            print response
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
         
         if const.WRITEDB:
@@ -154,7 +156,7 @@ class APIcancelBets(object):
     def call(self, betids):
         self.addheader()
         self.req.bets.CancelBets = self.getcbets(betids)
-        print self.req
+        betlog.betlog.info('calling BF API cancelBets')        
         response = self.client.service.cancelBets(self.req)
         
         if const.WRITEDB:
@@ -210,8 +212,7 @@ class APIgetMUBets(object):
         self.fillreq(betids, marketid)
 
         response = self.client.service.getMUBets(self.req)
-        if const.DEBUG:
-            print response
+        betlog.betlog.info('calling BF API getMUBets')            
         allorders = bfapiparse.ParsegetMUBets(response, orders)
         if const.WRITEDB:
             self.dbman.WriteOrders(allorders, response.header.timestamp)

@@ -9,6 +9,7 @@ import strategy
 from betman import const, database
 from betman.all import order, exchangedata
 from betman.api.bdaq import bdaqapi
+from betman.all import betlog
 
 # commission on winnings taken from both exchanges. The strategies can
 # easily be generalised to the case when the commissions for BDAQ and
@@ -159,26 +160,27 @@ class CXStrategy(strategy.Strategy):
 
         backstake = max(_MINBETS[bexid], _MINBETS[lexid]/lbratio)
         laystake = lbratio*backstake
-        print backstake, laystake
+        betlog.betlog.debug('Backstake: ${0} Laystake: ${1}'\
+                            .format(backstake, laystake))
         # watch out for rounding errors, we may want to be a bit
         # careful here.
-        return round(backstake,2), round(laystake,2)
+        return round(backstake, 2), round(laystake, 2)
 
     def make_back_order(self):
         """Place the back order"""
         if self.border.exid == const.BDAQID:
-            # call bdaq api method
-            print "placing BDAQ back: {0} @ {1} for ${2}".format(self.sback.name,
-                                                                 self.oback,
-                                                                 self.border.stake)
+            # print diagnostic info
+            betlog.betlog.debug("placing BDAQ back: {0} @ {1} for ${2}"\
+                                .format(self.sback.name, self.oback,
+                                        self.border.stake))
             # this just puts it in the list to be placed.  The
             # actually placement is done by the main program.
             self.toplace[const.BDAQID] = [self.border]
         else:
-            # call BF api method
-            print "placing BF back: {0} @ {1} for ${2}".format(self.sback.name,
-                                                               self.oback,
-                                                               self.border.stake)
+            # print diagnostic info            
+            betlog.betlog.debug("placing BF back: {0} @ {1} for ${2}"\
+                                .format(self.sback.name, self.oback,
+                                        self.border.stake))
             # this just puts it in the list to be placed.            
             self.toplace[const.BFID] = [self.border]
 
@@ -186,16 +188,14 @@ class CXStrategy(strategy.Strategy):
     def make_lay_order(self):
         """Place the lay order"""
         if self.lorder.exid == const.BDAQID:
-            # call bdaq api method
-            # dummy for now
-            print "placing BDAQ lay: {0} @ {1} for ${2}".format(self.slay.name,
-                                                                self.olay,
-                                                                self.lorder.stake)
+            betlog.betlog.debug("placing BDAQ lay: {0} @ {1} for ${2}"\
+                                 .format(self.slay.name, self.olay,
+                                         self.lorder.stake))
             self.toplace[const.BDAQID] = [self.lorder]
         else:
-            print "placing BF lay: {0} @ {1} for ${2}".format(self.slay.name,
-                                                              self.olay,
-                                                              self.lorder.stake)
+            betlog.betlog.debug("placing BF lay: {0} @ {1} for ${2}"\
+                                .format(self.slay.name, self.olay,
+                                        self.lorder.stake))
             self.toplace[const.BFID] = [self.lorder]
             # call BF api method
             pass
@@ -220,8 +220,7 @@ class CXStrategy(strategy.Strategy):
             # less than 20 for now and for which lay price is greater
             # than the min odds (i.e. order book is non-empty on this
             # side).
-            if lprice < 20 and lprice > exchangedata.MINODDSPLUS1:
-                return True
+            return True
         return False
 
     def update(self):
@@ -261,6 +260,40 @@ class CXStrategy(strategy.Strategy):
         
         # AI
         self.brain.update()
+
+        # if we added any orders to self.toplace, pass them through filter
+        self.filter_bets()
+
+    def filter_bets(self):
+        # if we are in 'bothplaced' state, the opportunity was instant
+        # so we don't want to filter any bets.
+        if self.brain.active_state.name == 'bothplaced':
+            return
+
+        # go through each exchange number in turn
+        for ekey in self.toplace:
+            for o in  self.toplace[ekey]:
+                # we only need to alter some lay orders
+                if o.polarity == order.LAY:
+                    # if we are laying at 1.01, lay the minimum bet
+                    if o.price <= exchangedata.MINODDSPLUS1:
+                        #nstake = _MINBETS[ekey]
+                        #betlog.betlog.debug(('Filter: changing stake from {0} '
+                        #                     'to {1}'.format(o.stake,
+                        #                                     nstake)))
+                        #o.stake = nstake
+                        # delete bets from dictionary
+                        betlog.betlog.debug(('Filter: deleting bets since layprice '
+                                             '{0}'.format(o.price)))
+                        self.toplace = {}
+                        return
+
+                    if o.price > 20:
+                        # delete bets from dictionary
+                        betlog.betlog.debug(('Filter: deleting bets since layprice '
+                                             '{0}'.format(o.price)))
+                        self.toplace = {}
+                        return
 
 class MMStrategy(strategy.Strategy):
     """Market making strategy"""

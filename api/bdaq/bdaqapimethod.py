@@ -21,7 +21,7 @@ class APIListTopLevelEvents(object):
         self.req._WantPlayMarkets = False
         
     def call(self):
-        betlog.betlog.info('BDAQ API ListTopLevelEvents')
+        betlog.betlog.info('calling BDAQ API ListTopLevelEvents')
         response = self.client.service.ListTopLevelEvents(self.req)
         events = bdaqapiparse.ParseEvents(response)
         # note that there is no database table for events at the
@@ -43,7 +43,7 @@ class APIGetEventSubTreeNoSelections(object):
     def call(self, ids, direct=False):
         self.req.EventClassifierIds = ids
         self.req._WantDirectDescendentsOnly = direct
-        betlog.betlog.info('BDAQ API GetEventSubTreeNoSelections')        
+        betlog.betlog.info('calling BDAQ API GetEventSubTreeNoSelections')        
         response = self.client.service.GetEventSubTreeNoSelections(self.req)
         allmarkets =  bdaqapiparse.ParseEventSubTree(response)
         # TODO:
@@ -145,12 +145,10 @@ class APIGetPrices(object):
             if callnum > 0:
                 # sleep for some time before calling API again
                 time.sleep(self.throttl)
-            if const.DEBUG:
-                print 'calling GetPrices'                
+            betlog.betlog.info('calling BDAQ API GetPrices')        
             result = self.client.service.GetPrices(self.req)
             selections =  bdaqapiparse.ParsePrices(ids, result)
             allselections = allselections + selections
-
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]
@@ -175,7 +173,6 @@ class APIGetCurrentSelectionSequenceNumber(object):
         result = self.client.service.GetCurrentSelectionSequenceNumber()
         return result
 
-
 ######################################################################
 # classes that implement the secure methods, in the order that they  # 
 # appear NewExternalAPIspec.doc                                      #
@@ -190,6 +187,7 @@ class APIGetAccountBalances(object):
         pass
 
     def call(self):
+        betlog.betlog.info('calling BDAQ API GetAccountBalances')        
         result = self.client.service.GetAccountBalances()
         # accountinfo returns a tuple (_AvailableFunds, _Balance,
         #                              _Credit, _Exposure)
@@ -253,14 +251,12 @@ class APIListOrdersChangedSince(object):
             self.req.SequenceNumber = seqnum
         else:
             self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
-        if const.DEBUG:
-            print 'Calling ListOrders with sequence number: {0}'\
-                  .format(self.req.SequenceNumber)
+
+        betlog.betlog.debug('Calling ListOrders with sequence number: {0}'\
+                            .format(self.req.SequenceNumber))
         
         resp = self.client.service.ListOrdersChangedSince(self.req)
-
-        if const.DEBUG:
-            print resp
+        betlog.betlog.info('calling BDAQ API ListOrdersChangedSince')        
 
         data = bdaqapiparse.ParseListOrdersChangedSince(resp)
         if not data:
@@ -272,9 +268,9 @@ class APIListOrdersChangedSince(object):
         orders, snum = data
         # set order sequence number to the maximum one returned by API
         ORDER_SEQUENCE_NUMBER = snum        
-        if const.DEBUG:
-            print 'Setting sequence number to: {0}'\
-                  .format(snum)
+
+        betlog.betlog.debug('Setting sequence number to: {0}'\
+                            .format(snum))
 
         # update changed orders
         if const.WRITEDB:
@@ -302,6 +298,7 @@ class APIListBootstrapOrders(object):
         # the bootstrap which is next class
         global ORDER_SEQUENCE_NUMBER
         self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
+        betlog.betlog.info('calling BDAQ API ListBootstrapOrders')        
         result = self.client.service.ListBootstrapOrders(self.req)
         # assign sequence number we get back to ORDER_SEQUENCE_NUMBER
         ORDER_SEQUENCE_NUMBER = result._MaximumSequenceNumber
@@ -358,10 +355,15 @@ class APIPlaceOrdersNoReceipt(object):
 
     def call(self, orderlist):
         assert isinstance(orderlist, list)
-        # make BDAQ representation of orders from orderlist past
-        self.req.Orders.Order = self.makeorderlist(orderlist)
-        result = self.client.service.PlaceOrdersNoReceipt(self.req)
-        allorders = bdaqapiparse.ParsePlaceOrdersNoReceipt(result, orderlist)
+        allorders = []
+        MAXORDERS = 50
+        for ol in util.chunks(orderlist, MAXORDERS):        
+            # make BDAQ representation of orders from orderlist past
+            self.req.Orders.Order = self.makeorderlist(ol)
+            betlog.betlog.info('calling BDAQ API PlaceOrdersNoReceipt')
+            result = self.client.service.PlaceOrdersNoReceipt(self.req)
+            ords = bdaqapiparse.ParsePlaceOrdersNoReceipt(result, orderlist)
+            allorders = allorders + ords
         if const.WRITEDB:
             self.dbman.WriteOrders(allorders, result.Timestamp)
         return allorders
@@ -395,6 +397,7 @@ class APIPlaceOrdersWithReceipt(object):
         # see 'ordertest.py' for what the dict should contain
         self.makeorder(order)
         self.req.Orders.Order = [self.order]
+        betlog.betlog.info('calling BDAQ API PlaceOrdersWithReceipt')        
         result = self.client.service.PlaceOrdersWithReceipt(self.req)
         return result
 
@@ -411,6 +414,7 @@ class APIListBlacklistInformation(object):
         self.client = apiclient.client
 
     def call(self):
+        betlog.betlog.info('calling BDAQ API ListBlacklistInformation')
         result = self.client.service.ListBlacklistInformation()
         return result
 

@@ -16,6 +16,7 @@ SELECTIONS = 'selections'
 ORDERS = 'orders'
 MATCHORDERS = 'matchorders'
 ACCOUNTINFO = 'accountinfo'
+HISTPRICES = 'histprices'
 
 # keys are table name, value is schema
 _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
@@ -90,7 +91,33 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                             ' balance     real NOT NULL,'
                             ' credit      real NOT NULL,'
                             ' exposure    real NOT NULL,'
-                            ' tstamp      text NOT NULL)')
+                            ' tstamp      text NOT NULL)'),
+              # HISTPRICES has the same schema as SELECTIONS
+              HISTPRICES: ('(exchange_id  int  NOT NULL,'
+                           ' market_id    long NOT NULL,'
+                           ' selection_id long NOT NULL,'
+                           ' name         text NOT NULL,'
+                           ' b_1          real,'
+                           ' bvol_1       real,'
+                           ' b_2          real,'
+                           ' bvol_2       real,'
+                           ' b_3          real,'
+                           ' bvol_3       real,'
+                           ' b_4          real,'
+                           ' bvol_4       real,'
+                           ' b_5          real,'
+                           ' bvol_5       real,'
+                           ' lay_1        real,'
+                           ' lvol_1       real,'
+                           ' lay_2        real,'
+                           ' lvol_2       real,'
+                           ' lay_3        real,'
+                           ' lvol_3       real,'
+                           ' lay_4        real,'
+                           ' lvol_4       real,'
+                           ' lay_5        real,'
+                           ' lvol_5       real,'
+                           ' last_checked text)'),              
               }
 
 def getschema(tname):

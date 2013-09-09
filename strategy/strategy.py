@@ -5,6 +5,7 @@
 # base classes for Strategy, StrategyGroup, StateMachine etc.
 
 from betman import const
+from betman.all import betlog
 
 class Strategy(object):
     """Base class - a strategy should inherit from this."""
@@ -119,10 +120,10 @@ class StateMachine(object):
         if self.active_state is not None:
             self.active_state.exit_actions()
 
-        if const.DEBUG:
-            cname = (self.active_state.name if
-                     self.active_state is not None else 'None')
-        print "changing state from '{0}' to '{1}'".\
-              format(cname, new_state_name)
+
+        cname = (self.active_state.name if
+                 self.active_state is not None else 'None')
+        betlog.betlog.debug("changing state from '{0}' to '{1}'".\
+                            format(cname, new_state_name))
         self.active_state = self.states[new_state_name]
         self.active_state.entry_actions()
