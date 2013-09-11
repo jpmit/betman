@@ -7,3 +7,4 @@ logs/
 # emacs creates these filenames with '#' in them
 \#*
 .\#*
+database/stratgroup.pkl

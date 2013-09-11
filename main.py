@@ -11,7 +11,7 @@ import betman.matchmarkets.marketmatcher as marketmatcher
 from betman import database
 
 dbman = database.DBMaster()
-dbman.cleanse()
+#dbman.cleanse()
 
 # names for bf and bdaq need to map
 bdaqelist = ['Rugby Union','Soccer']#, 'Formula 1']#,'Baseball', 'Boxing', 'Cricket', 'Cycling']
@@ -35,7 +35,7 @@ bfmatches = [m[1] for m in matchmarks]
 
 # get selections for the markets that match.  Note f2or both apis (BF
 # and BDAQ), we will get selections back in order called.
-bfselections = bfapi.GetSelections([m.id for m in bfmatches])
-bdaqselections = bdaqapi.GetSelectionsnonAPI([m.id for m in bdaqmatches])
+bfselections, emids = bfapi.GetSelections([m.id for m in bfmatches])
+bdaqselections, emids = bdaqapi.GetSelectionsnonAPI([m.id for m in bdaqmatches])
 # get matching selections for each selection in matching markets
 matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)

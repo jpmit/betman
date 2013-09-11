@@ -6,7 +6,7 @@
 
 import json
 import re
-from betman import const, Selection
+from betman import const, Selection, betlog
 
 def ParsenonAPIGetPrices(resp, mids):
     """Return Selections for json string resp"""
@@ -50,20 +50,36 @@ def ParsenonAPIGetPrices(resp, mids):
                                                  None,
                                                  None,
                                                  bprices, lprices))
-    if const.DEBUG:
-        # check how many markets we got selections for
-        print ('got selections for '
-               '{0} of {1} markets'.format(len(selections.keys()),
-                                           len(mids)))
-        # note, if we didn't get all markets, probably some have been
-        # cancelled/finished etc.
+
+    # check how many markets we got selections for.
+    # note, if we didn't get all markets, probably some have been
+    # cancelled/finished etc.
+    betlog.betlog.debug('BDAQ got selections for {0} of {1} markets'\
+                        .format(len(selections), len(mids)))
             
     # return selections ordered by list ids (passed as an argument).
     # this is so that when we call this function, we know what we are
     # getting back.  If we don't do this, we will get selections in an
     # order decided by BDAQ, i.e. ordered by eventtype.
-    allselections = [selections[mid] for mid in mids]            
-    return allselections
+    allselections = []
+    errormids = []
+    for mid in mids:
+        if mid in selections:
+            allselections.append(selections[mid])
+        else:
+            # we didn't manage to get any selections for this market,
+            # presumably it is no longer available...
+            allselections.append([])
+            errormids.append(mid)
+
+    if errormids:
+        betlog.betlog.debug('BDAQ no selections for markets: {0}'\
+                            .format(' '.join([str(m) for m in errormids])))
+
+    # return selections and error mids, note len(selections) is
+    # len(mids), but there will be empty lists for the error market
+    # ids.
+    return allselections, errormids
     
 def correct_json(jstr):
     """

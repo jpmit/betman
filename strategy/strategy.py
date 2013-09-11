@@ -4,8 +4,7 @@
 
 # base classes for Strategy, StrategyGroup, StateMachine etc.
 
-from betman import const
-from betman.all import betlog
+from betman import const, betlog
 
 class Strategy(object):
     """Base class - a strategy should inherit from this."""
@@ -30,6 +29,12 @@ class StrategyGroup(object):
     """Stores a group (i.e. one or more) of strategies."""
     def __init__(self):
         self.strategies = []
+
+    def __len__(self):
+        return len(self.strategies)
+
+    def __getitem__(self, index):
+        return self.strategies[index]
 
     def add(self, strategy):
         self.strategies.append(strategy)
@@ -80,6 +85,24 @@ class StrategyGroup(object):
             mids[k] = list(set(mids[k]))
         return mids
 
+    def remove_marketids(self, exid, mids):
+        """Remove any strategies from the group that depend on any of
+        the market ids (on exchange exid) in list mids."""
+        if (exid == const.BDAQID):
+            s = 'BDAQ'
+        else:
+            s = 'BF'
+        # note list(self.strategies) gives a copy of the list
+        for strat in list(self.strategies):
+            # get mid dictionary for strat
+            mdict = strat.get_marketids()
+            for mid in mdict.get(exid, []):
+                if mid in mids:
+                    betlog.betlog.debug('Removing strategy due to {0} mid: {1}'.\
+                                        format(s, str(strat)))
+                    # remove strategy
+                    self.strategies.remove(strat)
+
 class State(object):
     """Base class - a state should inherit from this."""
     def __init__(self, name):
@@ -123,7 +146,7 @@ class StateMachine(object):
 
         cname = (self.active_state.name if
                  self.active_state is not None else 'None')
-        betlog.betlog.debug("changing state from '{0}' to '{1}'".\
-                            format(cname, new_state_name))
+        #betlog.betlog.debug("changing state from '{0}' to '{1}'".\
+        #                    format(cname, new_state_name))
         self.active_state = self.states[new_state_name]
         self.active_state.entry_actions()

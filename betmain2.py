@@ -10,6 +10,7 @@ from betman import const
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from betman.all import betlog
+import betutil
 
 # in practicemode, we won't place any bets
 PRACTICEMODE = False
@@ -23,9 +24,11 @@ class BetMain(object):
         """deltat is time between price refreshes in seconds."""
         
         self.load_strategies()
+        
         # market ids for all strategies (for updating prices)
         self.marketids = self.stratgroup.get_marketids()
         self.clock = betman.all.clock.Clock(deltat)
+        
         # here we store a list of orders for both exchanges.  Only the
         # orders that are not yet matched are stored.
         self.orderdict = {const.BDAQID: [], const.BFID: []}
@@ -35,29 +38,66 @@ class BetMain(object):
 
     def load_strategies(self):
         """Load strategies."""
-        
-        self.stratgroup = betman.strategy.strategy.StrategyGroup()
 
-        # add strategies here
-        msels = betman.database.DBMaster().ReturnSelectionMatches()
+        # load from pickle file
+        try:
+            sgroup = betutil.unpickle_stratgroup()
+        except IOError:
+            betlog.betlog.warn(('Could not read pickle file: attempting'
+                                ' to read strategies from database'))
+            # save strategies from DB to pickle file
+            betutil.save_strategies()
 
-        betlog.betlog.debug("Found {0} strategies".format(len(msels)))
-        # alter the prices so that we get instant opp!!
-        msels[0][0].backprices[0] = (1.50, 10)
-        msels[0][1].layprices[0] = (1.01, 10)        
-        for m in msels[:100]:
-            self.stratgroup.add(betman.strategy.mystrategy.\
-                                CXStrategy(m[0], m[1]))
+            # load from the pickle file
+            sgroup = betutil.unpickle_stratgroup()
+
+        betlog.betlog.debug("Loaded {0} strategies".format(len(sgroup)))
+        self.stratgroup = sgroup
+
 
     def update_market_prices(self):
         """Get new prices and write to the database."""
+
+        betlog.betlog.debug('Updating prices for {0} strategies'\
+                            .format(len(self.stratgroup)))
+        
+        # market ids for all strategies (for updating prices)
+        self.marketids = self.stratgroup.get_marketids()
+
+        betlog.betlog.debug('BDAQ market ids total: {0}'.\
+                            format(len(self.marketids[const.BDAQID])))
+
+        # update prices from BDAQ API.
         if USEBDAQAPI:
             bdaqapi.GetSelections(self.marketids[const.BDAQID])
         else:
-            bdaqapi.GetSelectionsnonAPI(self.marketids[const.BDAQID])
+            allsels, emids = bdaqapi.\
+                             GetSelectionsnonAPI(self.marketids[const.BDAQID])
 
-            
-        bfapi.GetSelections(self.marketids[const.BFID])
+        # remove any strategies from the strategy list that depend on
+        # any of the BDAQ markets in emids.
+        if emids:
+            self.stratgroup.remove_marketids(const.BDAQID, emids)
+            # refresh market ids before calling BF API.
+            self.marketids = self.stratgroup.get_marketids()
+
+        betlog.betlog.debug('BF market ids total: {0}'.\
+                            format(len(self.marketids[const.BFID])))
+
+        # update prices from BF API. Note at the moment there doesn't
+        # seem to be a problem with requesting data for markets that
+        # have closed, but we may have to change this at a later date.
+        bfsels, bfemids = bfapi.GetSelections(self.marketids[const.BFID])
+
+        # remove any strategies from the strategy list that depend on
+        # any of the BF markets in emids.
+        if bfemids:
+            self.stratgroup.remove_marketids(const.BFID, bfemids)
+
+        # if we deleted any strategies, re-save the pickle so we only
+        # load valid strategies at startup
+        if emids or bfemids:
+            betutil.pickle_stratgroup(self.stratgroup)
 
     def update_order_information(self):
         """Get information on all current orders."""
@@ -66,15 +106,16 @@ class BetMain(object):
         if not PRACTICEMODE:
             # this should automatically keep track of a 'sequence
             # number', so that we are updating information about all
-            # orders
+            # orders.
             bdaqapi.ListOrdersChangedSince()
+            
             # check we actually have some BF orders under
             # consideration.
             if odict[const.BFID]:
                 bfapi.GetBetStatus(odict[const.BFID])
 
     def make_orders(self):
-        """Make outstanding orders for all strategies"""
+        """Make outstanding orders for all strategies."""
         # get dictionary of outstanding orders for all strategies.
         # Keys are const.BDAQID and const.BFID
         odict = self.stratgroup.get_orders_to_place()

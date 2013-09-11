@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as etree
-from betman import const, Selection
+from betman import const, Selection, betlog
 import json
 
 # obsolete - do not use, use ParseJsonSelections instead
@@ -31,8 +31,8 @@ def ParseSelections(mids, xmlstr):
     # mids[0].
     return selections
 
-def ParseJsonSelections(jstr, ids):
-    """Parse json data, return selections SORTED BY LIST ids"""
+def ParseJsonSelections(jstr, mids):
+    """Parse json data, return selections SORTED BY LIST mids"""
     data = json.loads(jstr)
     # selections dictionary stores market id as key, list of
     # selections as value.
@@ -65,9 +65,33 @@ def ParseJsonSelections(jstr, ids):
                                                      None, None, None,
                                                      None, None, back,
                                                      lay, const.BFID))
-    # return selections ordered by list ids (passed as an argument).
+
+    # check how many markets we got selections for.
+    # note, if we didn't get all markets, probably some have been
+    # cancelled/finished etc.
+    betlog.betlog.debug('BF got selections for {0} of {1} markets'\
+                        .format(len(selections), len(mids)))
+                    
+    # return selections ordered by list mids (passed as an argument).
     # this is so that when we call this function, we know what we are
     # getting back.  If we don't do this, we will get selections in an
     # order decided by BF, i.e. ordered by eventtype.
-    allselections = [selections[mid] for mid in ids]
-    return allselections
+    allselections = []
+    errormids = []
+    for mid in mids:
+        if mid in selections:
+            allselections.append(selections[mid])
+        else:
+            # we didn't manage to get any selections for this market,
+            # presumably it is no longer available...            
+            allselections.append([])
+            errormids.append(mid)
+
+    if errormids:
+        betlog.betlog.debug('BF no selections for markets: {0}'\
+                            .format(' '.join([str(m) for m in errormids])))
+
+    # return selections and error mids, note len(selections) is
+    # len(mids), but there will be empty lists for the error market
+    # ids.
+    return allselections, errormids

@@ -1,7 +1,6 @@
 import datetime
 import time
-from betman import const, util, Event
-from betman.all import betlog
+from betman import const, util, Event, betlog
 import bdaqapiparse
 
 ######################################################################

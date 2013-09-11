@@ -61,6 +61,9 @@ class CXStrategy(strategy.Strategy):
         # initialise into noopp state
         self.brain.set_state(noopp_state.name)
 
+    def __str__(self):
+        return self.sel1.name
+
     def get_marketids(self):
         """Return dictionary of all market ids involved in strategy."""
         return {const.BDAQID: [self.sel1.mid],
@@ -77,10 +80,12 @@ class CXStrategy(strategy.Strategy):
         # only care about the order if it has been placed, in fact we
         # need it to have been placed in order to update its status.
         if hasattr(self, 'border'):
-            if self.border.status != order.MATCHED and self.border.status != order.NOTPLACED:
+            if ((self.border.status != order.MATCHED) and
+                (self.border.status != order.NOTPLACED)):
                 odict[self.border.exid].append(self.border)
         if hasattr(self, 'lorder'):
-            if self.lorder.status != order.MATCHED and self.lorder.status != order.NOTPLACED:
+            if ((self.lorder.status != order.MATCHED) and
+                (self.lorder.status != order.NOTPLACED)):
                 odict[self.lorder.exid].append(self.lorder)
         return odict
         

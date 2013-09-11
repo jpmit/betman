@@ -8,6 +8,7 @@
 from betman import const, util
 import bdaqnonapiparse
 import datetime
+from betman.all import betlog
 
 class nonAPIGetPrices(object):
     def __init__(self, urlclient, dbman):
@@ -25,24 +26,30 @@ class nonAPIGetPrices(object):
         # market ids
         MAXMIDS = 50
         allselections = []
+        allemids = []
         for ids in util.chunks(mids, MAXMIDS):
             # for australian markets, need to write 2. rather than 1.  And
             # need different BASEURL (see top)
             midstring= '&mid=' + '&mid='.join(['{0}'.format(m) for m in ids])
             url = self.client.pricesurl + midstring + '&ccyCode=GBP'
-            if const.DEBUG:
-                print 'BDAQ Selection URL: {0}'.format(url)
+
+            betlog.betlog.info('calling BDAQ nonAPI GetPrices')
+            betlog.betlog.debug('BDAQ Selection URL: {0}'.format(url))
 
             # make the HTTP request
             response = self.client.call(url)
 
             # selections for all the market ids
-            selections = bdaqnonapiparse.ParsenonAPIGetPrices(response.read(),
-                                                              ids)
+            selections, emids = bdaqnonapiparse.ParsenonAPIGetPrices(response.read(),
+                                                                     ids)
             allselections = allselections + selections
+            allemids = allemids + emids
+
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]
             # write current time as timestamp for now!
             self.dbman.WriteSelections(writeselections, datetime.datetime.now())
-        return allselections
+
+        # return list of selections and the list of erroneous market ids
+        return allselections, allemids
