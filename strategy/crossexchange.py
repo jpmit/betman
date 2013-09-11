@@ -3,6 +3,7 @@
 # jamesmithen@gmail.com
 #
 # Classes for crossexchange strategy
+# obselete! - see cxstrategy.py
 
 import stratdata
 from betman.all import order

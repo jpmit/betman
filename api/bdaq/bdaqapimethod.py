@@ -346,8 +346,8 @@ class APIPlaceOrdersNoReceipt(object):
             # this stuff in correctly
             order._ExpectedSelectionResetCount = 1
             order. _ExpectedWithdrawalSequenceNumber = 0,         
-            order._CancelOnInRunning = True
-            order._CancelIfSelectionReset = True
+            order._CancelOnInRunning = False #True
+            order._CancelIfSelectionReset = False #True
 
             olist.append(order)
         return olist

@@ -110,50 +110,7 @@ class Selection(object):
         if blay == exchangedata.MINODDS:
             return exchangedata.MINODDS
 
-        if self.exid == const.BDAQID:
-            # use BDAQ betting increments
-            if blay <= 3:
-                return blay - 0.01
-            elif blay <= 4:
-                return blay - 0.05
-            elif blay <= 6:
-                return blay - 0.1
-            elif blay <= 10:
-                return blay - 0.2
-            elif blay <= 20:
-                return blay - 0.5
-            elif blay <= 50:
-                return blay - 1
-            elif blay <= 200:
-                return blay - 2
-            elif blay <= 1000:
-                return blay - 5
-
-        elif self.exid == const.BFID:
-            # use BF betting increments
-            if blay <= 2 :
-                return blay - 0.01
-            elif blay <= 3:
-                return blay - 0.02
-            elif blay <= 4:
-                return blay - 0.05        
-            elif blay <= 6:
-                return blay - 0.1
-            elif blay <= 10:
-                return blay - 0.2
-            elif blay <= 20:
-                return blay - 0.5
-            elif blay <= 30:
-                return blay - 1
-            elif blay <= 50:
-                return blay - 2
-            elif blay <= 100:
-                return blay - 5
-            elif blay <= 1000:
-                return blay - 10
-        else:
-            raise DataError, 'selection id must be either {0} or {1}'\
-                  .format(const,BDAQID, const.BFID)
+        return exchangedata.next_shorter_odds(self.exid, blay)
 
     def make_best_back(self):
         """Return price for if we wanted to make a market on selection
@@ -166,51 +123,8 @@ class Selection(object):
         # return None, but instead lets return 1000.
         if bback == exchangedata.MAXODDS:
             return exchangedata.MAXODDS
-        if self.exid == const.BDAQID:
-            # use BDAQ betting increments
-            if bback < 3 :
-                return bback + 0.01
-            elif bback < 4:
-                return bback + 0.05
-            elif bback < 6:
-                return bback + 0.1
-            elif bback < 10:
-                return bback + 0.2
-            elif bback < 20:
-                return bback + 0.5
-            elif bback < 50:
-                return bback + 1
-            elif bback < 200:
-                return bback + 2
-            elif bback < 1000:
-                return bback + 5
 
-        elif self.exid == const.BFID:
-            # use BF betting increments
-            if bback < 2 :
-                return bback + 0.01
-            elif bback < 3:
-                return bback + 0.02
-            elif bback < 4:
-                return bback + 0.05        
-            elif bback < 6:
-                return bback + 0.1
-            elif bback < 10:
-                return bback + 0.2
-            elif bback < 20:
-                return bback + 0.5
-            elif bback < 30:
-                return bback + 1
-            elif bback < 50:
-                return bback + 2
-            elif bback < 100:
-                return bback + 5
-            elif bback < 1000:
-                return bback + 10
-
-        else:
-            raise DataError, 'selection id must be either {0} or {1}'\
-                  .format(const,BDAQID, const.BFID)
+        return exchangedata.next_longer_odds(self.exid, bback)
 
     def __repr__(self):
         return ' '.join([self.name, str(self.id)])

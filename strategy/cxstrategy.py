@@ -1,11 +1,11 @@
-# mystrategy.py
+# cxstrategy.py
 # James Mithen
 # jamesmithen@gmail.com
 
-# actual strategies.  These inherit from the base classes in
+# Cross exchange strategy.  These inherit from the base classes in
 # strategy.py.
 
-import strategy
+from betman.strategy import strategy
 from betman import const, database
 from betman.all import order, exchangedata
 from betman.api.bdaq import bdaqapi
@@ -124,6 +124,23 @@ class CXStrategy(strategy.Strategy):
             # back selection at best current price
             oback = s2.best_back()
 
+            # now, if the lay price is 1.01, this means that there is
+            # nothing on this side of the order book.  Instead of
+            # laying a large amount at this price (which is unlikely
+            # to be taken), we will lay at a more competitive price,
+            # but a price that still allows us to make a profit when
+            # backing on the other exchange.
+            if olay <= exchangedata.MINODDSPLUS1:
+                # the 0.5 is arbitrary for now, this must be < 1 in
+                # order to generate an opportunity.
+                olay = 0.5*oback*((1.0 - _COMMISSION[const.BDAQID])*\
+                                  (1.0 - _COMMISSION[const.BFID]))
+
+                # get lay odds which are same or shorter than olay
+                olay = exchangedata.closest_shorter_odds(s1.exid, olay)
+
+                betlog.betlog.debug('Trying new odds {0}'.format(olay))
+
             if self._backlay(oback, olay):
                 self.store_opportunity(s1, s2, olay, oback)
                 return True
@@ -221,10 +238,6 @@ class CXStrategy(strategy.Strategy):
         """Return True if back-lay strategy profitable, else False"""
         if bprice > lprice / ((1.0 - _COMMISSION[const.BDAQID])*\
                               (1.0 - _COMMISSION[const.BFID])):
-            # only interested in opportunities for which lay odds are
-            # less than 20 for now and for which lay price is greater
-            # than the min odds (i.e. order book is non-empty on this
-            # side).
             return True
         return False
 
@@ -275,6 +288,10 @@ class CXStrategy(strategy.Strategy):
         if self.brain.active_state.name == 'bothplaced':
             return
 
+        # only interested in opportunities for which lay odds are
+        # less than 20 for now and for which lay price is greater
+        # than the min odds (i.e. order book is non-empty on this
+        # side).
         # go through each exchange number in turn
         for ekey in self.toplace:
             for o in  self.toplace[ekey]:
@@ -299,11 +316,6 @@ class CXStrategy(strategy.Strategy):
                                              '{0}'.format(o.price)))
                         self.toplace = {}
                         return
-
-class MMStrategy(strategy.Strategy):
-    """Market making strategy"""
-    def __init__(self):
-        super(CXStrategy, self).__init__()
 
 class CXStateInstantOpp(strategy.State):
     """An instant opportunity"""

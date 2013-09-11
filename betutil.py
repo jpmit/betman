@@ -6,7 +6,8 @@
 
 import os
 import pickle
-from betman import const, strategy, database, betlog
+from betman import const, database, betlog
+from betman.strategy import strategy, cxstrategy
 
 PICKPATH = os.path.join(os.path.split(const.MASTERDB)[0],
                         'stratgroup.pkl')
@@ -16,7 +17,7 @@ def save_strategies():
     """Using info in the DB, get strategies and save these to
     pickle file."""
 
-    sgroup = strategy.strategy.StrategyGroup()
+    sgroup = strategy.StrategyGroup()
 
     # add strategies here
     msels = database.DBMaster().ReturnSelectionMatches()
@@ -25,8 +26,8 @@ def save_strategies():
     # alter the prices so that we get instant opp!!
     msels[0][0].backprices[0] = (1.50, 10)
     msels[0][1].layprices[0] = (1.01, 10)        
-    for m in msels:
-        sgroup.add(strategy.mystrategy.CXStrategy(m[0], m[1]))
+    for m in msels[:50]:
+        sgroup.add(cxstrategy.CXStrategy(m[0], m[1]))
 
     betlog.betlog.debug("Created {0} strategies from DB"\
                         .format(len(sgroup)))
