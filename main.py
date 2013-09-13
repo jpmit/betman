@@ -5,6 +5,7 @@
 # get markets from BDAQ and BF
 # this makes requests using the APIs
 
+import operator
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 import betman.matchmarkets.marketmatcher as marketmatcher
@@ -41,3 +42,14 @@ bfselections, bfemids = bfapi.GetSelections([m.id for m in bfmatches])
 bdaqselections, bdaqemids = bdaqapi.GetSelectionsnonAPI([m.id for m in bdaqmatches])
 # get matching selections for each selection in matching markets
 matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)
+
+# if we are interested in horse racing, write times of races to file
+if 'Horse Racing' in bdaqelist:
+    horsematches = [m for m in bdaqmatches if hasattr(m, 'course')]
+    horsematches.sort(key = operator.attrgetter('starttime'))
+    wstr = ['{0} {1} {2}'.format(h.starttime, h.course, h.id)
+            for h in horsematches]
+    hfile = open(const.LOGDIR + '/horseraces.txt', 'w')
+    hfile.write('DATE COURSE BDAQMARKETID\n{0}\n'.format('-'*32))
+    hfile.write('\n'.join(wstr))
+    hfile.close()

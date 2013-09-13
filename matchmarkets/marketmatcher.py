@@ -73,15 +73,20 @@ def _matchselection(sel, sellist):
     # BF ones dont', so lets remove the numbers from the BDAQ
     # selections.
     selname = ''.join(i for i in sel.name if not i.isdigit())
+
+    # again, the BDAQ horse racing selections, due to our ASCII
+    # encoding, contain '&apos;' instead of an apostraphe, so remove
+    # this.
+    selname = selname.replace('&apos;','')
     
     # some of the BF names have trailing spaces, e.g. 'Sebastian
     # Vettel '.  This is clearly a bit cheeky.  Lets strip any
     # whitespace at start and end of name, and for both exchanges just
     # in case.
-    selname = selname.strip()
+    selname = selname.strip().lower()
 
     for s in sellist:
-        if s.name.strip() == selname:
+        if s.name.strip().lower() == selname:
             return s
     return None
 
