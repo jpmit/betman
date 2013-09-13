@@ -47,12 +47,6 @@ def MatchRugbyUnion(BDAQMarkets, BFMarkets):
                 if (level2convert(sp1[-2]) == sp2[-2]):
                     matches.append((m1,m2))
                     break
-    if const.DEBUG:
-        print "Matched %d/%d BDAQ markets" %(len(matches), len(BDAQMarkets))
-        print "Markets not matched:"
-        nomatch = [m.name for m in BDAQMarkets if not m
-                   in [a[0] for a in matches]]
-        print '\n'.join(nomatch)
     return matches
 
 if __name__ == '__main__':

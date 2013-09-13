@@ -235,7 +235,28 @@ class APIgetMarket(object):
     def call(self, mid):
         self.addheader()
         self.req.marketId = mid
+        betlog.betlog.info('calling BF API getMarket')        
         response = self.client.service.getMarket(self.req)
+        return response
+
+# this is a lite service compared to getMarket above
+class APIgetMarketInfo(object):
+    def __init__(self, apiclient, dbman):
+        self.client = apiclient.client
+        self.dbman = dbman
+        self.createinput()
+
+    def createinput(self):
+        self.req = self.client.factory.create('ns1:GetMarketInfoReq')
+
+    def addheader(self):
+        self.req.header = self.client.reqheader
+        
+    def call(self, mid):
+        self.addheader()
+        self.req.marketId = mid
+        betlog.betlog.info('calling BF API getMarketInfo')
+        response = self.client.service.getMarketInfo(self.req)
         return response
 
 # not fully implemented yet (do not use)

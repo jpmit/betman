@@ -55,13 +55,6 @@ def MatchFormula1(BDAQMarkets, BFMarkets):
                     break
                 if wnum == len(words1) - 1:
                     matches.append((m1,m2))
-                
-    if const.DEBUG:
-        print "Matched %d/%d BDAQ markets" %(len(matches), len(BDAQMarkets))
-        print "Markets not matched:"
-        nomatch = [m.name for m in BDAQMarkets if not m
-                   in [a[0] for a in matches]]
-        print '\n'.join(nomatch)
     return matches
 
 if __name__ == '__main__':

@@ -5,11 +5,12 @@
 # Functionality for finding pairs of matching markets, i.e. the same
 # market on BDAQ and BF
 
-from betman import const, database
+from betman import const, database, betlog
 from matchconst import EVENTMAP
 import matchformula1
 import matchrugbyunion
 import matchsoccer
+import matchhorse
 
 class MatchError(Exception): pass
 
@@ -17,7 +18,8 @@ class MatchError(Exception): pass
 # the event key used here is the BDAQ one
 _MATCHFNS = {'Formula 1': matchformula1.MatchFormula1,
             'Rugby Union': matchrugbyunion.MatchRugbyUnion,
-            'Soccer' : matchsoccer.MatchSoccer
+            'Soccer' : matchsoccer.MatchSoccer,
+             'Horse Racing': matchhorse.MatchHorse
             }
 
 def _matchevent(m1s, m2s, eventname):
@@ -42,10 +44,22 @@ def GetMatchMarkets(m1s, m2s):
     m1names = list(set([m.eventname for m in m1s]))
     m1names.sort()
     matchms = []
+    # match markets for each event in turn
     for name in m1names:
         bdaqms = [m for m in m1s if m.eventname == name]
         bfms = [m for m in m2s if m.eventname == EVENTMAP[name]]
         matchms += (_matchevent(bdaqms, bfms, name))
+
+        # write the markets not matched to log
+        nomatch = [m.name for m in bdaqms if not m
+                   in [a[0] for a in matchms]]
+        betlog.betlog.debug("Matched {0}/{1} BDAQ {2} markets"\
+                            .format(len(matchms), len(bdaqms),
+                                    name))
+        nmstr = '\n'.join(nomatch)
+        betlog.betlog.debug("Markets not matched:\n{0}"\
+                            .format(nmstr))
+        
     # write matching markets to DB
     if const.WRITEDB:
         database.DBMaster().WriteMarketMatches(matchms)
@@ -55,11 +69,17 @@ def GetMatchMarkets(m1s, m2s):
 def _matchselection(sel, sellist):
     """Return selection in sellist that 'matches' sel, or None if
     no match found"""
+    # the BDAQ horse racing selections have numbers in them, but the
+    # BF ones dont', so lets remove the numbers from the BDAQ
+    # selections.
+    selname = ''.join(i for i in sel.name if not i.isdigit())
+    
     # some of the BF names have trailing spaces, e.g. 'Sebastian
     # Vettel '.  This is clearly a bit cheeky.  Lets strip any
-    # whitespace at start and end of name, and for both exchanges.
-    selname = sel.name.strip()
-    #print selname
+    # whitespace at start and end of name, and for both exchanges just
+    # in case.
+    selname = selname.strip()
+
     for s in sellist:
         if s.name.strip() == selname:
             return s
@@ -86,6 +106,10 @@ def GetMatchSelections(m1sels, m2sels):
             if matchsel:
                 # a matching selection was found
                 matchsels.append((sel, matchsel))
+            else:
+                betlog.betlog.info(('No match found for BDAQ selection '
+                                    '{0}').format(sel))
+                
     # write matching selections to DB
     if const.WRITEDB:
         database.DBMaster().WriteSelectionMatches(matchsels)

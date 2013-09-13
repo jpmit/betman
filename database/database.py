@@ -494,11 +494,10 @@ class DBMaster(object):
         # delete everything from tables:
         # MATCHMARKS
         # MATCHSELS
-        # MARKETS
         # SELECTIONS
 
         for tname in [schema.MATCHMARKS, schema.MATCHSELS,
-                      schema.MARKETS, schema.SELECTIONS]:
+                      schema.SELECTIONS]:
             self.cursor.execute('DELETE FROM {0}'.format(tname))
 
         # delete all selections from SELECTIONS table (we only care

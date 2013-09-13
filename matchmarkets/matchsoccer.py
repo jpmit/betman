@@ -1,8 +1,9 @@
 # matchsoccer.py
-# 21st July 2013
+# James Mithen
+# jamesmithen@gmail.com
 # Try to match markets between BF and BDAQ (!)
 
-from betman import database, const
+from betman import database, const, betlog
 import numpy as np
 import re
 
@@ -39,7 +40,7 @@ def bfconvert(s):
     return s
 
 def MatchSoccer(BDAQMarkets, BFMarkets):
-    """Reurn list of tuples (m1,m2) where m1 and m2 are the matching
+    """Return list of tuples (m1,m2) where m1 and m2 are the matching
     markets"""
     # conversion from bdaq to bf market names; keys are bdaq market
     # names
@@ -61,12 +62,6 @@ def MatchSoccer(BDAQMarkets, BFMarkets):
                 if (n1 == n2):
                     matches.append((m1,m2))
                     break
-    if const.DEBUG:
-        print "Matched %d/%d BDAQ markets" %(len(matches), len(BDAQMarkets))
-        print "Markets not matched:"
-        nomatch = [m.name for m in BDAQMarkets if not m
-                   in [a[0] for a in matches]]
-        print '\n'.join(nomatch)
     return matches
 
 if __name__ == '__main__':

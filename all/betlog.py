@@ -22,13 +22,25 @@ import const
 betlog = logging.getLogger('betman')
 betlog.setLevel(logging.DEBUG) # ignore anything below DEBUG
 
+def _logfile_name():
+    import time
+    t = time.gmtime()
+    name = '{0}{1}{2}'.format(str(t.tm_mday).zfill(2),
+                              str(t.tm_mon).zfill(2), t.tm_year)
+
+    return name
+
 def _add_handlers():
     # formatter for all logging
     frmt = logging.Formatter(('%(asctime)s - %(name)s - %(levelname)s'
                               '- %(message)s'))
 
+    # base name for logfile (todays date)
+    lbasename = _logfile_name()
+
     # add a file handler for API calls
-    fh = logging.FileHandler('{0}apicall.log'.format(const.LOGDIR))
+    fh = logging.FileHandler('{0}apicall{1}.log'.format(const.LOGDIR,
+                                                        lbasename))
     fh.setLevel(logging.INFO)
 
     fh.setFormatter(frmt)
@@ -36,7 +48,8 @@ def _add_handlers():
     betlog.addHandler(fh)
 
     # add a file handler for everything else
-    fh2 = logging.FileHandler('{0}allinfo.log'.format(const.LOGDIR))
+    fh2 = logging.FileHandler('{0}allinfo{1}.log'.format(const.LOGDIR,
+                                                         lbasename))
     fh2.setLevel(logging.DEBUG)
     fh2.setFormatter(frmt)
     # add the Handler to the logger
