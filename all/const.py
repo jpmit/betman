@@ -16,10 +16,14 @@ USERAGENT = 'pybetman/%s Python/%s Suds/%s' %(VERSION,
                                               suds.__version__)
 
 # path to local copy of WSDL files
-WSDLLOCAL = {'BDAQ': 'file:///home/jm0037/python/bdaq/code/betman/api/bdaq/API.wsdl',
-             'BFglobal': 'file:///home/jm0037/python/bdaq/code/betman/api/bf/BFGlobalService.wsdl',
-             'BFuk': 'file:///home/jm0037/python/bdaq/code/betman/api/bf/BFExchangeServiceUK.wsdl',
-             'BFaus': 'file:///home/jm0037/python/bdaq/code/betman/api/bf/BFExchangeServiceAUS.wsdl'}
+WSDLLOCAL = {'BDAQ'    : ('file:///home/jm0037/python/bdaq/code'
+                          '/betman/api/bdaq/API.wsdl'),
+             'BFglobal': ('file:///home/jm0037/python/bdaq/code'
+                          '/betman/api/bf/BFGlobalService.wsdl'),
+             'BFuk'    : ('file:///home/jm0037/python/bdaq/code/'
+                          'betman/api/bf/BFExchangeServiceUK.wsdl'),
+             'BFaus'   : ('file:///home/jm0037/python/bdaq/code/'
+                          'betman/api/bf/BFExchangeServiceAUS.wsdl')}
 
 # BDAQ API version sent in SOAP headers
 BDAQAPIVERSION = '2'

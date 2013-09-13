@@ -52,7 +52,7 @@ class Selection(object):
     """A selection"""
     def __init__(self, name, myid, marketid, mback, mlay, lastmatched,
                  lastmatchedprice, lastmatchedamount, backprices,
-                 layprices, exid=const.BDAQID):
+                 layprices, src=None, wsn=None, exid=const.BDAQID):
         self.exid = exid
         # store everything from BDAQ API below
         # convert name to ascii string and ignore any funky unicode
@@ -65,6 +65,11 @@ class Selection(object):
         self.lastmatched = lastmatched
         self.lastmatchedprice = lastmatchedprice
         self.lastmatchedamount = lastmatchedamount
+
+        # selection reset count and withdrawal selection number are
+        # for BDAQ only
+        self.src = src
+        self.wsn = wsn
 
         # list of prices and stakes [(p1,s1), (p2,s2) ...,]
         self.backprices = backprices

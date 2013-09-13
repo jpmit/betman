@@ -17,11 +17,21 @@ def ParsenonAPIGetPrices(resp, mids):
     # go through each market in turn and get the selections.  Note
     # there is more information returned than we are tracking here.
     selections = {}
-    for mark in jsondata['ArrayOfEventClassifier']['EventClassifier']:
+
+    jdata = jsondata['ArrayOfEventClassifier']['EventClassifier']
+    # this is in case we queried price for a single market
+    if isinstance(jdata, dict):
+        jdata = [jdata]
+    print jdata
+    
+    for mark in jdata:
         # get market id
         markmid = mark['mkt']['mId']
         # list of selections for this marketid
         selections[markmid] = []
+        # withdrawal selection number for the market; we store this in
+        # the selection objects for speedier betting
+        wsn = mark['mkt']['wSN']
         
         # the mkt key contains everything we want
         for sel in mark['mkt']['sel']:
@@ -41,6 +51,9 @@ def ParsenonAPIGetPrices(resp, mids):
             else:
                 lprices = []
 
+            # selection recount number
+            src = sel['sRC']
+
             # add the selection.  Note we are not getting amounts
             # matched etc. at the moment.
             selections[markmid].append(Selection(name, sid, mid,
@@ -49,7 +62,9 @@ def ParsenonAPIGetPrices(resp, mids):
                                                  None,
                                                  None,
                                                  None,
-                                                 bprices, lprices))
+                                                 bprices, lprices,
+                                                 src,
+                                                 wsn))
 
     # check how many markets we got selections for.
     # note, if we didn't get all markets, probably some have been

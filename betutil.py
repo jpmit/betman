@@ -13,15 +13,25 @@ PICKPATH = os.path.join(os.path.split(const.MASTERDB)[0],
                         'stratgroup.pkl')
 PKLPROT = 2
 
-def save_strategies():
+def save_strategies(bdaqids=[]):
     """Using info in the DB, get strategies and save these to
-    pickle file."""
+    pickle file
+
+    bdaqids - list of BDAQ market ids allowed.  If empty, all market
+              ids are allowed.
+    """
 
     sgroup = strategy.StrategyGroup()
 
     # add strategies here
     msels = database.DBMaster().ReturnSelectionMatches()
 
+    if bdaqids:
+        # filter out any strategies not involving one of the markets
+        # listed in bdaqids
+        for ms in list(msels):
+            if ms[0].mid not in bdaqids:
+                msels.remove(ms)
 
     # alter the prices so that we get instant opp!!
     msels[0][0].backprices[0] = (1.50, 10)

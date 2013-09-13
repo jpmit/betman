@@ -64,7 +64,8 @@ def ParseJsonSelections(jstr, mids):
                     selections[mid].append(Selection(name, sid, mid,
                                                      None, None, None,
                                                      None, None, back,
-                                                     lay, const.BFID))
+                                                     lay, None, None,
+                                                     const.BFID))
 
     # check how many markets we got selections for.
     # note, if we didn't get all markets, probably some have been

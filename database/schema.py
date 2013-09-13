@@ -63,6 +63,12 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' lvol_4       real,'
                            ' lay_5        real,'
                            ' lvol_5       real,'
+                           # selection reset count (needed for placing
+                           # bet on BDAQ, NULL for BF)
+                           ' src          int,'
+                           # withdrawal selection number (needed for
+                           # placing bet on BDAQ, NULL for BF)
+                           ' wsn          int,'
                            ' last_checked text)'),
               # strategy is the strategy type
               # polarity can be either 1 (back) or 2 (lay)
@@ -117,6 +123,8 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' lvol_4       real,'
                            ' lay_5        real,'
                            ' lvol_5       real,'
+                           ' src          int,'
+                           ' wsn          int,'
                            ' last_checked text)'),              
               }
 

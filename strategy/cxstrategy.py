@@ -167,9 +167,13 @@ class CXStrategy(strategy.Strategy):
 
         # create both back and lay orders.         
         self.border = order.Order(sback.exid, sback.id, bstake,
-                                  self.oback, 1, **{'mid': sback.mid})
+                                  self.oback, 1, **{'mid': sback.mid,
+                                                    'src': sback.src,
+                                                    'wsn': sback.wsn})
         self.lorder = order.Order(slay.exid, slay.id, lstake,
-                                  self.olay, 2, **{'mid': slay.mid})
+                                  self.olay, 2, **{'mid': slay.mid,
+                                                   'src': slay.src,
+                                                   'wsn': slay.wsn})
 
     def get_stakes(self, bexid, oback, lexid, olay):
         """Return back and lay stakes."""

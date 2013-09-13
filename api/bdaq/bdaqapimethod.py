@@ -344,8 +344,8 @@ class APIPlaceOrdersNoReceipt(object):
             order._Polarity = o.polarity
             # we probably need to look at the market information to put
             # this stuff in correctly
-            order._ExpectedSelectionResetCount = 1
-            order. _ExpectedWithdrawalSequenceNumber = 0,         
+            order._ExpectedSelectionResetCount = o.src
+            order. _ExpectedWithdrawalSequenceNumber = o.wsn,         
             order._CancelOnInRunning = False #True
             order._CancelIfSelectionReset = False #True
 

@@ -18,6 +18,8 @@ def ParseListBootstrapOrders(resp):
     tstamp = resp.Timestamp
 
     # check the return status here
+    # some possible return codes are (see BDAQ docs for complete list):
+    # 136 - WithdrawalSequenceNumberIsInvalid
     if retcode != 0:
         # will have to diagnose this in more detail if/when it happens.
         raise APIError, ('Error with ListBootstrapOrders '

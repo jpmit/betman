@@ -44,8 +44,13 @@ class Order(object):
             # matchedstake - amount of order matched
             # unmatchedstake - amount of order unmatched
             # strategy - integer for strategy number
-            # mid - market id (needed for placing bets with BF, but
-            #                  not with BDAQ!)
+            #
+            # NEEDED FOR PLACING BETS WITH BF BUT NOT BDAQ:
+            # mid - market id
+            #
+            # NEEDED FOR PLACING BETS WITH BDAQ BUT NOT BF:
+            # src - selection reset count
+            # wsn - withdrawal sequence number
             setattr(self, kw, kwargs[kw])
 
     def __repr__(self):

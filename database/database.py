@@ -203,25 +203,26 @@ class DBMaster(object):
                 'selection_id, name, b_1, bvol_1, b_2, bvol_2, b_3, '
                 'bvol_3, b_4, bvol_4, b_5, bvol_5, lay_1, lvol_1, '
                 'lay_2, lvol_2, lay_3, lvol_3, lay_4, lvol_4, '
-                'lay_5, lvol_5, last_checked) values '
+                'lay_5, lvol_5, src, wsn, last_checked) values '
                 '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,'
-                ' ?, ?, ?, ?, ?, ?, ?)')
+                ' ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         qupd = ('UPDATE {0} SET b_1=?, bvol_1=?, b_2=?, bvol_2=?, '
                 'b_3=?, bvol_3=?, b_4=?, bvol_4=?, b_5=?, bvol_5=?, '
                 'lay_1=?, lvol_1=?, lay_2=?, lvol_2=?, lay_3=?, lvol_3=?, '
-                'lay_4=?, lvol_4=?, lay_5=?, lvol_5=?, last_checked=? '
+                'lay_4=?, lvol_4=?, lay_5=?, lvol_5=?, src=?, wsn=?, last_checked=? '
                 'WHERE exchange_id=? and market_id=? and selection_id=?'\
                 .format(schema.SELECTIONS))
 
         # all the data to insert
         alldata = [(s.exid, s.mid, s.id, s.name, s.padback[0][0],
-                   s.padback[0][1],
-                   s.padback[1][0], s.padback[1][1], s.padback[2][0],
-                   s.padback[2][1], s.padback[3][0], s.padback[3][1],
-                   s.padback[4][0], s.padback[4][1], s.padlay[0][0],
-                   s.padlay[0][1], s.padlay[1][0], s.padlay[1][1],
-                   s.padlay[2][0], s.padlay[2][1], s.padlay[3][0],
-                   s.padlay[3][1], s.padlay[4][0], s.padlay[4][1], tstamp)
+                    s.padback[0][1],
+                    s.padback[1][0], s.padback[1][1], s.padback[2][0],
+                    s.padback[2][1], s.padback[3][0], s.padback[3][1],
+                    s.padback[4][0], s.padback[4][1], s.padlay[0][0],
+                    s.padlay[0][1], s.padlay[1][0], s.padlay[1][1],
+                    s.padlay[2][0], s.padlay[2][1], s.padlay[3][0],
+                    s.padlay[3][1], s.padlay[4][0], s.padlay[4][1],
+                    s.src, s.wsn, tstamp)
                    for s in selections]
 
         # write to the current selections table; we have to do this
@@ -336,6 +337,8 @@ class DBMaster(object):
                                 [y for y in util.pairwise(s[4:14])],
                                 # layprices and volumes
                                 [y for y in util.pairwise(s[14:24])],
+                                s[24], # selection reset count
+                                s[25], # withdrawal selection number
                                 s[0])
                       for s in seldata]
         
