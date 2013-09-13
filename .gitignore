@@ -8,3 +8,4 @@ logs/
 \#*
 .\#*
 database/stratgroup.pkl
+*.txt
