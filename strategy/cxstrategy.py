@@ -26,13 +26,23 @@ class CXStrategy(strategy.Strategy):
     ex1sel - Selection object for exchange 1 (BetDaq)
     ex2sel - Selection object for exchange 2 (BetDaq)
     """
-    def __init__(self, ex1sel, ex2sel):
+    def __init__(self, ex1sel, ex2sel, instantonly = True):
+        """
+        ex1sel      - BDAQ selection
+        ex2sel      - BF   selection
+        instantonly - if True, only look for 'instant' opportunities.
+        """
+        
         # this gives us self.brain, a StateMachine, and self.toplace,
         # a dictionary of orders waiting to be placed (see
         # strategy.py).
         super(CXStrategy, self).__init__()
         self.sel1 = ex1sel
         self.sel2 = ex2sel
+
+        # if this is true, we will only look for 'instant'
+        # opportunities, when we can back and lay simultaneously.
+        self.ionly = instantonly
 
         # database interface
         self.dbman = database.DBMaster()
@@ -146,14 +156,14 @@ class CXStrategy(strategy.Strategy):
                 return True
         return False
 
-    def store_opportunity(self, slay, sback, olay, oback):
+    def store_opportunity(self, slay, sback, olay, oback, inst=False):
         """Store details of betting opportunity"""
         self.opp = True
         self.slay = slay
         self.sback = sback
         self.olay = olay
         self.oback = oback
-        self.instant = False
+        self.instant = inst
         # Figure out how much we want to back and how much to lay. For
         # now let us bet the minimum amount possible.  For this we
         # should note that BDAQ has a minimum bet of 0.5, and BF has a
@@ -329,8 +339,8 @@ class CXStateInstantOpp(strategy.State):
 
     def entry_actions(self):
         # place both bets on the to be placed list
-        self.cxstrat.toplace[self.border.exid] = border
-        self.cxstrat.toplace[self.lorder.exid] = lorder        
+        self.cxstrat.toplace[self.cxstrat.border.exid] = [self.cxstrat.border]
+        self.cxstrat.toplace[self.cxstrat.lorder.exid] = [self.cxstrat.lorder]
         
         #self.cxstrat.make_back_order()
         #self.cxstrat.make_lay_order()
@@ -441,10 +451,15 @@ class CXStateNoOpp(strategy.State):
         pass
 
     def check_conditions(self):
+        
         # check if there is an instant opportunity
         if self.cxstrat.check_instant_opportunity():
             return 'instantopp'
-        elif self.cxstrat.check_opportunity():
-            return 'opp'
+        
+        # only check for non instant opportunities if we have that
+        # flag set.
+        if not self.cxstrat.ionly:
+            if self.cxstrat.check_opportunity():
+                return 'opp'
         # if no opportunities, don't change state
         return None

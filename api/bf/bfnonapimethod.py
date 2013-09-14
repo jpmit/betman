@@ -46,6 +46,39 @@ def formula1():
                      '&marketIds=1.{1}'.format('%2C'.join(typeswanted),mid))
     print url
 
+class nonAPIgetMarket(object):
+    def __init__(self, urlclient, dbman):
+        self.client = urlclient
+        self.dbman = dbman
+        self.setinput()
+
+    def call(self, mids):
+        allemids = []
+        MAXMIDS = 50
+        allminfo = []        
+        for ids in util.chunks(mids, MAXMIDS):
+            # for australian markets, need to write 2. rather than 1.  And
+            # need different BASEURL (see top)
+            midstring= '%2C'.join(['{0}.{1}'.format(self.client.mprefix,
+                                                    m) for m in ids])
+            url = self.client.pricesurl + ('&types=MARKET_STATE%2C'
+                                           'MARKET_DESCRIPTION'
+                                           '&marketIds={0}'.\
+                                           format(midstring))
+
+            betlog.betlog.debug('BF getMarket URL: {0}'.format(url))
+
+            # make the HTTP request
+            betlog.betlog.info('calling BF nonAPI getMarket')            
+            response = self.client.call(url)
+
+            # selections for all the market ids
+            minfo = bfnonapiparse.ParsenonAPIgetMarket(response.read(),
+                                                       mids)
+            allminfo = allminfo + minfo
+
+        return allminfo
+
 class nonAPIgetSelections(object):
     def __init__(self, urlclient, dbman):
         self.client = urlclient

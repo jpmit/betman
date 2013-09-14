@@ -7,12 +7,21 @@
 import json
 import re
 from betman import const, Selection, betlog
+from betman.all.betexception import APIError
 
 def ParsenonAPIGetPrices(resp, mids):
     """Return Selections for json string resp"""
 
-    # get the raw data from BDAQ in a dictionary.
-    jsondata = json.loads(correct_json(resp))
+    try:
+        # get the raw data from BDAQ in a dictionary.
+        jsondata = json.loads(correct_json(resp))
+    except:
+        # we will hopefully only reach here if we called this with a
+        # single market id (i.e. mids is a list of length 1) AND the
+        # market has finished. In this case we will get
+        # 'EmptyResponse' (can check this easily in a browser).
+        # Return no selections and the market ids
+        return [[]], mids
 
     # go through each market in turn and get the selections.  Note
     # there is more information returned than we are tracking here.
@@ -22,19 +31,27 @@ def ParsenonAPIGetPrices(resp, mids):
     # this is in case we queried price for a single market
     if isinstance(jdata, dict):
         jdata = [jdata]
-    print jdata
     
     for mark in jdata:
+
+        mdat = mark['mkt']
+        
+        # I think this is a bug where market information can be
+        # returned twice.        
+        if isinstance(mdat, list):
+            mdat = mdat[0]
+
         # get market id
-        markmid = mark['mkt']['mId']
+        markmid = mdat['mId']
+
         # list of selections for this marketid
         selections[markmid] = []
         # withdrawal selection number for the market; we store this in
         # the selection objects for speedier betting
-        wsn = mark['mkt']['wSN']
+        wsn = mdat['wSN']
         
         # the mkt key contains everything we want
-        for sel in mark['mkt']['sel']:
+        for sel in mdat['sel']:
             name = sel['sN'].encode('ascii')
             sid = sel['sId']
             # each selection also contains a market id.  This should
@@ -42,13 +59,28 @@ def ParsenonAPIGetPrices(resp, mids):
             mid = sel['mId']
             assert (mid == markmid)
 
-            if hasattr(sel, 'fSO'):
-                bprices = [(p['p'], p['rA']) for p in sel['fSO']]
+            if 'fSO' in sel:
+                # if there are multiple back prices available,
+                # sel['fSO'] will be a list
+                if isinstance(sel['fSO'], list):
+                    bprices = [(p['p'], p['rA']) for p in sel['fSO']]
+                else:
+                    # only one back price available
+                    bprices = [(sel['fSO']['p'], sel['fSO']['rA'])]
             else:
+                # no back prices available
                 bprices = []
-            if hasattr(sel, 'aSO'):
-                lprices = [(p['p'], p['rA']) for p in sel['aSO']]
+                
+            if 'aSO' in sel:
+                # if there are multiple lay prices available,
+                # sel['aSO'] will be a list                
+                if isinstance(sel['aSO'], list):
+                    lprices = [(p['p'], p['rA']) for p in sel['aSO']]
+                else:
+                    # only one lay price available
+                    bprices = [(sel['aSO']['p'], sel['aSO']['rA'])]
             else:
+                # no lay prices available
                 lprices = []
 
             # selection recount number

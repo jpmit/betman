@@ -85,6 +85,12 @@ def ParseEvents(res):
 
 def ParseMarkets(res):
     markets = []
+
+    # check if there is some marketdata,
+    if res.marketData is None:
+        raise APIError, ('no market data returned, BF minorErrorCode'
+                         ' {0}'.format(res.minorErrorCode))
+        
     for mdata in res.marketData.split(':')[1:]:
         fields = mdata.split('~')
         # we will need to remove this erroneous Group D rubbish

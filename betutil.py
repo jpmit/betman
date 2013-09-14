@@ -13,7 +13,7 @@ PICKPATH = os.path.join(os.path.split(const.MASTERDB)[0],
                         'stratgroup.pkl')
 PKLPROT = 2
 
-def save_strategies(bdaqids=[]):
+def save_strategies(bdaqids=[], instantonly = True):
     """Using info in the DB, get strategies and save these to
     pickle file
 
@@ -36,8 +36,8 @@ def save_strategies(bdaqids=[]):
     # alter the prices so that we get instant opp!!
     msels[0][0].backprices[0] = (1.50, 10)
     msels[0][1].layprices[0] = (1.01, 10)        
-    for m in msels[:50]:
-        sgroup.add(cxstrategy.CXStrategy(m[0], m[1]))
+    for m in msels:
+        sgroup.add(cxstrategy.CXStrategy(m[0], m[1], instantonly))
 
     betlog.betlog.debug("Created {0} strategies from DB"\
                         .format(len(sgroup)))

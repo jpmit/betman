@@ -15,6 +15,9 @@ import betutil
 # in practicemode, we won't place any bets
 PRACTICEMODE = False
 
+# if this is set to false, we won't update any order info
+UPDATEORDERINFO = False
+
 # can choose whether or not to use BDAQ API for prices (we don't use
 # the BF API automatically).
 USEBDAQAPI = False
@@ -103,7 +106,7 @@ class BetMain(object):
         """Get information on all current orders."""
         odict = self.stratgroup.get_orders()
 
-        if not PRACTICEMODE:
+        if (not PRACTICEMODE) and (UPDATEORDERINFO):
             # this should automatically keep track of a 'sequence
             # number', so that we are updating information about all
             # orders.
@@ -174,5 +177,5 @@ class BetMain(object):
             self.update_order_information()
         
 if __name__=='__main__':
-    bm = BetMain(20)
+    bm = BetMain(2)
     bm.main_loop()
