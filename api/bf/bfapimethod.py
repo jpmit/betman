@@ -109,7 +109,7 @@ class APIplaceBets(object):
             # Unmatched exchanged bets are lapsed when market turns in
             # play.  Can also be "IP" - in play persistence or "SP" - Moc
             # Starting Price (see BF API docs for more info).
-            pbet.betPersistenceType.value = 'NONE'
+            pbet.betPersistenceType.value = 'IP'
             pbet.marketId = o.mid
             pbet.price = o.price
             pbet.selectionId = o.sid
