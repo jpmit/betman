@@ -16,7 +16,7 @@ dbman = database.DBMaster()
 #dbman.cleanse()
 
 # names for bf and bdaq need to map
-bdaqelist = ['Horse Racing']#, 'Formula 1']#,'Baseball', 'Boxing', 'Cricket', 'Cycling']
+bdaqelist = ['Formula 1']#, 'Formula 1']#,'Baseball', 'Boxing', 'Cricket', 'Cycling']
 bfelist = [matchconst.EVENTMAP[k] for k in bdaqelist]
 
 # get top level events for BF and BDAQ

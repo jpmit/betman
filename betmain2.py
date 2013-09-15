@@ -11,16 +11,13 @@ from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from betman.all import betlog
 import betutil
+from multiprocessing.pool import ThreadPool
 
 # in practicemode, we won't place any bets
-PRACTICEMODE = False
+PRACTICEMODE = True
 
 # if this is set to false, we won't update any order info
 UPDATEORDERINFO = False
-
-# can choose whether or not to use BDAQ API for prices (we don't use
-# the BF API automatically).
-USEBDAQAPI = False
 
 class BetMain(object):
     def __init__(self, deltat):
@@ -59,7 +56,11 @@ class BetMain(object):
 
 
     def update_market_prices(self):
-        """Get new prices and write to the database."""
+        """
+        Get new prices and write to the database.  Here we use
+        python's threading module to make the requests to BDAQ and BF
+        (approximately) simultaneously.
+        """
 
         betlog.betlog.debug('Updating prices for {0} strategies'\
                             .format(len(self.stratgroup)))
@@ -69,37 +70,36 @@ class BetMain(object):
 
         betlog.betlog.debug('BDAQ market ids total: {0}'.\
                             format(len(self.marketids[const.BDAQID])))
-
-        # update prices from BDAQ API.
-        if USEBDAQAPI:
-            bdaqapi.GetSelections(self.marketids[const.BDAQID])
-        else:
-            allsels, emids = bdaqapi.\
-                             GetSelectionsnonAPI(self.marketids[const.BDAQID])
-
-        # remove any strategies from the strategy list that depend on
-        # any of the BDAQ markets in emids.
-        if emids:
-            self.stratgroup.remove_marketids(const.BDAQID, emids)
-            # refresh market ids before calling BF API.
-            self.marketids = self.stratgroup.get_marketids()
-
+        
         betlog.betlog.debug('BF market ids total: {0}'.\
                             format(len(self.marketids[const.BFID])))
+
+        pool = ThreadPool(processes=1)
+
+        # update prices from BDAQ API.
+        async_result = pool.apply_async(bdaqapi.GetSelectionsnonAPI,
+                                        (self.marketids[const.BDAQID],))
 
         # update prices from BF API. Note at the moment there doesn't
         # seem to be a problem with requesting data for markets that
         # have closed, but we may have to change this at a later date.
         bfsels, bfemids = bfapi.GetSelections(self.marketids[const.BFID])
 
+        bdaqsels, bdaqemids = async_result.get()
+
         # remove any strategies from the strategy list that depend on
-        # any of the BF markets in emids.
+        # any of the BDAQ or BF markets in emids.
+        if bdaqemids:
+            self.stratgroup.remove_marketids(const.BDAQID, bdaqemids)
+            self.marketids = self.stratgroup.get_marketids()
+        
         if bfemids:
             self.stratgroup.remove_marketids(const.BFID, bfemids)
+            self.marketids = self.stratgroup.get_marketids()
 
         # if we deleted any strategies, re-save the pickle so we only
         # load valid strategies at startup
-        if emids or bfemids:
+        if bdaqemids or bfemids:
             betutil.pickle_stratgroup(self.stratgroup)
 
     def update_order_information(self):

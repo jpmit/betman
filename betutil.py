@@ -25,7 +25,6 @@ def save_strategies(bdaqids=[], instantonly = True):
 
     # add strategies here
     msels = database.DBMaster().ReturnSelectionMatches()
-
     if bdaqids:
         # filter out any strategies not involving one of the markets
         # listed in bdaqids
