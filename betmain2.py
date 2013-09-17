@@ -36,10 +36,9 @@ class BetMain(object):
         # horse), and the selection objects contain the current price,
         # hence the name.
         self.prices = {const.BDAQID: {}, const.BFID: {}}
-        
-        # here we store a list of orders for both exchanges.  Only the
-        # orders that are not yet matched are stored.
-        self.orderdict = {const.BDAQID: [], const.BFID: []}
+
+        # orders for both exchanges
+        self.orders = {const.BDAQID: {}, const.BFID: {}}
 
         # call the API functions to refresh prices etc.
         self.on_startup()
@@ -113,6 +112,9 @@ class BetMain(object):
 
     def update_order_information(self):
         """Get information on all current orders."""
+        ### TODO:
+        #   change this to update self.orders dictionary...
+        
         odict = self.stratgroup.get_orders()
 
         if (not PRACTICEMODE) and (UPDATEORDERINFO):
@@ -132,19 +134,59 @@ class BetMain(object):
         # Keys are const.BDAQID and const.BFID
         odict = self.stratgroup.get_orders_to_place()
         betlog.betlog.debug('making orders: {0}'.format(odict))
+        saveorders = {const.BDAQID: {}, const.BFID: {}}
 
         if not PRACTICEMODE:
-            # are there any BDAQ orders pending?
-            if odict[const.BDAQID]:
-                # place the orders
-                bdaqapi.PlaceOrders(odict[const.BDAQID])
-            
-            # Annoying!  The BF API only allows us to make bets for
-            # one market at a time (although we can make multiple bets
-            # - up to 60 apparently - for each market.
-            if odict[const.BFID]:
+
+            if (odict[const.BDAQID]) and (odict[const.BFID]):
+                # we are betting on both exchanges, so we use two
+                # threads to send the orders simultaneously.
+                pool = ThreadPool(processes=1)
+
+                # place BDAQ order.
+                async_result = pool.apply_async(bdaqapi.GetSelectionsnonAPI,
+                                                (self.marketids[const.BDAQID],))
+
+                # at the moment all bets to BF are placed one after
+                # the other - will need to modify this if we want to
+                # place bets on multiple markets 'simultaneously' -
+                # i.e. add new threads.
                 for plorder in odict[const.BFID]:
-                    bfapi.PlaceBets([plorder])
+                    bfo = bfapi.PlaceBets([plorder])
+                    saveorders[const.BFID].update(bfo)
+
+                bdo = async_result.get()
+                saveorders[const.BDAQID].update(bdo)
+
+            else:
+                # betting on BDAQ or BF or neither but not both - no
+                # need for extra thread
+
+                if odict[const.BDAQID]:
+                    # place the orders
+                    bdo = bdaqapi.PlaceOrders(odict[const.BDAQID])
+                    saveorders[const.BDAQID].update(bdo)
+                    # Annoying!  The BF API only allows us to make bets for
+                    # one market at a time (although we can make multiple bets
+                    # - up to 60 apparently - for each market.
+                if odict[const.BFID]:
+                    for plorder in odict[const.BFID]:
+                        bfo = bfapi.PlaceBets([plorder])
+                        saveorders[const.BFID].update(bfo)
+
+            # now save the order information to the database.
+            if (odict[const.BDAQID]) or (odict[const.BFID]):
+                self.save_orders(saveorders)
+
+    def save_orders(self, sorders):
+        allords = []
+        for exmid in sorders:
+            for mid in sorders[exmid]:
+                for o in sorders[exmid][mid]:
+                    allords.append(sorders[exmid][mid][o])
+
+        # time we are writing is going to be a bit off
+        self.dbman.WriteOrders(allords, datetime.datetime.now())
 
     def on_startup(self):
         # put all this stuff in __init__ eventually??
@@ -195,11 +237,10 @@ class BetMain(object):
             # do the thinking, and create/cancel orders.
             self.stratgroup.update(self.prices)
 
-            # make any outstanding orders.
+            # make any outstanding orders and save order info.
             self.make_orders()
 
-            # before next loop, save the updated prices and order
-            # information.
+            # before next loop, save the updated prices.
             self.save_prices()
             
             self.clock.tick()

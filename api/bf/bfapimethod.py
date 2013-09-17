@@ -126,10 +126,7 @@ class APIplaceBets(object):
         betlog.betlog.info('calling BF API placeBets')
         response = self.client.service.placeBets(self.req)
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
-        
-        if const.WRITEDB:
-            self.dbman.WriteOrders(allorders,
-                                   response.header.timestamp)
+
         return allorders
 
 # cancelBets doesn't seem to be working

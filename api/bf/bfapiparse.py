@@ -56,7 +56,7 @@ def ParseplaceBets(res, olist):
     # check that we have one result for each order executed
     assert len(res.betResults.PlaceBetsResult) == len(olist)
 
-    allorders = []
+    allorders = {}
     # go through all results in turn and add to allorders list
     for betres, o in zip(res.betResults.PlaceBetsResult, olist):
         # order id
@@ -71,9 +71,8 @@ def ParseplaceBets(res, olist):
         odict = {'mid': o.mid, 'oref': oref, 'status': status,
                  'matchedstake': matched, 'unmatchedstake':
                  o.stake - matched}
-        o = order.Order(const.BFID, o.sid, o.stake, o.price,
-                        o.polarity, **odict)
-        allorders.append(o)
+        allorders[oref] = order.Order(const.BFID, o.sid, o.stake, o.price,
+                                      o.polarity, **odict)
     
     return allorders
 

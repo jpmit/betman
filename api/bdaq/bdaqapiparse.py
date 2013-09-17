@@ -69,12 +69,13 @@ def ParsePlaceOrdersNoReceipt(resp, olist):
 
     # create and return order object.  Note we set status to UNMATCHED,
     # and unmatched stake and matched stake accordingly.
-    allorders = [order.Order(const.BDAQID, o.sid, o.stake, o.price,
-                             o.polarity, **{'oref': ref, 'status': order.UNMATCHED,
-                                            'matchedstake': 0.0,
-                                            'unmatchedstake': o.stake})
-                 for (o, ref) in zip(olist, orefs)]
-
+    allorders = {}
+    for (o, ref) in zip(olist, orefs):
+        allorders[ref] = order.Order(const.BDAQID, o.sid, o.stake, o.price,
+                                     o.polarity, **{'oref': ref, 'status':
+                                                    order.UNMATCHED,
+                                                    'matchedstake': 0.0,
+                                                    'unmatchedstake': o.stake})
     return allorders
 
 def ParseEvents(resp):

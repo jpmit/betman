@@ -354,18 +354,19 @@ class APIPlaceOrdersNoReceipt(object):
 
     def call(self, orderlist):
         assert isinstance(orderlist, list)
-        allorders = []
+        orders = {}
         MAXORDERS = 50
         for ol in util.chunks(orderlist, MAXORDERS):        
             # make BDAQ representation of orders from orderlist past
             self.req.Orders.Order = self.makeorderlist(ol)
             betlog.betlog.info('calling BDAQ API PlaceOrdersNoReceipt')
             result = self.client.service.PlaceOrdersNoReceipt(self.req)
-            ords = bdaqapiparse.ParsePlaceOrdersNoReceipt(result, orderlist)
-            allorders = allorders + ords
-        if const.WRITEDB:
-            self.dbman.WriteOrders(allorders, result.Timestamp)
-        return allorders
+            ors = bdaqapiparse.ParsePlaceOrdersNoReceipt(result, orderlist)
+            orders.update(ors)
+
+        # note: could put result.Timestamp in order object so that we
+        # are saving the BDAQ time.
+        return orders
 
 # not fully implemented (do not use)
 class APIPlaceOrdersWithReceipt(object):
