@@ -21,11 +21,11 @@ class nonAPIGetPrices(object):
     
     def call(self, mids):
         """Get selections and prices for list of BDAQ market ids mids"""
-        # unsure what MAXMIDS should be.  BF returns HTTP 400 return
+        # unsure what MAXMIDS should be.  BDAQ returns HTTP 400 return
         # code if we ask for too much data, so try limiting to 50
         # market ids
         MAXMIDS = 50
-        allselections = []
+        allselections = {}
         allemids = []
         for ids in util.chunks(mids, MAXMIDS):
             # for australian markets, need to write 2. rather than 1.  And
@@ -40,16 +40,11 @@ class nonAPIGetPrices(object):
             response = self.client.call(url)
 
             # selections for all the market ids
-            selections, emids = bdaqnonapiparse.ParsenonAPIGetPrices(response.read(),
-                                                                     ids)
-            allselections = allselections + selections
+            selections, emids = bdaqnonapiparse.\
+                                ParsenonAPIGetPrices(response.read(),
+                                                     ids)
+            allselections.update(selections)
             allemids = allemids + emids
-
-        if const.WRITEDB:
-            # collapse list of lists to a flat list
-            writeselections = [i for sub in allselections for i in sub]
-            # write current time as timestamp for now!
-            self.dbman.WriteSelections(writeselections, datetime.datetime.now())
 
         # return list of selections and the list of erroneous market ids
         return allselections, allemids

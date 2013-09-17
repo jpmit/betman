@@ -21,7 +21,7 @@ def ParsenonAPIGetPrices(resp, mids):
         # market has finished. In this case we will get
         # 'EmptyResponse' (can check this easily in a browser).
         # Return no selections and the market ids
-        return [[]], mids
+        return {}, mids
 
     # go through each market in turn and get the selections.  Note
     # there is more information returned than we are tracking here.
@@ -44,8 +44,8 @@ def ParsenonAPIGetPrices(resp, mids):
         # get market id
         markmid = mdat['mId']
 
-        # list of selections for this marketid
-        selections[markmid] = []
+        # dictionary of selections for this marketid
+        selections[markmid] = {}
         # withdrawal selection number for the market; we store this in
         # the selection objects for speedier betting
         wsn = mdat['wSN']
@@ -88,7 +88,7 @@ def ParsenonAPIGetPrices(resp, mids):
 
             # add the selection.  Note we are not getting amounts
             # matched etc. at the moment.
-            selections[markmid].append(Selection(name, sid, mid,
+            selections[markmid][sid] = Selection(name, sid, mid,
                                                  None,
                                                  None,
                                                  None,
@@ -96,37 +96,33 @@ def ParsenonAPIGetPrices(resp, mids):
                                                  None,
                                                  bprices, lprices,
                                                  src,
-                                                 wsn))
+                                                 wsn)
 
     # check how many markets we got selections for.
     # note, if we didn't get all markets, probably some have been
     # cancelled/finished etc.
+    lsels = len(selections)
+    lmids = len(mids)
     betlog.betlog.debug('BDAQ got selections for {0} of {1} markets'\
-                        .format(len(selections), len(mids)))
+                        .format(lsels, lmids))
             
     # return selections ordered by list ids (passed as an argument).
     # this is so that when we call this function, we know what we are
     # getting back.  If we don't do this, we will get selections in an
     # order decided by BDAQ, i.e. ordered by eventtype.
-    allselections = []
-    errormids = []
-    for mid in mids:
-        if mid in selections:
-            allselections.append(selections[mid])
-        else:
-            # we didn't manage to get any selections for this market,
-            # presumably it is no longer available...
-            allselections.append([])
-            errormids.append(mid)
+    # construct error list - market ids we did not get any selection
+    # information for. Presumably these have finished etc.
+    errormids = []    
+    if lsels != lmids:
+        for m in mids:
+            if m not in selections:
+                errormids.append(m)
 
     if errormids:
         betlog.betlog.debug('BDAQ no selections for markets: {0}'\
                             .format(' '.join([str(m) for m in errormids])))
 
-    # return selections and error mids, note len(selections) is
-    # len(mids), but there will be empty lists for the error market
-    # ids.
-    return allselections, errormids
+    return selections, errormids
     
 def correct_json(jstr):
     """

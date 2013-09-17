@@ -32,19 +32,23 @@ def ParseSelections(mids, xmlstr):
     return selections
 
 def ParseJsonSelections(jstr, mids):
-    """Parse json data, return selections SORTED BY LIST mids"""
+    """Parse json data, return selections as dictionary with mids as
+    keys."""
     data = json.loads(jstr)
-    # selections dictionary stores market id as key, list of
-    # selections as value.
+
+    # dictionary of dictionaries
     selections = {}
     for event in data['eventTypes']:
         for eventnode in event['eventNodes']:
             for market in eventnode['marketNodes']:
+                
                 # take away the 1. or 2. at start of market id; this
                 # corresponds to UK and AUS exchange respectively
                 mid = int(market['marketId'].split('.')[1])
-                # list of selections for this market
-                selections[mid] = []
+
+                # dictionary of selections for this mid
+                selections[mid] = {}
+                
                 for runner in market['runners']:
                     name = runner['description']['runnerName']
                     sid = runner['selectionId']
@@ -59,40 +63,32 @@ def ParseJsonSelections(jstr, mids):
                                runner['exchange']['availableToLay']]
                     else:
                         # no odds available to lay
-                        lay = [(None, None)]                        
-                    # create new selection for this market
-                    selections[mid].append(Selection(name, sid, mid,
+                        lay = [(None, None)]
+
+                    selections[mid][sid] = Selection(name, sid, mid,
                                                      None, None, None,
                                                      None, None, back,
                                                      lay, None, None,
-                                                     const.BFID))
+                                                     const.BFID)
 
     # check how many markets we got selections for.
     # note, if we didn't get all markets, probably some have been
     # cancelled/finished etc.
+    lsels = len(selections)
+    lmids = len(mids)
     betlog.betlog.debug('BF got selections for {0} of {1} markets'\
-                        .format(len(selections), len(mids)))
-                    
-    # return selections ordered by list mids (passed as an argument).
-    # this is so that when we call this function, we know what we are
-    # getting back.  If we don't do this, we will get selections in an
-    # order decided by BF, i.e. ordered by eventtype.
-    allselections = []
-    errormids = []
-    for mid in mids:
-        if mid in selections:
-            allselections.append(selections[mid])
-        else:
-            # we didn't manage to get any selections for this market,
-            # presumably it is no longer available...            
-            allselections.append([])
-            errormids.append(mid)
+                        .format(lsels, lmids))
+
+    # construct error list - market ids we did not get any selection
+    # information for. Presumably these have finished etc.
+    errormids = []    
+    if lsels != lmids:
+        for m in mids:
+            if m not in selections:
+                errormids.append(m)
 
     if errormids:
         betlog.betlog.debug('BF no selections for markets: {0}'\
                             .format(' '.join([str(m) for m in errormids])))
 
-    # return selections and error mids, note len(selections) is
-    # len(mids), but there will be empty lists for the error market
-    # ids.
-    return allselections, errormids
+    return selections, errormids

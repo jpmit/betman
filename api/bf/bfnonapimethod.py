@@ -97,7 +97,7 @@ class nonAPIgetSelections(object):
         # code if we ask for too much data, so try limiting to 50
         # market ids
         MAXMIDS = 50
-        allselections = []
+        allselections = {}
         allemids = []
         for ids in util.chunks(mids, MAXMIDS):
             # for australian markets, need to write 2. rather than 1.  And
@@ -115,13 +115,11 @@ class nonAPIgetSelections(object):
             response = self.client.call(url)
 
             # selections for all the market ids
-            selections, emids = bfnonapiparse.ParseJsonSelections(response.read(), ids)
-            allselections = allselections + selections
+            selections, emids = bfnonapiparse.\
+                                ParseJsonSelections(response.read(),
+                                                    ids)
+ 
+            allselections.update(selections)
             allemids = allemids + emids
-            
-        if const.WRITEDB:
-            # collapse list of lists to a flat list
-            writeselections = [i for sub in allselections for i in sub]
-            # write current time as timestamp for now!
-            self.dbman.WriteSelections(writeselections, datetime.datetime.now())
+
         return allselections, allemids

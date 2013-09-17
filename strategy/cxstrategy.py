@@ -255,26 +255,15 @@ class CXStrategy(strategy.Strategy):
             return True
         return False
 
-    def update(self):
+    def update(self, prices):
         # important: clear the list of orders to be placed so that we don't
         # place them again.
         self.toplace = {const.BDAQID: [], const.BFID: []}        
         
-        # update prices of selections from DB
-        self.sel1 = self.dbman.ReturnSelections(('SELECT * FROM selections '
-                                                 'where exchange_id = ? and '
-                                                 'market_id = ? and '
-                                                 'selection_id = ?'),
-                                                (self.sel1.exid,
-                                                 self.sel1.mid,
-                                                 self.sel1.id))[0]
-        self.sel2 = self.dbman.ReturnSelections(('SELECT * FROM selections '
-                                                 'where exchange_id = ? and '
-                                                 'market_id = ? and '
-                                                 'selection_id = ?'),
-                                                (self.sel2.exid,
-                                                 self.sel2.mid,
-                                                 self.sel2.id))[0]
+        # update prices of selections from dictionary
+        self.sel1 = prices[self.sel1.exid][self.sel1.mid][self.sel1.id]
+        self.sel2 = prices[self.sel1.exid][self.sel1.mid][self.sel1.id]
+        
         # update status of any orders from DB (only orders that have
         # actually been placed.
         if hasattr(self, 'border') and self.border.status != order.NOTPLACED:

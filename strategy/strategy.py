@@ -2,7 +2,7 @@
 # James Mithen
 # jamesmithen@gmail.com
 
-# base classes for Strategy, StrategyGroup, StateMachine etc.
+"""Base classes Strategy, StrategyGroup, StateMachine"""
 
 from betman import const, betlog
 
@@ -25,6 +25,12 @@ class Strategy(object):
         const.BFID"""
         pass
 
+    def update(self, prices):
+        """Update prices of any selections using the prices dict
+        passed as argument, then do the thinking and generate orders
+        to create or cancel on the exchanges."""
+        pass
+
 class StrategyGroup(object):
     """Stores a group (i.e. one or more) of strategies."""
     def __init__(self):
@@ -39,13 +45,11 @@ class StrategyGroup(object):
     def add(self, strategy):
         self.strategies.append(strategy)
 
-    def update(self):
+    def update(self, prices):
         """Update all strategies in the group"""
-        # update does the thinking and also updates any internal
-        # strategy objects, e.g. refreshing the prices using the
-        # database, the status of orders, etc.
+
         for strat in self.strategies:
-            strat.update()
+            strat.update(prices)
 
     def get_orders(self):
         """Order ids for all strategies in the group used for checking

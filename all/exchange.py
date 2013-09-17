@@ -1,8 +1,8 @@
 # exchange.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Event, Market, Selection objects
+
+"""Event, Market and Selection objects"""
 
 import const
 import exchangedata
@@ -91,17 +91,17 @@ class Selection(object):
 
     def best_back(self):
         """Return best back price, or 1.0 if no price"""
-        if self.backprices[0][0] is None:
+        if self.padback[0][0] is None:
             return exchangedata.MINODDS
         return max(exchangedata.MINODDS,
-                   self.backprices[0][0])
+                   self.padback[0][0])
 
     def best_lay(self):
         """Return best lay price, or 1000.0 if no price"""
-        if self.layprices[0][0] is None:
+        if self.padlay[0][0] is None:
             return exchangedata.MINODDS
         return min(exchangedata.MAXODDS,
-                   self.layprices[0][0])
+                   self.padlay[0][0])
 
     def make_best_lay(self):
         """Return price for if we wanted to make a market on selection

@@ -1,12 +1,12 @@
 # betmain2.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Main betting program.
 
-import time
+"""Main betting program."""
+
+import time, datetime
 import betman
-from betman import const
+from betman import const, database
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from betman.all import betlog
@@ -22,12 +22,20 @@ UPDATEORDERINFO = False
 class BetMain(object):
     def __init__(self, deltat):
         """deltat is time between price refreshes in seconds."""
+
+        self.clock = betman.all.clock.Clock(deltat)
+        self.dbman = database.DBMaster()
         
         self.load_strategies()
         
         # market ids for all strategies (for updating prices)
         self.marketids = self.stratgroup.get_marketids()
-        self.clock = betman.all.clock.Clock(deltat)
+
+        # we store selection objects as a dictionary of dictionaries.
+        # This contains the selection objects (e.g. a particular
+        # horse), and the selection objects contain the current price,
+        # hence the name.
+        self.prices = {const.BDAQID: {}, const.BFID: {}}
         
         # here we store a list of orders for both exchanges.  Only the
         # orders that are not yet matched are stored.
@@ -83,9 +91,10 @@ class BetMain(object):
         # update prices from BF API. Note at the moment there doesn't
         # seem to be a problem with requesting data for markets that
         # have closed, but we may have to change this at a later date.
-        bfsels, bfemids = bfapi.GetSelections(self.marketids[const.BFID])
+        self.prices[const.BFID], bfemids = bfapi.GetSelections\
+                                           (self.marketids[const.BFID])
 
-        bdaqsels, bdaqemids = async_result.get()
+        self.prices[const.BDAQID], bdaqemids = async_result.get()
 
         # remove any strategies from the strategy list that depend on
         # any of the BDAQ or BF markets in emids.
@@ -152,29 +161,48 @@ class BetMain(object):
         #  update market prices
         self.update_market_prices()
 
+    def save_prices(self):
+        allsels = []
+        for exmid in self.prices:
+            for mid in self.prices[exmid]:
+                for sel in self.prices[exmid][mid]:
+                    allsels.append(self.prices[exmid][mid][sel])
+
+        # note that the time we are writing is going to be a bit off
+        self.dbman.WriteSelections(allsels, datetime.datetime.now())
+
     def main_loop(self):
 
         # first tick initializes clock
         self.clock.tick()
+
+        # second tick waits for the allocated time
+        self.clock.tick()
+        
         while True:
             # print intro stuff
             print time.asctime()
             print '-'*32
+
+            # update fill status of orders etc
+            self.update_order_information()
             
-            # update the strategies: refresh prices of any selections
-            # from DB - these will have come from
-            # update_market_prices, do the AI, and create any orders.
-            self.stratgroup.update()
+            # call BF and BDAQ API functions to get prices for all
+            # relevant markets
+            self.update_market_prices()
+            
+            # update the strategies: based on the most recent prices,
+            # do the thinking, and create/cancel orders.
+            self.stratgroup.update(self.prices)
 
             # make any outstanding orders.
             self.make_orders()
+
+            # before next loop, save the updated prices and order
+            # information.
+            self.save_prices()
             
             self.clock.tick()
-
-            # call BF and BDAQ API functions to get prices and update
-            # order information
-            self.update_market_prices()
-            self.update_order_information()
         
 if __name__=='__main__':
     bm = BetMain(2)

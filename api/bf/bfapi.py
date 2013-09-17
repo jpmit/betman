@@ -1,15 +1,17 @@
 # bfapi.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# My internal API encapsulating the Betfair API.  This module should
-# be imported by scripts that are requesting prices, making bets,
-# etc..  Eventually, there should be two options, using the Betfair
-# API in its entirety (a bad option due to the severe limitations on
-# number of requests of the free BF API) or instead using my web
-# scraping functionality.  The most sensible option, however, may well
-# be to use some of the BF API and some of my own web scraping
-# methods.
+
+"""
+My internal API encapsulating the Betfair API.  This module should
+be imported by scripts that are requesting prices, making bets,
+etc..  Eventually, there should be two options, using the Betfair
+API in its entirety (a bad option due to the severe limitations on
+number of requests of the free BF API) or instead using my web
+scraping functionality.  The most sensible option, however, may well
+be to use some of the BF API and some of my own web scraping
+methods.
+"""
 
 from betman import *
 from betman.api import apiclient
