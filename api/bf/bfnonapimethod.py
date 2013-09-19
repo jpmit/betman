@@ -12,11 +12,9 @@ import urllib2
 import datetime
 from betman.all import betlog
 
-# for australia markets, replace uk with aus
-BASEURL = ('http://uk-api.betfair.com/www/sports/exchange/readonly/'
-           'v1.0/bymarket?currencyCode=GBP&alt=json&locale=en_GB')
-
 def example():
+    """Example for testing."""
+    
     exampleurl = ('http://uk-api.betfair.com/www/sports/exchange/readonly'
                   '/v1.0/bymarket?currencyCode=GBP'
                   '&alt=xml&locale=en_GB&types=MARKET_STATE%2CMARKET_RATES'
@@ -31,6 +29,11 @@ def example():
     return html
 
 def formula1():
+    """Example for testing."""
+    
+    BASEURL = ('http://uk-api.betfair.com/www/sports/exchange/readonly/'
+               'v1.0/bymarket?currencyCode=GBP&alt=json&locale=en_GB')
+    
     mid = 107586578
     alltypes = ['MARKET_STATE', # is it in play, in running etc
                 'MARKET_RATES', # commission rates
@@ -39,7 +42,7 @@ def formula1():
                 'RUNNER_DESCRIPTION',  # runner ids and names
                 'RUNNER_STATE', # whether runners are active or not
                 'RUNNER_EXCHANGE_PRICES_BEST', # selection ids and prices (top 3 only)
-                'RUNNER_METADATA' # runnerid (not sure why I would need this
+                'RUNNER_METADATA' # runnerid (not sure why I would need this)
                 ]
     typeswanted = ['MARKET_STATE']
     url = BASEURL + ('&types={0}'
@@ -57,10 +60,11 @@ class nonAPIgetMarket(object):
         MAXMIDS = 50
         allminfo = []        
         for ids in util.chunks(mids, MAXMIDS):
-            # for australian markets, need to write 2. rather than 1.  And
-            # need different BASEURL (see top)
+            # for AUS markets, need to write 2. rather than 1. 
             midstring= '%2C'.join(['{0}.{1}'.format(self.client.mprefix,
                                                     m) for m in ids])
+
+            # note also that pricesurl is diferent for UK and AUS markets.
             url = self.client.pricesurl + ('&types=MARKET_STATE%2C'
                                            'MARKET_DESCRIPTION'
                                            '&marketIds={0}'.\
@@ -88,23 +92,29 @@ class nonAPIgetSelections(object):
     def setinput(self):
         pass
     
-    def call(self, mids):
-        """markets should be list of market ids AND
-        markets should be all from the same event and either AUS or UK exchange.
-        Otherwise, all hell will break loose...
+    def call(self, mids, writedb = False):
         """
+        mids should be list of market ids.
+
+        Note that by default we don't write selection information to
+        the database.  This is because for multithreaded applications
+        writing to the DB asynchronously is problematic (as well as a
+        bit time consuming).
+        """
+        
         # unsure what MAXMIDS should be.  BF returns HTTP 400 return
         # code if we ask for too much data, so try limiting to 50
-        # market ids
+        # market ids for now (seems to work).
         MAXMIDS = 50
         allselections = {}
         allemids = []
         for ids in util.chunks(mids, MAXMIDS):
-            # for australian markets, need to write 2. rather than 1.  And
-            # need different BASEURL (see top)
+            
+            # mprefix is 1 for UK markets and 2 for AUS markets
             midstring= '%2C'.join(['{0}.{1}'.format(self.client.mprefix,
                                                     m) for m in ids])
-            url = self.client.pricesurl + ('&types=RUNNER_DESCRIPTION%2CRUNNER_EXCHANGE'
+            url = self.client.pricesurl + ('&types=RUNNER_DESCRIPTION%2'
+                                           'CRUNNER_EXCHANGE'
                                            '_PRICES_BEST'
                                            '&marketIds={0}'.format(midstring))
 
@@ -121,5 +131,11 @@ class nonAPIgetSelections(object):
  
             allselections.update(selections)
             allemids = allemids + emids
+
+        if writedb:
+            # get single flat list of selection objects from dict of dicts
+            sels = [m.values() for m in allselections.values()]
+            allsels = [item for subl in sels for item in subl]
+            self.dbman.WriteSelections(allsels, datetime.datetime.now())
 
         return allselections, allemids

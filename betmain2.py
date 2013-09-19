@@ -14,7 +14,7 @@ import betutil
 from multiprocessing.pool import ThreadPool
 
 # in practicemode, we won't place any bets
-PRACTICEMODE = True
+PRACTICEMODE = False
 
 # if this is set to false, we won't update any order info
 UPDATEORDERINFO = False
@@ -64,9 +64,10 @@ class BetMain(object):
 
     def update_market_prices(self):
         """
-        Get new prices and write to the database.  Here we use
-        python's threading module to make the requests to BDAQ and BF
-        (approximately) simultaneously.
+        Get new prices.  Here we use python's threading module to make
+        the requests to BDAQ and BF (approximately) simultaneously.
+        Note that we do not write selection information to the
+        database here.
         """
 
         betlog.betlog.debug('Updating prices for {0} strategies'\
@@ -128,11 +129,12 @@ class BetMain(object):
             if odict[const.BFID]:
                 bfapi.GetBetStatus(odict[const.BFID])
 
-    def make_orders(self):
+    def make_orders(self, odict = None):
         """Make outstanding orders for all strategies."""
         # get dictionary of outstanding orders for all strategies.
         # Keys are const.BDAQID and const.BFID
-        odict = self.stratgroup.get_orders_to_place()
+        if odict is None:
+            odict = self.stratgroup.get_orders_to_place()
         betlog.betlog.debug('making orders: {0}'.format(odict))
         saveorders = {const.BDAQID: {}, const.BFID: {}}
 
@@ -144,8 +146,8 @@ class BetMain(object):
                 pool = ThreadPool(processes=1)
 
                 # place BDAQ order.
-                async_result = pool.apply_async(bdaqapi.GetSelectionsnonAPI,
-                                                (self.marketids[const.BDAQID],))
+                async_result = pool.apply_async(bdaqapi.PlaceOrders,
+                                                (odict[const.BDAQID],))
 
                 # at the moment all bets to BF are placed one after
                 # the other - will need to modify this if we want to
@@ -179,11 +181,8 @@ class BetMain(object):
                 self.save_orders(saveorders)
 
     def save_orders(self, sorders):
-        allords = []
-        for exmid in sorders:
-            for mid in sorders[exmid]:
-                for o in sorders[exmid][mid]:
-                    allords.append(sorders[exmid][mid][o])
+        ords = [o.values() for o in sorders.values()]
+        allords = [item for subl in ords for item in subl]
 
         # time we are writing is going to be a bit off
         self.dbman.WriteOrders(allords, datetime.datetime.now())
@@ -204,6 +203,8 @@ class BetMain(object):
         self.update_market_prices()
 
     def save_prices(self):
+        # could be a quicker way of getting flat selection list in
+        # api/bf/bfnonapimethod.py
         allsels = []
         for exmid in self.prices:
             for mid in self.prices[exmid]:
@@ -246,5 +247,5 @@ class BetMain(object):
             self.clock.tick()
         
 if __name__=='__main__':
-    bm = BetMain(2)
-    bm.main_loop()
+    bm = BetMain(20)
+    #bm.main_loop()

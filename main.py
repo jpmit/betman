@@ -1,9 +1,11 @@
 # main.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# get markets from BDAQ and BF
-# this makes requests using the APIs
+
+"""
+Match markets and selections from BDAQ and BF.  This makes requests
+using the APIs.
+"""
 
 import operator
 from betman.api.bf import bfapi
@@ -12,11 +14,15 @@ import betman.matchmarkets.marketmatcher as marketmatcher
 import betman.matchmarkets.matchconst as matchconst
 from betman import database
 
+# list of events (BDAQ names) that we are interested in.  See
+# betman.matchmarkets.matchconst for list of possible names.
+EVENT_NAMES = ['Formula 1']
+
 dbman = database.DBMaster()
 #dbman.cleanse()
 
 # names for bf and bdaq need to map
-bdaqelist = ['Formula 1']#, 'Formula 1']#,'Baseball', 'Boxing', 'Cricket', 'Cycling']
+bdaqelist = EVENT_NAMES
 bfelist = [matchconst.EVENTMAP[k] for k in bdaqelist]
 
 # get top level events for BF and BDAQ
@@ -35,15 +41,22 @@ bfmarkets = bfapi.GetUKMarkets([ev.id for ev in bfevents
 matchmarks = marketmatcher.GetMatchMarkets(bdaqmarkets, bfmarkets)
 bdaqmatches = [m[0] for m in matchmarks]
 bfmatches = [m[1] for m in matchmarks]
+bfmids = [m.id for m in bfmatches]
+bdaqmids = [m.id for m in bdaqmatches]
 
-# get selections for the markets that match.  Note f2or both apis (BF
-# and BDAQ), we will get selections back in order called.
-bfselections, bfemids = bfapi.GetSelections([m.id for m in bfmatches])
-bdaqselections, bdaqemids = bdaqapi.GetSelectionsnonAPI([m.id for m in bdaqmatches])
+# get selection dictionary for the markets that match.  second
+# argument here ensures we write to the database.
+bfseldict, bfemids = bfapi.GetSelections(bfmids, True)
+bdaqseldict, bdaqemids = bdaqapi.GetSelectionsnonAPI(bdaqmids, True)
+
+# get selections ordered by market
+bfselections = [[bfseldict[m][s] for s in bfseldict[m]] for m in bfmids]
+bdaqselections = [[bfseldict[m][s] for s in bfseldict[m]] for m in bfmids]
+
 # get matching selections for each selection in matching markets
 matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)
 
-# if we are interested in horse racing, write times of races to file
+# if we are interested in horse racing, write times of races to file (make this a bit neater).
 if 'Horse Racing' in bdaqelist:
     horsematches = [m for m in bdaqmatches if hasattr(m, 'course')]
     horsematches.sort(key = operator.attrgetter('starttime'))

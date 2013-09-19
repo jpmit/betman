@@ -108,6 +108,7 @@ class BFnonAPIClient(object):
     # mapping from names to the URL we want to call
     UK = 'uk'
     AUS = 'aus'
+    # not too sure whether v1.0 could be replaced below
     _sdict = {UK : ('http://uk-api.betfair.com/www/sports/exchange/readonly/'
                       'v1.0/bymarket?currencyCode=GBP&alt=json&locale=en_GB'),
               AUS : ('http://aus-api.betfair.com/www/sports/exchange/readonly/'

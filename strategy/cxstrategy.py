@@ -5,11 +5,9 @@
 # Cross exchange strategy.  These inherit from the base classes in
 # strategy.py.
 
+from betman import const, database, order, exchangedata, betlog
 from betman.strategy import strategy
-from betman import const, database
-from betman.all import order, exchangedata
 from betman.api.bdaq import bdaqapi
-from betman.all import betlog
 
 # commission on winnings taken from both exchanges. The strategies can
 # easily be generalised to the case when the commissions for BDAQ and
