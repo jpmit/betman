@@ -43,7 +43,7 @@ MASTERDB = '/home/jm0037/python/bdaq/code/betman/database/masterdb.db'
 LOGDIR = '/home/jm0037/python/bdaq/code/betman/logs/'
 
 # write to database after results of every API call?
-WRITEDB = False
+WRITEDB = True
 
 # exchange ids of BDAQ and BF
 BDAQID = 1

@@ -12,11 +12,11 @@ from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 import betman.matchmarkets.marketmatcher as marketmatcher
 import betman.matchmarkets.matchconst as matchconst
-from betman import database
+from betman import database, const
 
 # list of events (BDAQ names) that we are interested in.  See
 # betman.matchmarkets.matchconst for list of possible names.
-EVENT_NAMES = ['Formula 1']
+EVENT_NAMES = ['Horse Racing']
 
 dbman = database.DBMaster()
 #dbman.cleanse()
@@ -51,12 +51,13 @@ bdaqseldict, bdaqemids = bdaqapi.GetSelectionsnonAPI(bdaqmids, True)
 
 # get selections ordered by market
 bfselections = [[bfseldict[m][s] for s in bfseldict[m]] for m in bfmids]
-bdaqselections = [[bfseldict[m][s] for s in bfseldict[m]] for m in bfmids]
+bdaqselections = [[bdaqseldict[m][s] for s in bdaqseldict[m]] for m in bdaqmids]
 
 # get matching selections for each selection in matching markets
 matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)
 
-# if we are interested in horse racing, write times of races to file (make this a bit neater).
+# if we are interested in horse racing, write times of races to file
+# (TODO: make this a bit cleaner).
 if 'Horse Racing' in bdaqelist:
     horsematches = [m for m in bdaqmatches if hasattr(m, 'course')]
     horsematches.sort(key = operator.attrgetter('starttime'))

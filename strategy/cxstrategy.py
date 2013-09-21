@@ -260,7 +260,7 @@ class CXStrategy(strategy.Strategy):
         
         # update prices of selections from dictionary
         self.sel1 = prices[self.sel1.exid][self.sel1.mid][self.sel1.id]
-        self.sel2 = prices[self.sel1.exid][self.sel1.mid][self.sel1.id]
+        self.sel2 = prices[self.sel2.exid][self.sel2.mid][self.sel2.id]
         
         # update status of any orders from DB (only orders that have
         # actually been placed.

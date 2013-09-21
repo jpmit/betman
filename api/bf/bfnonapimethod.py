@@ -1,9 +1,11 @@
 # bfnonapimethod.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Web scraping functionality to replace certain annoying parts of the
-# BF API.
+
+"""
+Web scraping functionality to replace certain annoying parts of the BF
+API.
+"""
 
 from betman import *
 import bfapiparse
@@ -53,12 +55,12 @@ class nonAPIgetMarket(object):
     def __init__(self, urlclient, dbman):
         self.client = urlclient
         self.dbman = dbman
-        self.setinput()
 
     def call(self, mids):
         allemids = []
         MAXMIDS = 50
-        allminfo = []        
+        allminfo = {}
+        allemids = []
         for ids in util.chunks(mids, MAXMIDS):
             # for AUS markets, need to write 2. rather than 1. 
             midstring= '%2C'.join(['{0}.{1}'.format(self.client.mprefix,
@@ -77,11 +79,13 @@ class nonAPIgetMarket(object):
             response = self.client.call(url)
 
             # selections for all the market ids
-            minfo = bfnonapiparse.ParsenonAPIgetMarket(response.read(),
-                                                       mids)
-            allminfo = allminfo + minfo
-
-        return allminfo
+            minfo, emids = bfnonapiparse.ParsenonAPIgetMarket(response.read(),
+                                                              mids)
+            
+            allminfo.update(minfo)
+            allemids = allemids + emids
+            
+        return allminfo, allemids
 
 class nonAPIgetSelections(object):
     def __init__(self, urlclient, dbman):

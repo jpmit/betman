@@ -24,7 +24,8 @@ def save_strategies(bdaqids=[], instantonly = True):
     sgroup = strategy.StrategyGroup()
 
     # add strategies here
-    msels = database.DBMaster().ReturnSelectionMatches()
+    msels = database.DBMaster().ReturnSelectionMatches(bdaqids)
+
     if bdaqids:
         # filter out any strategies not involving one of the markets
         # listed in bdaqids
@@ -33,8 +34,8 @@ def save_strategies(bdaqids=[], instantonly = True):
                 msels.remove(ms)
 
     # alter the prices so that we get instant opp!!
-    msels[0][0].backprices[0] = (1.50, 10)
-    msels[0][1].layprices[0] = (1.01, 10)        
+    #msels[0][0].backprices[0] = (1.50, 10)
+    #msels[0][1].layprices[0] = (1.01, 10)        
     for m in msels:
         sgroup.add(cxstrategy.CXStrategy(m[0], m[1], instantonly))
 

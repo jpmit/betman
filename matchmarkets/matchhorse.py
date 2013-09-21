@@ -20,7 +20,12 @@ COURSES = {'Donc'  : 'Doncaster',
            'Bath'  : 'Bath',
            'Chest' : 'Chester',
            'Kemp'  : 'Kempton',
-           'Curr'  : 'Curragh'}
+           'Curr'  : 'Curragh',
+           'Newm'  : 'Newmarket',
+           'Catt'  : 'Catterick',
+           'Ayr'   : 'Ayr',
+           'Newb'  : 'Newbury',
+           'List'  : 'Listowel'}
 
 def MatchHorse(bdaqmarkets, bfmarkets):
     """Return list of tuples (m1,m2) where m1 and m2 are the matching
@@ -37,13 +42,15 @@ def MatchHorse(bdaqmarkets, bfmarkets):
         date = re.findall('\(.+\)', names[-3])[0][1:-1]
         # replace th and st in e.g. 13th September
         date = date.replace('th','')
-
+        date = date.replace('st','')        
+        print course, date, stime
         try:
             # convert date into datetime object
             dt = datetime.datetime.strptime(stime + ' ' + date,
                                             '%H:%M %d %B %Y')
         except:
             # there must not have been any time given
+            print 'no time'
             pass
         else:
             m.course = course
@@ -97,17 +104,18 @@ def MatchHorse(bdaqmarkets, bfmarkets):
 
     betlog.betlog.debug(('Checking market info for {0} BF markets '
                          'to match horse racing markets'.format(len(bfmarks))))
+    minfo, emids = bfapi.GetMarketnonAPI([m.id for m in bfmarks])
+
+    # use market info to update the market objects
     for m in bfmarks:
-        resp = bfapi.GetMarket(m.id)
-
-        # we may want to use marketDisplayTime here instead
-        m.starttime = resp.market.marketTime
-        # numwinnders should be 1 for all markets
-        m.numwinners = resp.market.numberOfWinners
-
-        # can only call this 5 times per minute so wait 13 secs here to be
-        # safe!
-        time.sleep(13)
+        # we might not have the info if it was one of the error mids
+        if m.id in minfo:
+            m.starttime = minfo[m.id]['marketTime']
+            # numwinners should be 1 for all markets        
+            m.numwinners = minfo[m.id]['numberOfWinners']
+        else:
+            # dummy starttime
+            m.starttime = datetime.datetime(1,1,1)
 
     # if we are in BST (British Summer Time), then convert time to BST
     # (local) time from GMT.

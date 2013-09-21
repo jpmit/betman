@@ -247,5 +247,5 @@ class BetMain(object):
             self.clock.tick()
         
 if __name__=='__main__':
-    bm = BetMain(20)
-    #bm.main_loop()
+    bm = BetMain(2)
+    bm.main_loop()

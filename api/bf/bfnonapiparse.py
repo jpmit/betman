@@ -1,3 +1,4 @@
+import datetime
 import xml.etree.ElementTree as etree
 from betman import const, Selection, betlog
 import json
@@ -30,6 +31,62 @@ def ParseSelections(mids, xmlstr):
     # whose elements are Selection objects for the market with id
     # mids[0].
     return selections
+
+def ParsenonAPIgetMarket(jstr, mids):
+    """Parse json data, return market info as dictionary with mids as
+    keys."""    
+    data = json.loads(jstr)
+
+    # dictionary of dictionaries
+    minfo = {}
+
+    for event in data['eventTypes']:
+        for eventnode in event['eventNodes']:
+            for mkt in eventnode['marketNodes']:
+                
+                # take away the 1. or 2. at start of market id; this
+                # corresponds to UK and AUS exchange respectively
+                mid = int(mkt['marketId'].split('.')[1])
+
+                stime = mkt['description']['marketTime']
+                # convert the market starttime stime to a
+                # datetime.datetime object.  stime should look like
+                # '2014-03-11T15:20:00.000Z', so delete .000Z from end
+                # of time and replace the 'T' with a space
+                stime = stime[:-5].replace('T',' ')
+                mtime = datetime.datetime.strptime(stime,
+                                                   '%Y-%m-%d %H:%M:%S')
+                
+                # store dictionary with the info that we want here;
+                # note there is more info that comes from the call
+                # than we are storing here.
+                minfo[mid] = {'marketName' : mkt['description']['marketName'],
+                              'marketTime' : mtime,
+                              'numberOfWinners' : mkt['state']['numberOfWinners']}
+
+    # check how many markets we got market info for.
+    # note, if we didn't get all markets, probably some have been
+    # cancelled/finished etc.
+    lminfo = len(minfo)
+    lmids = len(mids)
+    betlog.betlog.debug('BF got market info for {0} of {1} markets'\
+                        .format(lminfo, lmids))
+
+    # construct error list - market ids we did not get any market
+    # information for. Presumably these have finished etc.
+    errormids = []    
+    if lminfo != lmids:
+        for m in mids:
+            if m not in minfo:
+                errormids.append(m)
+
+    if errormids:
+        betlog.betlog.debug('BF no market info for markets: {0}'\
+                            .format(' '.join([str(m) for m in errormids])))
+
+    return minfo, errormids
+
+
 
 def ParseJsonSelections(jstr, mids):
     """Parse json data, return selections as dictionary with mids as

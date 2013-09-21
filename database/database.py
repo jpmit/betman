@@ -48,7 +48,7 @@ class DBMaster(object):
         # check database is open
         if not self._isopen:
             self.open()
-        print 'here'
+
         # insertion string
         qins = ('INSERT INTO {0} (ex1_mid, ex1_sid, ex1_name, ex2_mid, ex2_sid'
                 ', ex2_name) values (?,?,?,?,?,?)'.\
@@ -124,8 +124,11 @@ class DBMaster(object):
             matchmarkets.append((ex1mark[0], ex2mark[0]))
         return matchmarkets
 
-    def ReturnSelectionMatches(self):
-        """Return all selection matches."""
+    def ReturnSelectionMatches(self, bdaqmids=[]):
+        """
+        Return selection matches for market ids in bdaqmids.  If
+        bdaqmids not passed, return all selection matches.
+        """
         # Note: there is definitely a much better way to accomplish
         # what is below using joins.  Once I actually know something
         # about SQL I shall come back to this.
@@ -136,7 +139,19 @@ class DBMaster(object):
         
         # first query matching selection table
         qstr = 'SELECT * FROM {0}'.format(schema.MATCHSELS)
-        qargs = ()
+
+        if bdaqmids:
+            # limit to certain markets
+            if len(bdaqmids) == 1:
+                qstr = '{0} WHERE ex1_mid=?'.\
+                       format(qstr)
+                qargs = (bdaqmids[0],)
+            else:
+                qstr = '{0} WHERE ex1_mid in ({1})'.\
+                   format(qstr, ','.join(['?' for i in bdaqmids]))
+                qargs = tuple(bdaqmids)
+        else:
+            qargs = ()
 
         # get the matching selections we want
         msels = self.cursor.execute(qstr, qargs).fetchall()
@@ -227,6 +242,7 @@ class DBMaster(object):
 
         # write to the current selections table; we have to do this
         # one entry at a time
+
         for d in alldata:
             try:
                 self.cursor.execute(qins.format(schema.SELECTIONS), d)

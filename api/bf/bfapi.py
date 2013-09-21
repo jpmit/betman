@@ -52,6 +52,7 @@ GetAUSMarkets = bfapimethod.APIgetAllMarkets(claus, dbman).call
 GetSelections = bfnonapimethod.nonAPIgetSelections(cluknonapi,
                                                    dbman).call
 GetMarket = bfapimethod.APIgetMarket(cluk, dbman).call
+GetMarketnonAPI = bfnonapimethod.nonAPIgetMarket(cluknonapi, dbman).call
 GetMarketInfo = bfapimethod.APIgetMarketInfo(cluk, dbman).call
 
 #GetSelections = bfapimethod.APIgetMarket(cluk, dbman).call
