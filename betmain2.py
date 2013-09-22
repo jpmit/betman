@@ -17,7 +17,7 @@ from multiprocessing.pool import ThreadPool
 PRACTICEMODE = False
 
 # if this is set to false, we won't update any order info
-UPDATEORDERINFO = False
+UPDATEORDERINFO = True
 
 class BetMain(object):
     def __init__(self, deltat):
@@ -247,5 +247,5 @@ class BetMain(object):
             self.clock.tick()
         
 if __name__=='__main__':
-    bm = BetMain(2)
+    bm = BetMain(1)
     bm.main_loop()

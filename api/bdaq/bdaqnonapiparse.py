@@ -89,7 +89,7 @@ def ParsenonAPIGetPrices(resp, mids):
             # add the selection.  Note we are not getting amounts
             # matched etc. at the moment.
             selections[markmid][sid] = Selection(name, sid, mid,
-                                                 None,
+                                                 markmid,
                                                  None,
                                                  None,
                                                  None,

@@ -213,7 +213,7 @@ class APIgetMUBets(object):
         allorders = bfapiparse.ParsegetMUBets(response, orders)
         if const.WRITEDB:
             self.dbman.WriteOrders(allorders, response.header.timestamp)
-  
+            
         return allorders
 
 class APIgetMarket(object):

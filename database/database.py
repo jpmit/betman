@@ -418,12 +418,9 @@ class DBMaster(object):
             unmatched = getattr(o, 'matched', o.stake)            
             status = getattr(o, 'status', order.UNMATCHED)
             strategy = getattr(o, 'strategy', None)
-            # we only know the market id for BF not BDAQ (due to API
-            # differences)
-            mid = getattr(o, 'mid', None)
 
             try:
-                self.cursor.execute(qins, (o.oref, o.exid, mid,
+                self.cursor.execute(qins, (o.oref, o.exid, o.mid,
                                            o.sid, strategy, o.price,
                                            o.stake, o.polarity, matched,
                                            unmatched, status, tstamp))
