@@ -90,8 +90,9 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' unmatched    real NOT NULL,'
                            ' status       int  NOT NULL,'
                            ' tstamp       text NOT NULL)'),
-              MATCHORDERS: ('(order1_id int primary key, '
-                            ' order2_id int NOT NULL)'),
+              MATCHORDERS: ('(order1_id   int  primary key, '
+                            ' order2_id   int  NOT NULL, '
+                            ' tplaced     text NOT NULL)'),
               ACCOUNTINFO: ('(exchange_id int  NOT NULL, '
                             ' available   real NOT NULL,'
                             ' balance     real NOT NULL,'

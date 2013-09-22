@@ -52,7 +52,7 @@ def ParseListBootstrapOrders(resp):
     return allorders
 
 def ParsePlaceOrdersNoReceipt(resp, olist):
-    """Parse a single order, return order object"""
+    """Return list of order objects"""
     
     retcode = resp.ReturnStatus._Code
     tstamp = resp.Timestamp

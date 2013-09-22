@@ -43,8 +43,23 @@ class DBMaster(object):
         self.conn.close()
         self._isopen = False
 
+    def WriteOrderMatches(self, omatches, tplaced):
+        """Write to matchorders table"""
+        # check database is open
+        if not self._isopen:
+            self.open()
+
+        # insertion string
+        qins = ('INSERT INTO {0} (order1_id, order2_id, tplaced) '
+                'values (?,?,?)'.\
+                format(schema.MATCHORDERS))
+        alldata = [(o1.oref, o2.oref, tplaced) for (o1, o2) in omatches]        
+
+        self.cursor.executemany(qins, alldata)
+        self.conn.commit()
+
     def WriteSelectionMatches(self, selmatches):
-        """Write to matchingselections table"""
+        """Write to matchselections table"""
         # check database is open
         if not self._isopen:
             self.open()

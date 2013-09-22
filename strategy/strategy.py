@@ -64,6 +64,10 @@ class StrategyGroup(object):
         return oids
 
     def get_orders_to_place(self):
+        """
+        Return dictionary with keys that are the exchange ids, and
+        items that are lists of order objects that we want to place.
+        """
         toplace = {const.BDAQID: [], const.BFID: []}
         for strat in self.strategies:
             # get order dictionary for each strat

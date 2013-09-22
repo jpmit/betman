@@ -17,7 +17,7 @@ from multiprocessing.pool import ThreadPool
 PRACTICEMODE = False
 
 # if this is set to false, we won't update any order info
-UPDATEORDERINFO = True
+UPDATEORDERINFO = False
 
 class BetMain(object):
     def __init__(self, deltat):
@@ -135,50 +135,80 @@ class BetMain(object):
         # Keys are const.BDAQID and const.BFID
         if odict is None:
             odict = self.stratgroup.get_orders_to_place()
-        betlog.betlog.debug('making orders: {0}'.format(odict))
         saveorders = {const.BDAQID: {}, const.BFID: {}}
 
-        if not PRACTICEMODE:
+        if PRACTICEMODE:
+            return
 
-            if (odict[const.BDAQID]) and (odict[const.BFID]):
-                # we are betting on both exchanges, so we use two
-                # threads to send the orders simultaneously.
-                pool = ThreadPool(processes=1)
+        if (odict[const.BDAQID]) or (odict[const.BFID]):
+            betlog.betlog.debug('making orders: {0}'.format(odict))
 
-                # place BDAQ order.
-                async_result = pool.apply_async(bdaqapi.PlaceOrders,
-                                                (odict[const.BDAQID],))
+        if (odict[const.BDAQID]) and (odict[const.BFID]):
+            # we are betting on both exchanges, so we use two
+            # threads to send the orders simultaneously.
+            pool = ThreadPool(processes=1)
 
-                # at the moment all bets to BF are placed one after
-                # the other - will need to modify this if we want to
-                # place bets on multiple markets 'simultaneously' -
-                # i.e. add new threads.
+            # place BDAQ order.
+            async_result = pool.apply_async(bdaqapi.PlaceOrders,
+                                            (odict[const.BDAQID],))
+
+            # at the moment all bets to BF are placed one after
+            # the other - will need to modify this if we want to
+            # place bets on multiple markets 'simultaneously' -
+            # i.e. add new threads.
+            for plorder in odict[const.BFID]:
+                bfo = bfapi.PlaceBets([plorder])
+                saveorders[const.BFID].update(bfo)
+
+            bdo = async_result.get()
+            saveorders[const.BDAQID].update(bdo)
+
+        else:
+            # betting on BDAQ or BF or neither but not both - no
+            # need for extra thread
+
+            if odict[const.BDAQID]:
+                # place the orders
+                bdo = bdaqapi.PlaceOrders(odict[const.BDAQID])
+                saveorders[const.BDAQID].update(bdo)
+                # Annoying!  The BF API only allows us to make bets for
+                # one market at a time (although we can make multiple bets
+                # - up to 60 apparently - for each market.
+            if odict[const.BFID]:
                 for plorder in odict[const.BFID]:
                     bfo = bfapi.PlaceBets([plorder])
                     saveorders[const.BFID].update(bfo)
 
-                bdo = async_result.get()
-                saveorders[const.BDAQID].update(bdo)
+        # now save the order information to the database.
+        if (odict[const.BDAQID]) or (odict[const.BFID]):
 
-            else:
-                # betting on BDAQ or BF or neither but not both - no
-                # need for extra thread
+            # save the full order information
+            self.save_orders(saveorders)
 
-                if odict[const.BDAQID]:
-                    # place the orders
-                    bdo = bdaqapi.PlaceOrders(odict[const.BDAQID])
-                    saveorders[const.BDAQID].update(bdo)
-                    # Annoying!  The BF API only allows us to make bets for
-                    # one market at a time (although we can make multiple bets
-                    # - up to 60 apparently - for each market.
-                if odict[const.BFID]:
-                    for plorder in odict[const.BFID]:
-                        bfo = bfapi.PlaceBets([plorder])
-                        saveorders[const.BFID].update(bfo)
+            # save the information on matching orders to the database
+            if (len(odict[const.BDAQID]) == len(odict[const.BFID])):
+                self.save_match_orders(odict, saveorders)
 
-            # now save the order information to the database.
-            if (odict[const.BDAQID]) or (odict[const.BFID]):
-                self.save_orders(saveorders)
+    def save_match_orders(self, odict, saveorders):
+        """Save matching order ids to database table matchorders."""
+
+        # since we got odict from each strategy in turn, they
+        # are already in matching order; we just need to add
+        # the order refs that were returned by the BDAQ and BF
+        # API.
+        matchorders = zip(odict[const.BDAQID], odict[const.BFID])
+        for (o1, o2) in matchorders:
+            # we need to get the order id for o1 and o2 from
+            # saveorders dictionary
+            for o in saveorders[const.BDAQID]:
+                if o1.sid == o.sid:
+                    o1.oref = o.oref
+            for o in saveorders[const.BFID]:
+                if o2.sid == o2.sid:
+                    o2.oref = o.oref
+        # write to DB
+        self.dbman.WriteOrderMatches(matchorders,
+                                     datetime.datetime.now())
 
     def save_orders(self, sorders):
         ords = [o.values() for o in sorders.values()]
