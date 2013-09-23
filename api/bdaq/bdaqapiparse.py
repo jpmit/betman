@@ -72,8 +72,8 @@ def ParsePlaceOrdersNoReceipt(resp, olist):
     allorders = {}
     for (o, ref) in zip(olist, orefs):
         allorders[ref] = order.Order(const.BDAQID, o.sid, o.stake, o.price,
-                                     o.polarity, **{'oref': ref, 'status':
-                                                    order.UNMATCHED,
+                                     o.polarity, **{'oref': ref, 'mid': o.mid,
+                                                    'status': order.UNMATCHED,
                                                     'matchedstake': 0.0,
                                                     'unmatchedstake': o.stake})
     return allorders

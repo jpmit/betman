@@ -53,8 +53,9 @@ class DBMaster(object):
         qins = ('INSERT INTO {0} (order1_id, order2_id, tplaced) '
                 'values (?,?,?)'.\
                 format(schema.MATCHORDERS))
-        alldata = [(o1.oref, o2.oref, tplaced) for (o1, o2) in omatches]        
+        alldata = [(o1.oref, o2.oref, tplaced) for (o1, o2) in omatches]
 
+        print alldata
         self.cursor.executemany(qins, alldata)
         self.conn.commit()
 
@@ -422,8 +423,7 @@ class DBMaster(object):
                 'exchange_id, market_id, selection_id,'
                 'strategy, price, stake, polarity, matched,'
                 'unmatched, status, tstamp) values '
-                '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'.\
-                format(schema.ORDERS))
+                '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         qupd = ('UPDATE {0} SET matched=?, unmatched=?, status=?,'
                 'tstamp=? WHERE order_id=?').format(schema.ORDERS)
         
@@ -434,16 +434,27 @@ class DBMaster(object):
             status = getattr(o, 'status', order.UNMATCHED)
             strategy = getattr(o, 'strategy', None)
 
+            # we won't know the market id if we are here from BDAQ API
+            # ListBootstrapOrders; otherwise we should know the market
+            # id.
+            mid = getattr(o, 'mid', None)
+
+            # add to orders table; update if the order id already exists
+            data = (o.oref, o.exid, mid, o.sid, strategy, o.price,
+                    o.stake, o.polarity, matched, unmatched, status,
+                    tstamp)
             try:
-                self.cursor.execute(qins, (o.oref, o.exid, o.mid,
-                                           o.sid, strategy, o.price,
-                                           o.stake, o.polarity, matched,
-                                           unmatched, status, tstamp))
+                self.cursor.execute(qins.format(schema.ORDERS), data)
+
             except sqlite3.IntegrityError:
                 # already have order_id. Update matched amount,
                 # unmatched amount, status and timestamp.
                 self.cursor.execute(qupd, (matched, unmatched, status,
                                            tstamp, o.oref))
+
+            # add to historical orders table
+            self.cursor.execute(qins.format(schema.HISTORDERS), data)
+                                            
         self.conn.commit()
         
     def CreateTables(self):
@@ -500,8 +511,11 @@ class DBMaster(object):
         # accountinfo stores balance, available funds etc
         self.cursor.execute(schema.getschema(schema.ACCOUNTINFO))
 
-        # hist prices stores historical price information
+        # histprices stores historical price information
         self.cursor.execute(schema.getschema(schema.HISTPRICES))
+
+        # historders stores historical order information
+        self.cursor.execute(schema.getschema(schema.HISTORDERS))
 
         self.conn.commit()
         return

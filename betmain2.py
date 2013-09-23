@@ -149,18 +149,32 @@ class BetMain(object):
             pool = ThreadPool(processes=1)
 
             # place BDAQ order.
-            async_result = pool.apply_async(bdaqapi.PlaceOrders,
-                                            (odict[const.BDAQID],))
+            bdaq_result = pool.apply_async(bdaqapi.PlaceOrders,
+                                           (odict[const.BDAQID],))
 
-            # at the moment all bets to BF are placed one after
-            # the other - will need to modify this if we want to
-            # place bets on multiple markets 'simultaneously' -
-            # i.e. add new threads.
-            for plorder in odict[const.BFID]:
-                bfo = bfapi.PlaceBets([plorder])
+            # we can only place one bet (at least, only one mid) per
+            # API call for BF
+            nbfbets = len(odict[const.BFID])
+            if nbfbets == 1:
+                bfo = bfapi.PlaceBets(odict[const.BFID])
                 saveorders[const.BFID].update(bfo)
+            else:
+                # more than one BF bet; (try to) place this
+                # asynchronously
+                bf_results = [None]*(nbfbets - 1)
+                for bnum in range(nbfbets - 1):
+                    bf_results[bnum] = pool.apply_async(bfapi.PlaceBets,
+                                                        ([odict[const.BFID][bnum]],))
+                bfo = bfapi.PlaceBets([odict[const.BFID][-1]])
+                saveorders[const.BFID].update(bfo)
+                
+                # fetch the bf results
+                for resp in bf_results:
+                    d = resp.get()
+                    saveorders[const.BFID].update(d)
 
-            bdo = async_result.get()
+            # fetch the BDAQ results
+            bdo = bdaq_result.get()
             saveorders[const.BDAQID].update(bdo)
 
         else:
@@ -200,12 +214,14 @@ class BetMain(object):
         for (o1, o2) in matchorders:
             # we need to get the order id for o1 and o2 from
             # saveorders dictionary
-            for o in saveorders[const.BDAQID]:
-                if o1.sid == o.sid:
+            for o in saveorders[const.BDAQID].values():
+                if o1.sid == o.sid and o1.mid == o.mid:
                     o1.oref = o.oref
-            for o in saveorders[const.BFID]:
-                if o2.sid == o2.sid:
+
+            for o in saveorders[const.BFID].values():
+                if o2.sid == o.sid and o2.mid == o.mid:
                     o2.oref = o.oref
+
         # write to DB
         self.dbman.WriteOrderMatches(matchorders,
                                      datetime.datetime.now())

@@ -16,7 +16,7 @@ from betman import database, const
 
 # list of events (BDAQ names) that we are interested in.  See
 # betman.matchmarkets.matchconst for list of possible names.
-EVENT_NAMES = ['Horse Racing']
+EVENT_NAMES = ['Formula 1']
 
 dbman = database.DBMaster()
 #dbman.cleanse()

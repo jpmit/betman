@@ -37,6 +37,18 @@ class Order(object):
         # overwritten by the dict kwargs.
         self.status = NOTPLACED
 
+        # set default values which may be overridden by **kwargs
+        # selection reset count and withdrawal sequence number (needed
+        # for BDAQ).
+        self.src = 0
+        self.wsn = 0
+
+        # persistence type (used for betfair); default here is 'in
+        # play', which means the order persists (is not cancelled)
+        # when the order goes in play (e.g. when a horse race or
+        # football match starts).
+        self.persistence = 'IP'
+
         for kw in kwargs:
             # notable kwargs (and therefore possible instance attributes) are:
             # oref - reference number from API
