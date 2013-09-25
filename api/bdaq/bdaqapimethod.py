@@ -232,7 +232,6 @@ class APIListAccountPostings(object):
 
 # class APIChangePassword(object):
 
-# not fully implemented (do not use)
 class APIListOrdersChangedSince(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
@@ -251,17 +250,19 @@ class APIListOrdersChangedSince(object):
         else:
             self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
 
-        betlog.betlog.debug('Calling ListOrders with sequence number: {0}'\
-                            .format(self.req.SequenceNumber))
+        betlog.betlog.debug(('Calling ListOrdersChangedSince with '
+                             'sequence number: {0}'\
+                            .format(self.req.SequenceNumber)))
         
         resp = self.client.service.ListOrdersChangedSince(self.req)
-        betlog.betlog.info('calling BDAQ API ListOrdersChangedSince')        
 
         data = bdaqapiparse.ParseListOrdersChangedSince(resp)
+
         if not data:
-            # should be returning an empty list here, i.e. no orders
+            # should be returning an empty dict here, i.e. no orders
             # changed since last call.
             return data
+        
         # if we did get some orders changed, the data consists of the
         # order information and the new max sequence number.
         orders, snum = data
@@ -273,7 +274,7 @@ class APIListOrdersChangedSince(object):
 
         # update changed orders
         if const.WRITEDB:
-            self.dbman.WriteOrders(orders, resp.Timestamp)
+            self.dbman.WriteOrders(orders.values(), resp.Timestamp)
         return orders
 
 # this sequence number is updated by both APIListOrdersChangedSince
@@ -303,7 +304,7 @@ class APIListBootstrapOrders(object):
         ORDER_SEQUENCE_NUMBER = result._MaximumSequenceNumber
         allorders = bdaqapiparse.ParseListBootstrapOrders(result)
         if const.WRITEDB:
-            self.dbman.WriteOrders(allorders, result.Timestamp)
+            self.dbman.WriteOrders(allorders.values(), result.Timestamp)
         return allorders
 
 # not fully implemented (do not use)

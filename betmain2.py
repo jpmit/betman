@@ -111,26 +111,42 @@ class BetMain(object):
         if bdaqemids or bfemids:
             betutil.pickle_stratgroup(self.stratgroup)
 
+    def unmatched_orders(self, exid):
+        """Return list of unmatched orders for exchange exid."""
+        
+        unmatched = []
+        for o in self.orders[exid].values():
+            if o.status == order.UNMATCHED:
+                unmatched.append(o)
+        return unmatched
+
     def update_order_information(self):
         """Get information on all current orders."""
-        ### TODO:
-        #   change this to update self.orders dictionary...
-        
-        odict = self.stratgroup.get_orders()
 
         if (not PRACTICEMODE) and (UPDATEORDERINFO):
-            # this should automatically keep track of a 'sequence
-            # number', so that we are updating information about all
-            # orders.
-            bdaqapi.ListOrdersChangedSince()
+            # get list of unmatched orders on BDAQ
+            bdaqunmatched = self.unmatched_orders(const.BDAQID)
+
+            # only want to call BDAQ API if we have unmatched bets
+            if bdaqunmatched:
+                # this should automatically keep track of a 'sequence
+                # number', so that we are updating information about all
+                # orders.
+                bdaqors = bdaqapi.ListOrdersChangedSince()
+                self.orders[const.BDAQID].update(bdaqors)
             
-            # check we actually have some BF orders under
-            # consideration.
-            if odict[const.BFID]:
-                bfapi.GetBetStatus(odict[const.BFID])
+            # get list of unmatched orders on BF
+            bfunmatched = self.unmatched_orders(const.BFID)
+
+            if bfunmatched:
+                # we pass this function the list of order objects;
+                bfors = bfapi.GetBetStatus(bfunmatched)
+                # update order dictionary
+                self.orders[const.BFID].update(bfors)
 
     def make_orders(self, odict = None):
         """Make outstanding orders for all strategies."""
+        
         # get dictionary of outstanding orders for all strategies.
         # Keys are const.BDAQID and const.BFID
         if odict is None:
@@ -193,13 +209,18 @@ class BetMain(object):
                     bfo = bfapi.PlaceBets([plorder])
                     saveorders[const.BFID].update(bfo)
 
-        # now save the order information to the database.
+        # now save the order information to the DB.
         if (odict[const.BDAQID]) or (odict[const.BFID]):
 
-            # save the full order information
+            # update the dictionary of orders that we have placed
+            # since starting the application; this
+            self.orders[const.BDAQID].update(saveorders[const.BDAQID])
+            self.orders[const.BFID].update(saveorders[const.BFID])
+
+            # save the full order information to the DB
             self.save_orders(saveorders)
 
-            # save the information on matching orders to the database
+            # save the information on matching orders to the DB
             if (len(odict[const.BDAQID]) == len(odict[const.BFID])):
                 self.save_match_orders(odict, saveorders)
 
@@ -249,6 +270,10 @@ class BetMain(object):
         self.update_market_prices()
 
     def save_prices(self):
+        """
+        Save prices of all selections in self.prices dictionary to DB.
+        """
+        
         # could be a quicker way of getting flat selection list in
         # api/bf/bfnonapimethod.py
         allsels = []

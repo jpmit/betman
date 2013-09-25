@@ -1,8 +1,8 @@
 # bfapiparse.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# functions for parsing the response that comes from the BF api
+
+"""Functions for parsing the response that comes from the BF api."""
 
 from betman import const, Market, Event, order
 from betman.all.betexception import APIError
@@ -15,10 +15,15 @@ def ParsegetMUBets(res, orders):
     if ecode != 'OK':
         raise APIError, 'getMUBets error, errorcode {0}'.format(ecode)
 
+    if res.errorCode == 'NO_RESULTS':
+        return {}
+
     print len(res.bets.MUBet), len(orders)
+    print res.bets.MUBet
+    print orders
     assert len(res.bets.MUBet) == len(orders)
 
-    allorders = []
+    allorders = {}
     for o, r in zip(orders, res.bets.MUBet):
 
         if r.betStatus == 'U':
@@ -33,12 +38,12 @@ def ParsegetMUBets(res, orders):
             raise APIError, 'Received unknown order status {0}'.\
                   format(r.betStatus)
         
-        odict = {'status': status,
-                 'matchedstake' : matched,
-                 'unmatchedstake' : unmatched}
+        odict = {'mid': o.mid, 'oref': oref, 'status': status,
+                 'matchedstake' : matched, 'unmatchedstake' :
+                 unmatched}
 
-        allorders.append(order.Order(const.BFID, o.sid, o.stake,
-                                     o.price, o.polarity, **odict))
+        allorders[oref] = order.Order(const.BFID, o.sid, o.stake,
+                                      o.price, o.polarity, **odict)
 
     return allorders
 
@@ -71,18 +76,18 @@ def ParseplaceBets(res, olist):
         odict = {'mid': o.mid, 'oref': oref, 'status': status,
                  'matchedstake': matched, 'unmatchedstake':
                  o.stake - matched}
-        allorders[oref] = order.Order(const.BFID, o.sid, o.stake, o.price,
-                                      o.polarity, **odict)
+        allorders[oref] = order.Order(const.BFID, o.sid, o.stake,
+                                      o.price, o.polarity, **odict)
     
     return allorders
 
-def ParseEvents(res):
+def ParsegetActiveEventTypes(res):
     events = []
     for e in res.eventTypeItems.EventType:
-        events.append(Event(e.name, e.id, 2))
+        events.append(Event(e.name, e.id, const.BFID))
     return events
 
-def ParseMarkets(res):
+def ParsegetAllMarkets(res):
     markets = []
 
     # check if there is some marketdata,

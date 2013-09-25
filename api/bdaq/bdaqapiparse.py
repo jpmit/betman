@@ -27,10 +27,10 @@ def ParseListBootstrapOrders(resp):
 
     # no orders returned; end of bootstrapping process.
     if not hasattr(resp, 'Orders'):
-        return []
+        return {}
 
     # create and return list of order objects.    
-    allorders = []
+    allorders = {}
     for o in resp.Orders.Order:
         sid = o._SelectionId
         ustake = o._UnmatchedStake
@@ -43,11 +43,11 @@ def ParseListBootstrapOrders(resp):
         oref = o._Id
         status = o._Status
         
-        allorders.append(order.Order(const.BDAQID, sid, stake, price,
-                                     pol, **{'oref': oref,
-                                             'status': status,
-                                             'matchedstake': mstake,
-                                             'unmatchedstake': ustake}))
+        allorders[oref] = order.Order(const.BDAQID, sid, stake, price,
+                                      pol, **{'oref': oref,
+                                              'status': status,
+                                              'matchedstake': mstake,
+                                              'unmatchedstake': ustake})
 
     return allorders
 
@@ -264,14 +264,14 @@ def ParseListOrdersChangedSince(resp):
 
     if not hasattr(resp, 'Orders'):
         # no orders have changed
-        return []
+        return {}
 
     # store the sequence numbers of the orders: we need to return the
     # maximum sequence number so that the next time we call the API
     # function we won't return this again!
     seqnums = []
 
-    allorders = []
+    allorders = {}
     for o in resp.Orders.Order:
 
         # From API docs, order _Status can be
@@ -290,10 +290,10 @@ def ParseListOrdersChangedSince(resp):
                  'matchedstake' : o._MatchedStake,
                  'unmatchedstake': o._UnmatchedStake}
 
-        allorders.append(order.Order(const.BDAQID, o._SelectionId,
-                                     o._MatchedStake + o._UnmatchedStake,
-                                     o._RequestedPrice, o._Polarity,
-                                     **odict))
+        allorders[o._Id] = order.Order(const.BDAQID, o._SelectionId,
+                                       o._MatchedStake + o._UnmatchedStake,
+                                       o._RequestedPrice, o._Polarity,
+                                       **odict)
         # store sequence number
         seqnums.append(o._SequenceNumber)
 

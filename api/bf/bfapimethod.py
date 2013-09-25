@@ -43,7 +43,7 @@ class APIgetActiveEventTypes(object):
         self.addheader()
         betlog.betlog.info('calling BF API getActiveEventTypes')        
         response = self.client.service.getActiveEventTypes(self.req)
-        events = bfapiparse.ParseEvents(response)
+        events = bfapiparse.ParsegetActiveEventTypes(response)
         # note that we don't have any database tables for events at
         # the moment - we only write info on actual markets to the
         # database.
@@ -70,7 +70,7 @@ class APIgetAllMarkets(object):
         self.req.eventTypeIds = aofint
         betlog.betlog.info('calling BF API getAllMarkets')         
         response = self.client.service.getAllMarkets(self.req)
-        allmarkets = bfapiparse.ParseMarkets(response)
+        allmarkets = bfapiparse.ParsegetAllMarkets(response)
         
         if const.WRITEDB:
             self.dbman.WriteMarkets(allmarkets,
@@ -188,7 +188,7 @@ class APIgetMUBets(object):
         # or PLACED_DATE - order by placed date.  This probably
         # shouldn't matter too much since I'll parse the output
         # anyhow.
-        self.req.orderBy.value = 'MATCHED_DATE'
+        self.req.orderBy.value = 'BET_ID'
         # can be 'ASC' - ascending or 'DESC' - descending.
         self.req.sortOrder.value = 'ASC'
         # I think this is the maximum but docs are unclear.
@@ -211,8 +211,10 @@ class APIgetMUBets(object):
         response = self.client.service.getMUBets(self.req)
         betlog.betlog.info('calling BF API getMUBets')            
         allorders = bfapiparse.ParsegetMUBets(response, orders)
+
         if const.WRITEDB:
-            self.dbman.WriteOrders(allorders, response.header.timestamp)
+            self.dbman.WriteOrders(allorders.values(),
+                                   response.header.timestamp)
             
         return allorders
 
