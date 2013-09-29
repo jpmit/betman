@@ -140,6 +140,56 @@ class DBMaster(object):
             matchmarkets.append((ex1mark[0], ex2mark[0]))
         return matchmarkets
 
+    def ReturnOrderMatches(self, date=None):
+        """
+        Return list of all matching orders [(o1, o2) ,...].  Note that
+        the status of the order will be the most recent one.  If date
+        is given, this should be a string to limit the orders returned
+        to those that were placed on the particular date given.
+        E.g. date='2013-09-25' is valid.
+        """
+
+        if not self._isopen:
+            self.open()
+
+        qstr = 'SELECT * FROM {0}'.format(schema.MATCHORDERS)
+
+        if date:
+            # restrict orders to the specific date.  Check that there
+            # are no spaces in date, to avoid injection.
+            for let in date:
+                if let.isspace():
+                    raise DBError, ('date field cannot contain '
+                                    'whitespace')
+            qstr += " WHERE tplaced like '{0}%'".format(date)
+
+        mords = self.cursor.execute(qstr).fetchall()
+        matchorders = []
+        # could in principle sort mords by order id and make only a
+        # single query...
+        for m in mords:
+            ex1oid = m[0]
+            ex2oid = m[1]
+            ex1order = self.ReturnOrders('SELECT * FROM {0} where '
+                                         'exchange_id=? and order_id=?'\
+                                         .format(schema.ORDERS),
+                                         (const.BDAQID, ex1oid))
+            ex2order = self.ReturnOrders('SELECT * FROM {0} where '
+                                         'exchange_id=? and order_id=?'\
+                                         .format(schema.ORDERS),
+                                         (const.BFID, ex2oid))
+            # check our queries worked.  If they didn't, then the
+            # database is corrupted, since the order is listed in the
+            # matching orders table but not in the main orders table.
+            for eo, oid in zip([ex1order, ex2order], [ex1oid, ex2oid]):
+                if not eo:
+                    raise DBCorruptError, ('order id {0} not found in '
+                                           'table {1}'\
+                                           .format(oid, schema.ORDERS))
+            matchorders.append((ex1order[0], ex2order[0]))
+
+        return matchorders
+
     def ReturnSelectionMatches(self, bdaqmids=[]):
         """
         Return selection matches for market ids in bdaqmids.  If
@@ -282,6 +332,15 @@ class DBMaster(object):
                              accinfo[3], tstamp))
         self.conn.commit()
 
+    def ReturnMarketById(self, exid, mid):
+        qstr = ('SELECT * FROM {0} WHERE exchange_id=? '
+                'and market_id=?'\
+                .format(schema.MARKETS))
+        mark = self.ReturnMarkets(qstr, (exid, mid))
+        
+        if not mark: return None
+        return mark[0]
+
     def ReturnMarkets(self, sqlstr, sqlargs):
         """
         Execute query sqlquery, which should return a list of Markets.
@@ -327,15 +386,27 @@ class DBMaster(object):
         # in the database!
         # Note also we need to convert sqlite int into bool for
         # inrunning status of market.
-        orders = [Order(o[1], o[3], o[6], o[5], o[7], **{'oref': o[0],
-                                                         'status': o[10],
-                                                         'matchedstake': o[8],
-                                                         'unmatchedstake': o[9],
-                                                         'strategy': o[4],
-                                                         'mid': o[2]})
+        orders = [order.Order(o[1], o[3], o[6], o[5], o[7],
+                              **{'oref': o[0], 'status': o[10],
+                                 'matchedstake': o[8],
+                                 'unmatchedstake': o[9],
+                                 'strategy': o[4], 'mid': o[2]})
                   for o in odata]
         
         return orders
+
+    def ReturnSelectionById(self, exid, mid, sid):
+        """
+        Return a single selection from the database (or None if no
+        selection exists with the parameters passed).
+        """
+        qstr = ('SELECT * FROM {0} WHERE exchange_id=? '
+                'and market_id=? and selection_id=?'\
+                .format(schema.SELECTIONS))
+        sel = self.ReturnSelections(qstr, (exid, mid, sid))
+        
+        if not sel: return None
+        return sel[0]
 
     def ReturnSelections(self, sqlstr, sqlargs=None):
         """
