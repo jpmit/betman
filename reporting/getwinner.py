@@ -45,17 +45,17 @@ class MyHTMLParser(HTMLParser):
         if self.ncourses:
             # add another course if we need to
             if self.ncourses > len(self.courses):
-                self.courses[data] = []
+                self.courses[data] = {}
                 self.curcourse = data
 
             # add another racing time if we need to
             if self.tnext:
                 time = data.strip()
-                self.courses[self.curcourse].append([time])
                 self.tnext = False
+                self.lasttime = time
 
             if self.wnext:
-                self.courses[self.curcourse][-1].append(data)
+                self.courses[self.curcourse][self.lasttime] = data
                 self.wnext = False
 
 def getwinners(date, mnames):
@@ -67,10 +67,18 @@ def getwinners(date, mnames):
     bbcurl = ('http://www.bbc.co.uk/sport/horse-racing/uk-ireland/'
               'results/{0}'.format(date.replace('-','')))
     data = urllib2.urlopen(bbcurl).read()
-
-
-    return data
     
-# parse the html
-parser = MyHTMLParser()
-winners = parser.return_winners(data)
+    # parse the html
+    parser = MyHTMLParser()
+    windict = parser.return_winners(data)
+
+    winners = []
+    for mname in mnames:
+        time, course = mname.split()
+        try:
+            winners.append(windict[course][time])
+        except KeyError:
+            # winning time and course not successfully parsed from the
+            # HTML.
+            pass
+    return winners
