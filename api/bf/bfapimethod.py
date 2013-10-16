@@ -1,3 +1,4 @@
+from operator import attrgetter
 import bfapiparse
 from betman import const, Event
 from betman.all import betlog
@@ -205,12 +206,19 @@ class APIgetMUBets(object):
         # bfapiparse.ParsegetMUBets will have to be modified to make
         # this work.
         self.addheader()
-        betids = [o.oref for o in orders]
+
+        # make orders into a dict, where key is order reference
+        odict = {}
+        for o in orders:
+            odict[o.oref] = o
+        orders.sort(key = attrgetter('oref'))
+        
+        betids = sorted([o.oref for o in orders])
         self.fillreq(betids, marketid)
 
         response = self.client.service.getMUBets(self.req)
         betlog.betlog.info('calling BF API getMUBets')            
-        allorders = bfapiparse.ParsegetMUBets(response, orders)
+        allorders = bfapiparse.ParsegetMUBets(response, odict)
 
         if const.WRITEDB:
             self.dbman.WriteOrders(allorders.values(),

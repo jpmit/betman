@@ -7,7 +7,7 @@
 from betman import const, Market, Event, order
 from betman.all.betexception import APIError
 
-def ParsegetMUBets(res, orders):
+def ParsegetMUBets(res, odict):
 
     ecode = res.header.errorCode
     tstamp = res.header.timestamp
@@ -18,32 +18,43 @@ def ParsegetMUBets(res, orders):
     if res.errorCode == 'NO_RESULTS':
         return {}
 
-    print len(res.bets.MUBet), len(orders)
-    print res.bets.MUBet
-    print orders
-    assert len(res.bets.MUBet) == len(orders)
+    # note we could get back more items than orders here, since an order
+    # may have been partially matched to 2 or more others.
+    if len(res.bets.MUBet) != len(odict):
+        betlog.betlog.debug('Got {0} results for updating {1} orders'\
+                            .format(len(res.bets.MUBet), len(odict)))
+        print res.bets.MUBet
+        print odict
 
     allorders = {}
-    for o, r in zip(orders, res.bets.MUBet):
+    for r in res.bets.MUBet:
 
+        # get the order id
+        oref = r.betId
+
+        # get the order in the order dict that has the matching id
+        o = odict[oref]
+
+        # note: will have to change this at some point for partial
+        # matches
         if r.betStatus == 'U':
             status = order.UNMATCHED
-            matched = o.stake
-            unmatched = 0.0
-        elif r.betStatus == 'M':
-            status = order.MATCHED
             matched = 0.0
             unmatched = o.stake
+        elif r.betStatus == 'M':
+            status = order.MATCHED
+            matched = o.stake
+            unmatched = 0.0
         else:
             raise APIError, 'Received unknown order status {0}'.\
                   format(r.betStatus)
         
-        odict = {'mid': o.mid, 'oref': oref, 'status': status,
+        oinfo = {'mid': o.mid, 'oref': oref, 'status': status,
                  'matchedstake' : matched, 'unmatchedstake' :
                  unmatched}
 
         allorders[oref] = order.Order(const.BFID, o.sid, o.stake,
-                                      o.price, o.polarity, **odict)
+                                      o.price, o.polarity, **oinfo)
 
     return allorders
 

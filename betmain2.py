@@ -17,7 +17,7 @@ from multiprocessing.pool import ThreadPool
 PRACTICEMODE = False
 
 # if this is set to false, we won't update any order info
-UPDATEORDERINFO = False
+UPDATEORDERINFO = True
 
 class BetMain(object):
     def __init__(self, deltat):
@@ -220,7 +220,10 @@ class BetMain(object):
             # save the full order information to the DB
             self.save_orders(saveorders)
 
-            # save the information on matching orders to the DB
+            # save the information on matching orders to the DB.  Note
+            # we are assuming here that if the number of orders on
+            # each exchange are the same, then orders are made of
+            # matching orders.
             if (len(odict[const.BDAQID]) == len(odict[const.BFID])):
                 self.save_match_orders(odict, saveorders)
 
