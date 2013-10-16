@@ -121,7 +121,16 @@ class BetMain(object):
         return unmatched
 
     def update_order_information(self):
-        """Get information on all current orders."""
+        """
+        Get information on all current orders.  Note that there are
+        differences between BDAQ and BF here due to the APIs.  For
+        BDAQ, we will only get information back if orders have
+        changed.  For BF, we will get information back for all
+        unmatched orders.  The main repurcussions of this is that
+        historical orders are available for every timepoint for BF,
+        but only at timepoints for which a given order has changed for
+        BDAQ (this applies to the table 'historders'.
+        """
 
         if (not PRACTICEMODE) and (UPDATEORDERINFO):
             # get list of unmatched orders on BDAQ
