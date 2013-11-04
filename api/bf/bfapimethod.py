@@ -10,17 +10,17 @@ def BFLogin(clglob):
     req.ipAddress = 0
     req.locationId = 0
     req.password = const.BFPASS
-    req.productId = 82 # BF Free API use code
+    req.productId = 82 # BF Free Api use code
     req.username = const.BFUSER
     req.vendorSoftwareId = 0
 
     # call the login service
-    betlog.betlog.info('calling BF API Login')
+    betlog.betlog.info('calling BF Api Login')
     res = clglob.client.service.login(req)
 
     # we need the session token from the response
     stoken = res[0].sessionToken
-    # set up API request header using this
+    # set up Api request header using this
     reqheader = clglob.client.factory.create('ns1:APIRequestHeader')
     reqheader.clientStamp = 0
     reqheader.sessionToken = stoken
@@ -28,7 +28,7 @@ def BFLogin(clglob):
 
 # classes that implement the global methods
 
-class APIgetActiveEventTypes(object):
+class ApigetActiveEventTypes(object):
     def __init__(self, apiclient):
         self.client = apiclient.client
         self.createinput()
@@ -42,7 +42,7 @@ class APIgetActiveEventTypes(object):
         
     def call(self):
         self.addheader()
-        betlog.betlog.info('calling BF API getActiveEventTypes')        
+        betlog.betlog.info('calling BF Api getActiveEventTypes')        
         response = self.client.service.getActiveEventTypes(self.req)
         events = bfapiparse.ParsegetActiveEventTypes(response)
         # note that we don't have any database tables for events at
@@ -52,7 +52,7 @@ class APIgetActiveEventTypes(object):
 
 # classes that can be called with either uk or aus exchange
 
-class APIgetAllMarkets(object):
+class ApigetAllMarkets(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
@@ -69,7 +69,7 @@ class APIgetAllMarkets(object):
         aofint = self.client.factory.create('ns1:ArrayOfInt')
         aofint.int = ids
         self.req.eventTypeIds = aofint
-        betlog.betlog.info('calling BF API getAllMarkets')         
+        betlog.betlog.info('calling BF Api getAllMarkets')         
         response = self.client.service.getAllMarkets(self.req)
         allmarkets = bfapiparse.ParsegetAllMarkets(response)
         
@@ -78,7 +78,7 @@ class APIgetAllMarkets(object):
                                     response.header.timestamp)
         return allmarkets
 
-class APIplaceBets(object):
+class ApiplaceBets(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
@@ -109,14 +109,14 @@ class APIplaceBets(object):
             # this can be "NONE" - normal exchange or SP bet.
             # Unmatched exchanged bets are lapsed when market turns in
             # play.  Can also be "IP" - in play persistence or "SP" - Moc
-            # Starting Price (see BF API docs for more info).
+            # Starting Price (see BF Api docs for more info).
             pbet.betPersistenceType.value = o.persistence
             pbet.marketId = o.mid
             pbet.price = o.price
             pbet.selectionId = o.sid
             pbet.size = o.stake
             # maximum amount of money want to risk for BSP bet (???
-            # see BF API docs).
+            # see BF Api docs).
             pbet.bspLiability = 0.0 
             blist.append(pbet)
         return blist
@@ -124,14 +124,14 @@ class APIplaceBets(object):
     def call(self, orderlist):
         self.addheader()
         self.req.bets.PlaceBets = self.makebetlist(orderlist)
-        betlog.betlog.info('calling BF API placeBets')
+        betlog.betlog.info('calling BF Api placeBets')
         response = self.client.service.placeBets(self.req)
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
 
         return allorders
 
 # cancelBets doesn't seem to be working
-class APIcancelBets(object):
+class ApicancelBets(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
@@ -154,7 +154,7 @@ class APIcancelBets(object):
     def call(self, betids):
         self.addheader()
         self.req.bets.CancelBets = self.getcbets(betids)
-        betlog.betlog.info('calling BF API cancelBets')        
+        betlog.betlog.info('calling BF Api cancelBets')        
         response = self.client.service.cancelBets(self.req)
         
         if const.WRITEDB:
@@ -163,7 +163,7 @@ class APIcancelBets(object):
 
         return response
 
-class APIgetMUBets(object):
+class ApigetMUBets(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
@@ -201,7 +201,7 @@ class APIgetMUBets(object):
         self.req.excludeLastSecond = False        
         
     def call(self, orders, marketid=0):
-        # Note, the actual API call will work if orders=[]. Then we
+        # Note, the actual Api call will work if orders=[]. Then we
         # will return all matched and unmatched bets.  However,
         # bfapiparse.ParsegetMUBets will have to be modified to make
         # this work.
@@ -217,7 +217,7 @@ class APIgetMUBets(object):
         self.fillreq(betids, marketid)
 
         response = self.client.service.getMUBets(self.req)
-        betlog.betlog.info('calling BF API getMUBets')            
+        betlog.betlog.info('calling BF Api getMUBets')            
         allorders = bfapiparse.ParsegetMUBets(response, odict)
 
         if const.WRITEDB:
@@ -226,7 +226,7 @@ class APIgetMUBets(object):
             
         return allorders
 
-class APIgetMarket(object):
+class ApigetMarket(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
@@ -242,12 +242,12 @@ class APIgetMarket(object):
     def call(self, mid):
         self.addheader()
         self.req.marketId = mid
-        betlog.betlog.info('calling BF API getMarket')        
+        betlog.betlog.info('calling BF Api getMarket')        
         response = self.client.service.getMarket(self.req)
         return response
 
 # this is a lite service compared to getMarket above
-class APIgetMarketInfo(object):
+class ApigetMarketInfo(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
@@ -262,12 +262,12 @@ class APIgetMarketInfo(object):
     def call(self, mid):
         self.addheader()
         self.req.marketId = mid
-        betlog.betlog.info('calling BF API getMarketInfo')
+        betlog.betlog.info('calling BF Api getMarketInfo')
         response = self.client.service.getMarketInfo(self.req)
         return response
 
 # not fully implemented yet (do not use)
-class APIgetMarketPricesCompressed(object):
+class ApigetMarketPricesCompressed(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
@@ -292,7 +292,7 @@ class APIgetMarketPricesCompressed(object):
         return result
 
 # not fully implemented yet (do not use)
-class APIgetMarketPrices(object):
+class ApigetMarketPrices(object):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman

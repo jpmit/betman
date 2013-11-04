@@ -2,14 +2,14 @@
 # James Mithen
 # jamesmithen@gmail.com
 #
-# Functions for parsing output of BDAQ non-API (webscraping) calls.
+# Functions for parsing output of BDAQ non-Api (webscraping) calls.
 
 import json
 import re
 from betman import const, Selection, betlog
-from betman.all.betexception import APIError
+from betman.all.betexception import ApiError
 
-def ParsenonAPIGetPrices(resp, mids):
+def ParsenonApiGetPrices(resp, mids):
     """Return Selections for json string resp"""
 
     try:

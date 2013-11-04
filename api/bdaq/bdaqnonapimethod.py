@@ -3,14 +3,14 @@
 # jamesmithen@gmail.com
 #
 # Web scraping functionality to replace certain annoying parts of the
-# BDAQ API.
+# BDAQ Api.
 
 from betman import const, util
 import bdaqnonapiparse
 import datetime
 from betman.all import betlog
 
-class nonAPIGetPrices(object):
+class nonApiGetPrices(object):
     def __init__(self, urlclient, dbman):
         self.client = urlclient
         self.dbman = dbman
@@ -40,7 +40,7 @@ class nonAPIGetPrices(object):
             midstring= '&mid=' + '&mid='.join(['{0}'.format(m) for m in ids])
             url = self.client.pricesurl + midstring + '&ccyCode=GBP'
 
-            betlog.betlog.info('calling BDAQ nonAPI GetPrices')
+            betlog.betlog.info('calling BDAQ nonApi GetPrices')
             betlog.betlog.debug('BDAQ Selection URL: {0}'.format(url))
 
             # make the HTTP request
@@ -48,7 +48,7 @@ class nonAPIGetPrices(object):
 
             # selections for all the market ids
             selections, emids = bdaqnonapiparse.\
-                                ParsenonAPIGetPrices(response.read(),
+                                ParsenonApiGetPrices(response.read(),
                                                      ids)
             allselections.update(selections)
             allemids = allemids + emids

@@ -4,7 +4,7 @@
 
 """
 Web scraping functionality to replace certain annoying parts of the BF
-API.
+Api.
 """
 
 from betman import *
@@ -51,7 +51,7 @@ def formula1():
                      '&marketIds=1.{1}'.format('%2C'.join(typeswanted),mid))
     print url
 
-class nonAPIgetMarket(object):
+class nonApigetMarket(object):
     def __init__(self, urlclient, dbman):
         self.client = urlclient
         self.dbman = dbman
@@ -75,11 +75,11 @@ class nonAPIgetMarket(object):
             betlog.betlog.debug('BF getMarket URL: {0}'.format(url))
 
             # make the HTTP request
-            betlog.betlog.info('calling BF nonAPI getMarket')            
+            betlog.betlog.info('calling BF nonApi getMarket')            
             response = self.client.call(url)
 
             # selections for all the market ids
-            minfo, emids = bfnonapiparse.ParsenonAPIgetMarket(response.read(),
+            minfo, emids = bfnonapiparse.ParsenonApigetMarket(response.read(),
                                                               mids)
             
             allminfo.update(minfo)
@@ -87,7 +87,7 @@ class nonAPIgetMarket(object):
             
         return allminfo, allemids
 
-class nonAPIgetSelections(object):
+class nonApigetSelections(object):
     def __init__(self, urlclient, dbman):
         self.client = urlclient
         self.dbman = dbman
@@ -125,7 +125,7 @@ class nonAPIgetSelections(object):
             betlog.betlog.debug('BF Selection URL: {0}'.format(url))
 
             # make the HTTP request
-            betlog.betlog.info('calling BF nonAPI getSelections')            
+            betlog.betlog.info('calling BF nonApi getSelections')            
             response = self.client.call(url)
 
             # selections for all the market ids

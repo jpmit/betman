@@ -2,132 +2,164 @@ import datetime
 import time
 from betman import const, util, Event, betlog
 import bdaqapiparse
+from betman.api.apimethod import ApiMethod
 
-######################################################################
-# classes that implement the read only methods, in the order that    # 
-# they appear NewExternalAPIspec.doc                                 #
-######################################################################
+"""
+Classes for calling the Betdaq Api Methods.  These are not designed to
+be called from user applications directly; rather, use the interface
+in bdaqapi.py by calling e.g. bdaqapi.ListTopLevelEvents().
+"""
 
-class APIListTopLevelEvents(object):
+# classes that implement the read only methods, in the order that they
+# appear in the Betdaq documentation 'NewExternalApispec.doc'.
+
+class ApiListTopLevelEvents(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
+        super(ApiListTopLevelEvents, self).__init__(apiclient)
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('ListTopLevelEventsRequest')
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('ListTopLevelEventsRequest')
         # this is the default, and I don't exactly know why we would
-        # want True anyway, but lets set it just in case
+        # want True anyway, but lets set it just in case.
         self.req._WantPlayMarkets = False
         
     def call(self):
-        betlog.betlog.info('calling BDAQ API ListTopLevelEvents')
+        """
+        Return list of events. Note that there is no database table
+        for events at the # moment, only for markets.
+        """
+        
+        betlog.betlog.info('calling BDAQ Api ListTopLevelEvents')
         response = self.client.service.ListTopLevelEvents(self.req)
-        events = bdaqapiparse.ParseEvents(response)
-        # note that there is no database table for events at the
-        # moment, only for markets
+        events = bdaqapiparse.ParseListTopLevelEvents(response)
         return events
-                
-class APIGetEventSubTreeNoSelections(object):
+    
+class ApiGetEventSubTreeNoSelections(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApiGetEventSubTreeNoSelections,
+              self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
+        self.create_req()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create(('GetEventSubTreeNoSele'
                                                'ctionsRequest'))
-        # may want to change this sometime
+        # may want to change this sometime (?)
         self.req._WantPlayMarkets = False
 
-    def call(self, ids, direct=False):
+    def call(self, ids, direct = False):
+        """
+        Return list of markets for events. ids should be a list of
+        event ids e.g. calling with ids = [100004, 100005] will give
+        all markets for 'Horse Racing' and 'Tennis'.
+        """
+        
         self.req.EventClassifierIds = ids
         self.req._WantDirectDescendentsOnly = direct
-        betlog.betlog.info('calling BDAQ API GetEventSubTreeNoSelections')        
-        response = self.client.service.GetEventSubTreeNoSelections(self.req)
-        allmarkets =  bdaqapiparse.ParseEventSubTree(response)
-        # TODO:
-        # the markets in allmarkets are currently ordered by
-        # Event ID.  But we may have passed the event ids in a
-        # different order.  Let's reorder the markets so that they are
-        # in the event id order as passed to this function (parameter
-        # ids).
+        self.req._WantPlayMarkets = False
+        betlog.betlog.info('calling BDAQ Api GetEventSubTreeNoSelections')        
+        response = self.client.service.\
+                   GetEventSubTreeNoSelections(self.req)
+        allmarkets = bdaqapiparse.\
+                     ParseGetEventSubTreeNoSelections(response)
+
         if const.WRITEDB:
             self.dbman.WriteMarkets(allmarkets, response.Timestamp)
         return allmarkets
 
 # not fully implemented (do not use)
-class APIGetEventSubTreeWithSelections(object):
+class ApiGetEventSubTreeWithSelections(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
+        super(ApiGetEventSubTreeWithSelections,
+              self).__init__(apiclient)
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('GetEventSubTreeWithSelectionsRequest')
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('GetEventSubTreeWithSelectionsRequest')
         # note that for this function (unlike NoSelections), can only
         # go down one level i.e. can only get 'direct descendants'
         self.req._WantPlayMarkets = False
 
     def call(self, ids):
         self.req.EventClassifierIds = ids
-        result = self.client.service.GetEventSubTreeWithSelections(self.req)
+        result = self.client.service.\
+                 GetEventSubTreeWithSelections(self.req)
         return result
 
-class APIGetMarketInformation(object):
+class ApiGetMarketInformation(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApiGetMarketInformation, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('GetMarketInformationRequest')
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('GetMarketInformationRequest')
 
     def call(self, ids):
+        """
+        Return raw data of all market information.  Note that at the
+        moment there is no 'MarketInfo' type class that contains this
+        information.  Part of the reason for this is that this API
+        function should not be required frequently.
+        """
+
         self.req.MarketIds = ids
         result = self.client.service.GetMarketInformation(self.req)
+        # note the raw data is returned here
         return result
 
 # not fully implemented (do not use)
-class APIListSelectionsChangedSince(object):
+class ApiListSelectionsChangedSince(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
+        super(ApiListSelectionsChangedSince, self).__init__(apiclient)
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('ListSelectionsChangedSinceRequest')
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('ListSelectionsChangedSinceRequest')
 
     def call(self, seqnum):
         self.req._SelectionSequenceNumber = seqnum
-        result = self.client.service.ListSelectionsChangedSince(self.req)
+        result = self.client.service.\
+                 ListSelectionsChangedSince(self.req)
         return result
 
 # not fully implemented (do not use)
-class APIListMarketWithdrawalHistory(object):
+class ApiListMarketWithdrawalHistory(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
+        super(ApiListMarketWithdrawalHistory, self).__init__(apiclient)        
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('ListMarketWithdrawalHistoryRequest')
+    def create_req(self):
+        self.req = self.client.factory.create(('ListMarketWithdrawal'
+                                               'HistoryRequest'))
 
     def call(self, ids):
         self.req.MarketId = ids
-        result = self.client.service.ListMarketWithdrawalHistory(self.req)
+        result = self.client.service.\
+                 ListMarketWithdrawalHistory(self.req)
         return result
 
-class APIGetPrices(object):
-    def __init__(self, apiclient, dbman, throttl=0):
-        self.client = apiclient.client
-        self.dbman = dbman
+class ApiGetPrices(ApiMethod):
+    # maximum number of market ids we get get selection prices for in
+    # a single API call (Set to 50 according to the API docs).
+    MAXMIDS = 50 
+    def __init__(self, apiclient, throttl = 0):
+        super(ApiGetPrices, self).__init__(apiclient) 
         # time to wait between consecutive calls when calling multiple
         # times.
         self.throttl = throttl
-        self.createinput()
+        self.create_req()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('GetPricesRequest')
         self.req._ThresholdAmount = 0.0
-        # -1 for all prices, 0 for no prices, or a positive
-        # number for a maximum number of prices
+        # set this to -1 for all prices, 0 for no prices, or a
+        # positive number for a maximum number of prices.
         self.req._NumberForPricesRequired = const.NUMPRICES
         self.req._NumberAgainstPricesRequired = const.NUMPRICES
         self.req._WantMarketMatchedAmount = True
@@ -135,61 +167,63 @@ class APIGetPrices(object):
         self.req._WantSelectionMatchedDetails = True
 
     def call(self, mids):
-        """markets should be list of market ids"""
-        MAXMIDS = 50 # set by BDAQ API
+        """
+        Return all selections for Market ids in mids, where mids is a
+        list of market ids.
+        """
+
         allselections = []
         # split up mids into groups of size MAXMIDS
-        for (callnum, ids) in enumerate(util.chunks(mids, MAXMIDS)):
+        for (callnum, ids) in \
+            enumerate(util.chunks(mids, ApiGetPrices.MAXMIDS)):
             self.req.MarketIds = ids
             if callnum > 0:
-                # sleep for some time before calling API again
+                # sleep for some time before calling Api again
                 time.sleep(self.throttl)
-            betlog.betlog.info('calling BDAQ API GetPrices')        
+                
+            betlog.betlog.info('calling BDAQ Api GetPrices')
             result = self.client.service.GetPrices(self.req)
-            selections =  bdaqapiparse.ParsePrices(ids, result)
+            selections =  apiparse.ParseGetPrices(ids, result)
             allselections = allselections + selections
+
         if const.WRITEDB:
             # collapse list of lists to a flat list
             writeselections = [i for sub in allselections for i in sub]
             self.dbman.WriteSelections(writeselections, result.Timestamp)
+
         return allselections
 
 # not fully implemented (do not use)
-class APIGetOddsLadder(object):
+class ApiGetOddsLadder(ApiMethod):
     pass
 
 # not fully implemented (do not use)
-class APIGetCurrentSelectionSequenceNumber(object):
+class ApiGetCurrentSelectionSequenceNumber(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
-
-    def createinput(self):
-        #self.req = None
-        pass
+        super(ApiGetCurrentSelectionSequenceNumber,
+              self).__init__(apiclient)         
 
     def call(self):
-        result = self.client.service.GetCurrentSelectionSequenceNumber()
+        result = self.client.service.\
+                 GetCurrentSelectionSequenceNumber()
         return result
 
-######################################################################
-# classes that implement the secure methods, in the order that they  # 
-# appear NewExternalAPIspec.doc                                      #
-######################################################################
+# classes that implement the secure methods, in the order that they 
+# appear in the Betdaq documentation 'NewExternalApispec.doc'.
 
-class APIGetAccountBalances(object):
+class ApiGetAccountBalances(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApiGetAccountBalances, self).__init__(apiclient)
         self.dbman = dbman
 
-    def createinput(self):
+    def create_req(self):
         pass
 
     def call(self):
-        betlog.betlog.info('calling BDAQ API GetAccountBalances')        
+        betlog.betlog.info('calling BDAQ Api GetAccountBalances')        
         result = self.client.service.GetAccountBalances()
-        # accountinfo returns a tuple (_AvailableFunds, _Balance,
-        #                              _Credit, _Exposure)
+        # accinfo is a dictionary of (_AvailableFunds, _Balance,
+        # _Credit, _Exposure).
         accinfo = bdaqapiparse.ParseGetAccountBalances(result)
         if const.WRITEDB:
             self.dbman.WriteAccountBalance(const.BDAQID, accinfo,
@@ -197,20 +231,19 @@ class APIGetAccountBalances(object):
 
         return accinfo
 
-# not fully implemented (do not use)
-# this one lists extra details about account, mainly orders settled
-# between two dates.
-
-class APIListAccountPostings(object):
+# not fully implemented (do not use).  This one lists extra details
+# about account, mainly orders settled between two dates.
+class ApiListAccountPostings(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
+        super(ApiListAccountPostings, self).__init__(apiclient)        
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('ListAccountPostingsRequest')
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('ListAccountPostingsRequest')
 
     def call(self, *args):
-        # should be able to pass two datetime objects here(?)
+        # should be able to pass two datetime ApiMethods here(?)
         # year month day hour minute second microsecond
         nargs = len(args)
         if nargs > 0:
@@ -228,23 +261,24 @@ class APIListAccountPostings(object):
         result = self.client.service.ListAccountPostings(self.req)
         return result
 
-# class APIListAccountPostingsById(object):
+# class ApiListAccountPostingsById(ApiMethod):
 
-# class APIChangePassword(object):
+# class ApiChangePassword(ApiMethod):
 
-class APIListOrdersChangedSince(object):
+class ApiListOrdersChangedSince(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApiListOrdersChangedSince, self).__init__(apiclient)        
         self.dbman = dbman
-        self.createinput()
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('ListOrdersChangedSinceRequest')
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('ListOrdersChangedSinceRequest')
 
     def call(self, seqnum=None):
         global ORDER_SEQUENCE_NUMBER
         # the sequence number should come in the first instance from
-        # the bootstrap, see class APIListBootstrapOrders
+        # the bootstrap, see class ApiListBootstrapOrders
         if seqnum:
             self.req.SequenceNumber = seqnum
         else:
@@ -266,7 +300,7 @@ class APIListOrdersChangedSince(object):
         # if we did get some orders changed, the data consists of the
         # order information and the new max sequence number.
         orders, snum = data
-        # set order sequence number to the maximum one returned by API
+        # set order sequence number to the maximum one returned by Api
         ORDER_SEQUENCE_NUMBER = snum        
 
         betlog.betlog.debug('Setting sequence number to: {0}'\
@@ -277,20 +311,21 @@ class APIListOrdersChangedSince(object):
             self.dbman.WriteOrders(orders.values(), resp.Timestamp)
         return orders
 
-# this sequence number is updated by both APIListOrdersChangedSince
-# (above) and APIListBootstrapOrders (below).
+# this sequence number is updated by both ApiListOrdersChangedSince
+# (above) and ApiListBootstrapOrders (below).
 ORDER_SEQUENCE_NUMBER = -1
 
-class APIListBootstrapOrders(object):
+class ApiListBootstrapOrders(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApiListBootstrapOrders, self).__init__(apiclient)
         self.dbman = dbman
-        
-        self.createinput()
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('ListBootstrapOrdersRequest')
-        # this is probably the best default here (see BDAQ documentation)
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('ListBootstrapOrdersRequest')
+        # this is probably the best default here (see BDAQ
+        # documentation).
         self.req.wantSettledOrdersOnUnsettledMarkets = False
 
     def call(self, snum=-1):
@@ -298,7 +333,7 @@ class APIListBootstrapOrders(object):
         # the bootstrap which is next class
         global ORDER_SEQUENCE_NUMBER
         self.req.SequenceNumber = ORDER_SEQUENCE_NUMBER
-        betlog.betlog.info('calling BDAQ API ListBootstrapOrders')        
+        betlog.betlog.info('calling BDAQ Api ListBootstrapOrders')        
         result = self.client.service.ListBootstrapOrders(self.req)
         # assign sequence number we get back to ORDER_SEQUENCE_NUMBER
         ORDER_SEQUENCE_NUMBER = result._MaximumSequenceNumber
@@ -308,12 +343,12 @@ class APIListBootstrapOrders(object):
         return allorders
 
 # not fully implemented (do not use)
-class APIGetOrderDetails(object):
+class ApiGetOrderDetails(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
+        super(ApiGetOrderDetails, self).__init__(apiclient)        
+        self.create_req()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('GetOrderDetailsRequest')
 
     def call(self, oid):
@@ -321,14 +356,15 @@ class APIGetOrderDetails(object):
         result = self.client.service.GetOrderDetails(self.req)
         return result
 
-class APIPlaceOrdersNoReceipt(object):
+class ApiPlaceOrdersNoReceipt(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApiPlaceOrdersNoReceipt, self).__init__(apiclient)        
         self.dbman = dbman
-        self.createinput()
+        self.create_req()
 
-    def createinput(self):
-        self.req = self.client.factory.create('PlaceOrdersNoReceiptRequest')
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('PlaceOrdersNoReceiptRequest')
         # if one fails, none will be placed
         self.req.WantAllOrNothingBehaviour = True
 
@@ -336,7 +372,7 @@ class APIPlaceOrdersNoReceipt(object):
         olist = []
 
         for o in orderlist:
-            # make a single order object
+            # make a single order ApiMethod
             order = self.client.factory.create('SimpleOrderRequest')
 
             order._SelectionId = o.sid
@@ -347,8 +383,8 @@ class APIPlaceOrdersNoReceipt(object):
             # this stuff in correctly
             order._ExpectedSelectionResetCount = o.src
             order. _ExpectedWithdrawalSequenceNumber = o.wsn,         
-            order._CancelOnInRunning = False #True
-            order._CancelIfSelectionReset = False #True
+            order._CancelOnInRunning = o.cancelrunning
+            order._CancelIfSelectionReset = o.cancelreset
 
             olist.append(order)
         return olist
@@ -360,23 +396,23 @@ class APIPlaceOrdersNoReceipt(object):
         for ol in util.chunks(orderlist, MAXORDERS):        
             # make BDAQ representation of orders from orderlist past
             self.req.Orders.Order = self.makeorderlist(ol)
-            betlog.betlog.info('calling BDAQ API PlaceOrdersNoReceipt')
+            betlog.betlog.info('calling BDAQ Api PlaceOrdersNoReceipt')
             result = self.client.service.PlaceOrdersNoReceipt(self.req)
             ors = bdaqapiparse.ParsePlaceOrdersNoReceipt(result, orderlist)
             orders.update(ors)
 
-        # note: could put result.Timestamp in order object so that we
+        # note: could put result.Timestamp in order ApiMethod so that we
         # are saving the BDAQ time.
         return orders
 
 # not fully implemented (do not use)
-class APIPlaceOrdersWithReceipt(object):
+class ApiPlaceOrdersWithReceipt(ApiMethod):
     def __init__(self, apiclient, dbman):
         self.client = apiclient.client
         self.dbman = dbman
-        self.createinput()
+        self.create_req()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('PlaceOrdersWithReceiptRequest')
         # lets just do a single order at a time at the moment
         self.order = self.client.factory.create('SimpleOrderRequest')
@@ -398,24 +434,40 @@ class APIPlaceOrdersWithReceipt(object):
         # see 'ordertest.py' for what the dict should contain
         self.makeorder(order)
         self.req.Orders.Order = [self.order]
-        betlog.betlog.info('calling BDAQ API PlaceOrdersWithReceipt')        
+        betlog.betlog.info('calling BDAQ Api PlaceOrdersWithReceipt')        
         result = self.client.service.PlaceOrdersWithReceipt(self.req)
         return result
 
-#class APIUpdateOrdersNoReceipt(object):
+#class ApiUpdateOrdersNoReceipt(ApiMethod):
 
-#class APICancelOrders(object):
+class ApiCancelOrders(ApiMethod):
+    def __init__(self, apiclient, dbman):
+        super(ApiCancelOrders, self).__init__(apiclient)
+        self.create_req()
+        self.dbman = dbman
 
-#class APICancelAllOrdersOnMarket(object):
+    def create_req(self):
+        self.req = self.client.factory.create('CancelOrdersRequest')
 
-#class APICancelAllOrders(object):
+    def call(self, olist):
+        self.req.OrderHandle = [o.oref for o in olist]
+        betlog.betlog.info('calling BDAQ Api CancelOrders')
+        result = self.client.service.CancelOrders(self.req)
+        ol = apiparse.ParseCancelOrders(result, olist)
+        return ol
 
-class APIListBlacklistInformation(object):
+#class ApiCancelOrders(ApiMethod):
+
+#class ApiCancelAllOrdersOnMarket(ApiMethod):
+
+#class ApiCancelAllOrders(ApiMethod):
+
+class ApiListBlacklistInformation(ApiMethod):
     def __init__(self, apiclient):
         self.client = apiclient.client
 
     def call(self):
-        betlog.betlog.info('calling BDAQ API ListBlacklistInformation')
+        betlog.betlog.info('calling BDAQ Api ListBlacklistInformation')
         result = self.client.service.ListBlacklistInformation()
         return result
 
@@ -423,27 +475,27 @@ class APIListBlacklistInformation(object):
 # Suspending orders
 ####################
 
-#class APISuspendFromTrading(object):
+#class ApiSuspendFromTrading(ApiMethod):
 
-#class APIUnsuspendFromTrading(object):
+#class ApiUnsuspendFromTrading(ApiMethod):
 
-#class APISuspendOrders(object):
+#class ApiSuspendOrders(ApiMethod):
 
-#class APISuspendAllOrdersOnMarket(object):
+#class ApiSuspendAllOrdersOnMarket(ApiMethod):
 
-#class APISuspendAllOrders(object):
+#class ApiSuspendAllOrders(ApiMethod):
 
-#class APIUnsuspendOrders(object):
+#class ApiUnsuspendOrders(ApiMethod):
 
 #####################
 # Hearbeat stuff
 # don't bother with all this for now
 ####################
 
-#class APIRegisterHeartbeat(object):
+#class ApiRegisterHeartbeat(ApiMethod):
 
-#class APIChangeHeartbeatRegistration(object):
+#class ApiChangeHeartbeatRegistration(ApiMethod):
 
-#class APIDeregisterHeartbeat(object):
+#class ApiDeregisterHeartbeat(ApiMethod):
 
-#class APIPulse(object):
+#class ApiPulse(ApiMethod):

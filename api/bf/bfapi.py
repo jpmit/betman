@@ -3,13 +3,13 @@
 # jamesmithen@gmail.com
 
 """
-My internal API encapsulating the Betfair API.  This module should
+My internal Api encapsulating the Betfair Api.  This module should
 be imported by scripts that are requesting prices, making bets,
 etc..  Eventually, there should be two options, using the Betfair
-API in its entirety (a bad option due to the severe limitations on
-number of requests of the free BF API) or instead using my web
+Api in its entirety (a bad option due to the severe limitations on
+number of requests of the free BF Api) or instead using my web
 scraping functionality.  The most sensible option, however, may well
-be to use some of the BF API and some of my own web scraping
+be to use some of the BF Api and some of my own web scraping
 methods.
 """
 
@@ -24,44 +24,44 @@ import bfnonapimethod
 # * one for the UK exchange, and
 # * one for the Australian exchange
 # each gets a different handling client here.
-clglob = apiclient.BFAPIClient('global')
-cluk = apiclient.BFAPIClient('uk')
-claus = apiclient.BFAPIClient('aus')
-cluknonapi = apiclient.BFnonAPIClient('uk')
+clglob = apiclient.BFApiClient('global')
+cluk = apiclient.BFApiClient('uk')
+claus = apiclient.BFApiClient('aus')
+cluknonapi = apiclient.BFnonApiClient('uk')
 
 # database interface (this will create DB if necessary)
 dbman = database.DBMaster()
 
 # we have to login to betfair before we do anything. This gives us a
-# header with session token we use for all further BF API calls (all
-# of the other API functions need this session token)
+# header with session token we use for all further BF Api calls (all
+# of the other Api functions need this session token)
 def Login():
     rhead = bfapimethod.BFLogin(clglob)
-    clglob.SetReqHead(rhead)
-    cluk.SetReqHead(rhead)
-    claus.SetReqHead(rhead)
+    clglob.set_reqheader(rhead)
+    cluk.set_reqheader(rhead)
+    claus.set_reqheader(rhead)
 
 # get all the root events
-GetActiveEvents = bfapimethod.APIgetActiveEventTypes(clglob).call
+GetActiveEvents = bfapimethod.ApigetActiveEventTypes(clglob).call
 
 # get markets will get markets for the selected top level ids
-GetUKMarkets = bfapimethod.APIgetAllMarkets(cluk, dbman).call
-GetAUSMarkets = bfapimethod.APIgetAllMarkets(claus, dbman).call
+GetUKMarkets = bfapimethod.ApigetAllMarkets(cluk, dbman).call
+GetAUSMarkets = bfapimethod.ApigetAllMarkets(claus, dbman).call
     
-# selections and prices for markets - not using the API
-GetSelections = bfnonapimethod.nonAPIgetSelections(cluknonapi,
+# selections and prices for markets - not using the Api
+GetSelections = bfnonapimethod.nonApigetSelections(cluknonapi,
                                                    dbman).call
-GetMarket = bfapimethod.APIgetMarket(cluk, dbman).call
-GetMarketnonAPI = bfnonapimethod.nonAPIgetMarket(cluknonapi, dbman).call
-GetMarketInfo = bfapimethod.APIgetMarketInfo(cluk, dbman).call
+GetMarket = bfapimethod.ApigetMarket(cluk, dbman).call
+GetMarketnonApi = bfnonapimethod.nonApigetMarket(cluknonapi, dbman).call
+GetMarketInfo = bfapimethod.ApigetMarketInfo(cluk, dbman).call
 
-#GetSelections = bfapimethod.APIgetMarket(cluk, dbman).call
-#GetPricesCompressed = bfapimethod.APIgetMarketPricesCompressed(cluk, dbman).call
-#GetPrices = bfapimethod.APIgetMarketPrices(cluk, dbman).call
-PlaceBets = bfapimethod.APIplaceBets(cluk, dbman).call
+#GetSelections = bfapimethod.ApigetMarket(cluk, dbman).call
+#GetPricesCompressed = bfapimethod.ApigetMarketPricesCompressed(cluk, dbman).call
+#GetPrices = bfapimethod.ApigetMarketPrices(cluk, dbman).call
+PlaceBets = bfapimethod.ApiplaceBets(cluk, dbman).call
 
 # cancel bets doesn't seem to be working at the moment...
-CancelBets = bfapimethod.APIcancelBets(cluk, dbman).call
+CancelBets = bfapimethod.ApicancelBets(cluk, dbman).call
 
 # this only checks if matched or unmatched at the moment
-GetBetStatus = bfapimethod.APIgetMUBets(cluk, dbman).call
+GetBetStatus = bfapimethod.ApigetMUBets(cluk, dbman).call

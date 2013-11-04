@@ -1,11 +1,11 @@
-# schemas.py
+ # schemas.py
 # James Mithen
 # jamesmithen@gmail.com
 #
 # Schemas for SQL tables. These are stored here for easy access in
 # case of future modification.
 
-from betman.all.betexception import DBError
+from betman.all.betexception import DbError
 
 # table names
 EXCHANGES = 'exchanges'
@@ -146,7 +146,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
 def getschema(tname):
     """Get string for creating table for particular table name"""
     if tname not in _SQLSCHEMA:
-        raise DBException, 'table name {0} has no schema'\
+        raise DbException, 'table name {0} has no schema'\
               .format(tname)
     return '{0} {1} {2}'.format('CREATE TABLE', tname,
                                 _SQLSCHEMA[tname])

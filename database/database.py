@@ -1,4 +1,4 @@
-# database.py
+ # database.py
 # James Mithen
 # jamesmithen@gmail.com
 #
@@ -7,7 +7,7 @@
 import os
 import sqlite3
 from betman import const, Market, Selection, util, order
-from betman.all.betexception import DBError, DBCorruptError
+from betman.all.betexception import DbError, DbCorruptError
 from betman.matchmarkets.matchconst import EVENTMAP
 import schema
 
@@ -100,7 +100,7 @@ class DBMaster(object):
             # event names
             for e in elist:
                 if e not in EVENTMAP:
-                    raise DBError, '{0} is not a valid event'.format(e)
+                    raise DbError, '{0} is not a valid event'.format(e)
             
             qargs = ['|'+elist[0]+'%']
             likestr = ' WHERE (ex1_name LIKE ?'
@@ -133,7 +133,7 @@ class DBMaster(object):
             # matching markets table but not in the markets table.
             for em, eid in zip([ex1mark, ex2mark], [ex1mid, ex2mid]):
                 if not em:
-                    raise DBCorruptError, ('market id {0} not found in '
+                    raise DbCorruptError, ('market id {0} not found in '
                                            'table {1}'\
                                            .format(eid, schema.MARKETS))
                 
@@ -159,7 +159,7 @@ class DBMaster(object):
             # are no spaces in date, to avoid injection.
             for let in date:
                 if let.isspace():
-                    raise DBError, ('date field cannot contain '
+                    raise DbError, ('date field cannot contain '
                                     'whitespace')
             qstr += " WHERE tplaced like '{0}%'".format(date)
 
@@ -183,7 +183,7 @@ class DBMaster(object):
             # matching orders table but not in the main orders table.
             for eo, oid in zip([ex1order, ex2order], [ex1oid, ex2oid]):
                 if not eo:
-                    raise DBCorruptError, ('order id {0} not found in '
+                    raise DbCorruptError, ('order id {0} not found in '
                                            'table {1}'\
                                            .format(oid, schema.ORDERS))
             matchorders.append((ex1order[0], ex2order[0]))
@@ -240,7 +240,7 @@ class DBMaster(object):
             # matching selections table but not in the markets table.
             for es, eid in zip([ex1sel, ex2sel], [ex1sid, ex2sid]):
                 if not es:
-                    raise DBCorruptError, ('selection id {0} not found in '
+                    raise DbCorruptError, ('selection id {0} not found in '
                                            'table {1}'\
                                            .format(eid, schema.SELECTIONS))
             
@@ -351,9 +351,9 @@ class DBMaster(object):
             res = self.cursor.execute(sqlstr, sqlargs)
         except sqlite3.OperationalError:
             # query string was malformed somehow
-            raise DBError, 'received malformed SQL statement'
+            raise DbError, 'received malformed SQL statement'
         except ValueError:
-            raise DBError, ('wrong parameters passed to SQL '
+            raise DbError, ('wrong parameters passed to SQL '
                                 'statement')
         mdata = res.fetchall()
         # create Market objects from results of market data
@@ -376,9 +376,9 @@ class DBMaster(object):
             res = self.cursor.execute(sqlstr, sqlargs)
         except sqlite3.OperationalError:
             # query string was malformed somehow
-            raise DBError, 'received malformed SQL statement'
+            raise DbError, 'received malformed SQL statement'
         except ValueError:
-            raise DBError, ('wrong parameters passed to SQL '
+            raise DbError, ('wrong parameters passed to SQL '
                                 'statement')
         odata = res.fetchall()
         # create Order objects from results of market data
@@ -421,9 +421,9 @@ class DBMaster(object):
                 res = self.cursor.execute(sqlstr)
         except sqlite3.OperationalError:
             # query string was malformed somehow
-            raise DBError, 'received malformed SQL statement'
+            raise DbError, 'received malformed SQL statement'
         except ValueError:
-            raise DBError, ('wrong parameters passed to SQL '
+            raise DbError, ('wrong parameters passed to SQL '
                                 'statement')
         seldata = res.fetchall()
         # create Selection objects from results

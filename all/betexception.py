@@ -8,10 +8,10 @@
 # base class for everythin
 class BetmanError(Exception): pass
 
-class DBError(BetmanError): pass
+class DbError(BetmanError): pass
 
-class DBCorruptError(DBError) : pass
+class DbCorruptError(DbError) : pass
 
 class DataError(BetmanError): pass
 
-class APIError(BetmanError): pass
+class ApiError(BetmanError): pass

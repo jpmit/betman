@@ -5,7 +5,7 @@
 """Functions for parsing the response that comes from the BF api."""
 
 from betman import const, Market, Event, order
-from betman.all.betexception import APIError
+from betman.all.betexception import ApiError
 
 def ParsegetMUBets(res, odict):
 
@@ -13,7 +13,7 @@ def ParsegetMUBets(res, odict):
     tstamp = res.header.timestamp
     
     if ecode != 'OK':
-        raise APIError, 'getMUBets error, errorcode {0}'.format(ecode)
+        raise ApiError, 'getMUBets error, errorcode {0}'.format(ecode)
 
     if res.errorCode == 'NO_RESULTS':
         return {}
@@ -46,7 +46,7 @@ def ParsegetMUBets(res, odict):
             matched = o.stake
             unmatched = 0.0
         else:
-            raise APIError, 'Received unknown order status {0}'.\
+            raise ApiError, 'Received unknown order status {0}'.\
                   format(r.betStatus)
         
         oinfo = {'mid': o.mid, 'oref': oref, 'status': status,
@@ -64,7 +64,7 @@ def ParseplaceBets(res, olist):
     tstamp = res.header.timestamp
     
     if ecode != 'OK':
-        raise APIError, 'placeBets error, errorcode {0}'.format(ecode)
+        raise ApiError, 'placeBets error, errorcode {0}'.format(ecode)
 
     if const.DEBUG:
         print res
@@ -103,7 +103,7 @@ def ParsegetAllMarkets(res):
 
     # check if there is some marketdata,
     if res.marketData is None:
-        raise APIError, ('no market data returned, BF minorErrorCode'
+        raise ApiError, ('no market data returned, BF minorErrorCode'
                          ' {0}'.format(res.minorErrorCode))
         
     for mdata in res.marketData.split(':')[1:]:

@@ -25,8 +25,9 @@ dbman = database.DBMaster()
 bdaqelist = EVENT_NAMES
 bfelist = [matchconst.EVENTMAP[k] for k in bdaqelist]
 
+#bdaqapi.set_user('jimmybob','')
 # get top level events for BF and BDAQ
-bdaqevents = bdaqapi.GetTopLevelEvents()
+bdaqevents = bdaqapi.ListTopLevelEvents()
 bfapi.Login()
 bfevents = bfapi.GetActiveEvents()
 

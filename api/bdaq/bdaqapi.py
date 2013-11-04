@@ -2,54 +2,85 @@
 # James Mithen
 # jamesmithen@gmail.com
 
-# The BetDaq API functions.
+"""The BetDaq Api functions."""
 
 import bdaqapimethod
 import bdaqnonapimethod
 from betman import database
 from betman.api import apiclient
 
-# any constants that we might need to modify
-
-# time in seconds to sleep between calling APIGetPrices (when called
+# time in seconds to sleep between calling ApiGetPrices (when called
 # with > 50 market ids).
-PRICETHROTTLE = 10
+_PRICETHROTTLE = 10
 
-# create suds clients
-# There is only 1 WSDL file, but this has two 'services'.  The 
-# services are for 'readonly' methods and 'secure' methods. Secure
-# methods use an https:// url and send the 
-# read-only
-rcl = apiclient.BDAQAPIClient('readonly')
-scl = apiclient.BDAQAPIClient('secure')
-ncl = apiclient.BDAQnonAPIClient()
+# create suds clients.  There is only 1 WSDL file, but this has two
+# 'services'.  The services are for 'readonly' methods and 'secure'
+# methods. Secure methods use an https:// url and require the user's
+# Betdaq username and password in the SOAP headers, read-only methods
+# use http:// and only require username.
+_rcl = apiclient.BDAQApiClient('readonly')
+_scl = apiclient.BDAQApiClient('secure')
+_ncl = apiclient.BDAQnonApiClient()
+
+def set_user(name, password):
+    """
+    Set username and password for SOAP headers.  Note that these are
+    automatically set to be const.BDAQUSER and const.BDAQPASS,
+    respectively, so we only need to call this method if we don't have
+    these values set.
+    """
+    
+    _rcl.set_headers(name, password)
+    _scl.set_headers(name, password)
 
 # database interface
-dbman = database.DBMaster()
+_dbman = database.DBMaster()
+
+# the Api functions appear below, first 'readonly' methods, then
+# 'secure' methods, in the order that these appear in the Betdaq Api
+# docs (but note that not all of the Api methods are implemented
+# here).
 
 # get all the root events
-GetTopLevelEvents = bdaqapimethod.APIListTopLevelEvents(rcl).call
-# get markets will get 'subtree' and parse it for markets
-GetMarkets = bdaqapimethod.APIGetEventSubTreeNoSelections(rcl, dbman).call
-# selections and pricers for markets
-# TODO: GetSelections does not seem to work when called for a single mid
-GetSelections = bdaqapimethod.APIGetPrices(rcl, dbman, PRICETHROTTLE).call
-GetSelectionsnonAPI = bdaqnonapimethod.nonAPIGetPrices(ncl, dbman).call
+ListTopLevelEvents = bdaqapimethod.ApiListTopLevelEvents(_rcl).call
 
-GetMarketInformation = bdaqapimethod.APIGetMarketInformation(rcl, dbman).call
+# get 'subtree' and parse it for markets
+GetEventSubTreeNoSelections = bdaqapimethod.\
+                              ApiGetEventSubTreeNoSelections(_rcl, _dbman).call
+
+# get information for some market ids, e.g. starttime etc.
+GetMarketInformation = bdaqapimethod.\
+                       ApiGetMarketInformation(_rcl, _dbman).call
+
+# get prices for some market ids
+GetPrices = bdaqapimethod.\
+            ApiGetPrices(_rcl, _PRICETHROTTLE).call
+
+# get account information
+GetAccountBalances = bdaqapimethod.\
+                     ApiGetAccountBalances(_scl, _dbman).call
+
+# update order status
+ListOrdersChangedSince = bdaqapimethod.\
+                         ApiListOrdersChangedSince(_scl, _dbman).call
+
+# call ListBootstrapOrders repeatedly at startup
+ListBootstrapOrders = bdaqapimethod.\
+                      ApiListBootstrapOrders(_scl, _dbman).call
 
 # make order(s)
-PlaceOrders = bdaqapimethod.APIPlaceOrdersNoReceipt(scl, dbman).call
+PlaceOrdersNoReceipt = bdaqapimethod.\
+                       ApiPlaceOrdersNoReceipt(_scl, _dbman).call
 
-# account information
-GetAccountBalances = bdaqapimethod.APIGetAccountBalances(scl, dbman).call
+# cancel orders
+CancelOrders = bdaqapimethod.ApiCancelOrders(_scl, _dbman).call
 
-#ListAccountPostings = bdaqapimethod.APIListAccountPostings(scl).call
+# which Api services (hopefully none) am I currently blacklisted from?
+ListBlacklistInformation = bdaqapimethod.\
+                           ApiListBlacklistInformation(_scl).call
 
-# details of orders
-# call ListBootstrapOrders repeatedly at startup
-ListBootstrapOrders = bdaqapimethod.APIListBootstrapOrders(scl, dbman).call
+# non Api (screen scraping) functions appear below.  These are
+# suffixed with nApi_.
 
-ListOrdersChangedSince = bdaqapimethod.APIListOrdersChangedSince(scl, dbman).call
-
-ListBlacklistInformation = bdaqapimethod.APIListBlacklistInformation(scl).call
+# get prices for some market ids
+GetSelections_nApi = bdaqnonapimethod.nonApiGetPrices(_ncl, _dbman).call
