@@ -8,7 +8,8 @@ import const
 import exchangedata
 
 class Event(object):
-    """A top level event"""
+    """A top level event."""
+    
     def __init__(self, name, myid, **kwargs):
         # convert name to ascii string and ignore any funky unicode
         # characters
@@ -25,7 +26,8 @@ class Event(object):
         return self.__repr__()
 
 class Market(object):
-    """A market"""
+    """A market."""
+    
     def __init__(self, exid, name, myid, pid, inrunning,
                  **kwargs):
 
@@ -59,13 +61,15 @@ class Market(object):
 
 class Selection(object):
     """A selection."""
-    def __init__(self, name, myid, marketid, mback, mlay, lastmatched,
-                 lastmatchedprice, lastmatchedamount, backprices,
-                 layprices, src=None, wsn=None, exid=const.BDAQID):
+    
+    def __init__(self, exid, name, myid, marketid, mback, mlay,
+                 lastmatched, lastmatchedprice, lastmatchedamount,
+                 backprices, layprices, src=None, wsn=None, **kwargs):
+
         self.exid = exid
-        # store everything from BDAQ API below
+
         # convert name to ascii string and ignore any funky unicode
-        # characters
+        # characters.
         self.name = name.encode('ascii', 'ignore')        
         self.id = myid # selection id
         self.mid = marketid # market id I belong to
@@ -76,7 +80,7 @@ class Selection(object):
         self.lastmatchedamount = lastmatchedamount
 
         # selection reset count and withdrawal selection number are
-        # for BDAQ only
+        # used for BDAQ only.
         self.src = src
         self.wsn = wsn
 
@@ -88,9 +92,14 @@ class Selection(object):
         self.padback = self.PadPrices(backprices, const.NUMPRICES)
         self.padlay = self.PadPrices(layprices, const.NUMPRICES)
 
+        # store all data from API
+        self.properties = kwargs
+
     def PadPrices(self, prices, num):
-        """Pad prices so that if have fewer than num back or lay
-        prices"""
+        """
+        Pad prices so that if have fewer than num back or lay prices.
+        """
+
         nprices = len(prices)
         if nprices == num:
             return prices
@@ -99,23 +108,27 @@ class Selection(object):
         return prices + app
 
     def best_back(self):
-        """Return best back price, or 1.0 if no price"""
+        """Return best back price, or 1.0 if no price."""
+        
         if self.padback[0][0] is None:
             return exchangedata.MINODDS
         return max(exchangedata.MINODDS,
                    self.padback[0][0])
 
     def best_lay(self):
-        """Return best lay price, or 1000.0 if no price"""
+        """Return best lay price, or 1000.0 if no price."""
+        
         if self.padlay[0][0] is None:
             return exchangedata.MINODDS
         return min(exchangedata.MAXODDS,
                    self.padlay[0][0])
 
     def make_best_lay(self):
-        """Return price for if we wanted to make a market on selection
+        """
+        Return price for if we wanted to make a market on selection
         and be the best price on offer to lay.  E.g. if exchange is BF
-        and best lay price is 21, this will return 20"""
+        and best lay price is 21, this will return 20.
+        """
         
         blay = self.best_lay()
 
@@ -127,9 +140,11 @@ class Selection(object):
         return exchangedata.next_shorter_odds(self.exid, blay)
 
     def make_best_back(self):
-        """Return price for if we wanted to make a market on selection
+        """
+        Return price for if we wanted to make a market on selection
         and be the best price on offer to back E.g. if exchange is BF
-        and best back price is 21, this will return 22."""
+        and best back price is 21, this will return 22.
+        """
 
         bback = self.best_back()
 

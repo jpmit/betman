@@ -170,7 +170,8 @@ def ParseGetPrices(marketids, resp):
             # the only data directly concerning the selection that we
             # are not storing in the selection instance is the
             # 'deduction factor'.
-            allselections[-1].append(Selection(sel._Name, sel._Id, mid,
+            allselections[-1].append(Selection(const.BDAQID, sel._Name, sel._Id,
+                                               mid,
                                                sel._MatchedSelectionForStake,
                                                sel._MatchedSelectionAgainstStake,
                                                lastmatchoccur,

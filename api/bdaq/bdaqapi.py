@@ -20,7 +20,7 @@ _PRICETHROTTLE = 10
 # use http:// and only require username.
 _rcl = apiclient.BDAQApiClient('readonly')
 _scl = apiclient.BDAQApiClient('secure')
-_ncl = apiclient.BDAQnonApiClient()
+_ncl = apiclient.BDAQNonApiClient()
 
 def set_user(name, password):
     """
@@ -83,4 +83,4 @@ ListBlacklistInformation = bdaqapimethod.\
 # suffixed with _nApi.
 
 # get prices for some market ids
-GetSelections_nApi = bdaqnonapimethod.nonApiGetPrices(_ncl, _dbman).call
+GetSelections_nApi = bdaqnonapimethod.NonApiGetPrices(_ncl, _dbman).call

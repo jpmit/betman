@@ -9,12 +9,18 @@ import re
 from betman import const, Selection, betlog
 from betman.all.betexception import ApiError
 
-def ParsenonApiGetPrices(resp, mids):
-    """Return Selections for json string resp"""
+def ParseNonApiGetPrices(resp, mids):
+    """
+    Return Selections from json string response as a dictionary with
+    keys that are the market ids.  Also return a list of mids with
+    'errors'; probably these are markets that have finished.
+    """
 
     try:
-        # get the raw data from BDAQ in a dictionary.
-        jsondata = json.loads(correct_json(resp))
+        # get the raw data from BDAQ in a dictionary.  We call
+        # _correct_json since the data returned from BDAQ is not quite
+        # in proper JSON format.
+        jsondata = json.loads(_correct_json(resp))
     except:
         # we will hopefully only reach here if we called this with a
         # single market id (i.e. mids is a list of length 1) AND the
@@ -47,7 +53,7 @@ def ParsenonApiGetPrices(resp, mids):
         # dictionary of selections for this marketid
         selections[markmid] = {}
         # withdrawal selection number for the market; we store this in
-        # the selection objects for speedier betting
+        # the selection objects for speedier betting.
         wsn = mdat['wSN']
         
         # the mkt key contains everything we want
@@ -78,7 +84,7 @@ def ParsenonApiGetPrices(resp, mids):
                     lprices = [(p['p'], p['rA']) for p in sel['aSO']]
                 else:
                     # only one lay price available
-                    bprices = [(sel['aSO']['p'], sel['aSO']['rA'])]
+                    lprices = [(sel['aSO']['p'], sel['aSO']['rA'])]
             else:
                 # no lay prices available
                 lprices = []
@@ -88,15 +94,17 @@ def ParsenonApiGetPrices(resp, mids):
 
             # add the selection.  Note we are not getting amounts
             # matched etc. at the moment.
-            selections[markmid][sid] = Selection(name, sid, mid,
-                                                 markmid,
+            selections[markmid][sid] = Selection(const.BDAQID,
+                                                 name, sid, mid,
+                                                 None,
                                                  None,
                                                  None,
                                                  None,
                                                  None,
                                                  bprices, lprices,
                                                  src,
-                                                 wsn)
+                                                 wsn,
+                                                 **sel)
 
     # check how many markets we got selections for.
     # note, if we didn't get all markets, probably some have been
@@ -106,10 +114,6 @@ def ParsenonApiGetPrices(resp, mids):
     betlog.betlog.debug('BDAQ got selections for {0} of {1} markets'\
                         .format(lsels, lmids))
             
-    # return selections ordered by list ids (passed as an argument).
-    # this is so that when we call this function, we know what we are
-    # getting back.  If we don't do this, we will get selections in an
-    # order decided by BDAQ, i.e. ordered by eventtype.
     # construct error list - market ids we did not get any selection
     # information for. Presumably these have finished etc.
     errormids = []    
@@ -124,19 +128,22 @@ def ParsenonApiGetPrices(resp, mids):
 
     return selections, errormids
     
-def correct_json(jstr):
+def _correct_json(jstr):
     """
     Return proper Json from BDAQ response!  The problem with the
     Betdaq response is:
     (i) There are some spaces around the names
     (ii) None of the names are in double quotes
     """
+    
     # Strip leading whitespace: match { followed by any number of
     # spaces followed by any alphanumeric character.
     jstr = re.sub(r"{\s*(\w)", r'{"\1', jstr)
+    
     # Strip trailing whitespace: match , followed by any number of
     # spaces followed by any alphanumeric character
     jstr = re.sub(r",\s*(\w)", r',"\1', jstr)
+    
     # Add double quotes: matches only an alphabetic character [a-zA-Z]
     # before the ":" and not any alphanumeric character \w, since we
     # don't want to match json values like 06:00 which are already in

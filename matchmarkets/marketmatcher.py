@@ -78,11 +78,20 @@ def _matchselection(sel, sellist):
     """
     Return selection in sellist that 'matches' sel, or None if no
     match found.
+
+    Here sel is a BDAQ selection names, and sellist is a list of BF
+    selections.
     """
+
+    # Soccer: the BDAQ draw selection is called 'Draw', but the
+    # corresponding BF selection is 'The Draw', so let's rename the
+    # BDAQ selection 'Draw'.
+    if sel == 'Draw':
+        sel = 'The Draw'
     
-    # the BDAQ horse racing selections have numbers in them, but the
-    # BF ones dont', so lets remove the numbers from the BDAQ
-    # selections.
+    # Horse Racing: the BDAQ horse racing selections have numbers in
+    # them, but the BF ones dont', so lets remove the numbers from the
+    # BDAQ selections.
     selname = ''.join(i for i in sel.name if not i.isdigit())
 
     # again, the BDAQ horse racing selections, due to our ASCII
@@ -116,7 +125,7 @@ def get_match_selections(m1sels, m2sels):
     # simple selection matching: if the names of the selection are the
     # same for both BDAQ and BF, they are probably the same
     # selection...
-    for (sel1list,sel2list) in zip(m1sels, m2sels):
+    for (sel1list, sel2list) in zip(m1sels, m2sels):
         # match the selections for this market: go through each bdaq
         # selection in turn and try to find a matching BF selection.
         for sel in sel1list:

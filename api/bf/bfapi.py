@@ -27,7 +27,7 @@ import bfnonapimethod
 clglob = apiclient.BFApiClient('global')
 cluk = apiclient.BFApiClient('uk')
 claus = apiclient.BFApiClient('aus')
-cluknonapi = apiclient.BFnonApiClient('uk')
+cluknonapi = apiclient.BFNonApiClient('uk')
 
 # database interface (this will create DB if necessary)
 dbman = database.DBMaster()
@@ -49,10 +49,10 @@ GetAllMarketsUK = bfapimethod.ApigetAllMarkets(cluk, dbman).call
 GetAllMarketsAUS = bfapimethod.ApigetAllMarkets(claus, dbman).call
     
 # selections and prices for markets - not using the Api
-GetSelections = bfnonapimethod.nonApigetSelections(cluknonapi,
-                                                   dbman).call
+GetSelections_nApi = bfnonapimethod.NonApigetSelections(cluknonapi,
+                                                        dbman).call
 GetMarket = bfapimethod.ApigetMarket(cluk, dbman).call
-GetMarketnonApi = bfnonapimethod.nonApigetMarket(cluknonapi, dbman).call
+GetMarketnonApi = bfnonapimethod.NonApigetMarket(cluknonapi, dbman).call
 GetMarketInfo = bfapimethod.ApigetMarketInfo(cluk, dbman).call
 
 #GetSelections = bfapimethod.ApigetMarket(cluk, dbman).call

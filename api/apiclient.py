@@ -91,7 +91,7 @@ class BDAQApiClient(object):
         header.attributes = [astring]
         self.client.set_options(soapheaders = header)
 
-class BDAQnonApiClient(object):
+class BDAQNonApiClient(object):
     """Client object to 'screen scrape' data from the Betdaq website."""
 
     def __init__(self):
@@ -138,7 +138,7 @@ class BFApiClient(object):
         """Set request header, which contains the session token"""
         self.client.reqheader = rhead
 
-class BFnonApiClient(object):
+class BFNonApiClient(object):
     """Client object to 'screen scrape' data from the Betdaq website."""
     
     # mapping from names to the URL we want to call
@@ -156,16 +156,16 @@ class BFnonApiClient(object):
         and UK markets.
         """
 
-        anames = BFnonApiClient._sdict.keys()
+        anames = BFNonApiClient._sdict.keys()
         if name not in anames:
-            raise IOError('BFnonApiClient name must be one of: %s'
+            raise IOError('BFNonApiClient name must be one of: %s'
                           %(' '.join(anames)))
         self.name = name
         # this is the 'base' URL got getting the prices.  We can add
         # other 'base' URLs here for different functionality.
-        self.pricesurl = BFnonApiClient._sdict[name]
+        self.pricesurl = BFNonApiClient._sdict[name]
         # the prefix is needed to get the prices of the markets
-        self.mprefix = 1 if self.name == BFnonApiClient.UK else 2
+        self.mprefix = 1 if self.name == BFNonApiClient.UK else 2
         # headers for http requests
         self.headers = { 'User-Agent' : const.USERAGENT }
 

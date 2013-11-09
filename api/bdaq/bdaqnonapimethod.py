@@ -1,23 +1,26 @@
 # bdaqnonapimethod.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Web scraping functionality to replace certain annoying parts of the
-# BDAQ Api.
 
-from betman import const, util
+"""
+Web scraping functionality to replace certain annoying parts of the
+BDAQ Api.
+"""
+
 import bdaqnonapiparse
 import datetime
-from betman.all import betlog
+from betman import const, util, betlog
+from betman.api.apimethod import NonApiMethod
 
-class nonApiGetPrices(object):
+class NonApiGetPrices(NonApiMethod):
+    """
+    Replacement for ApiGetPrices, which is throttled when using the
+    BDAQ API.
+    """
+    
     def __init__(self, urlclient, dbman):
-        self.client = urlclient
+        super(NonApiGetPrices, self).__init__(urlclient)
         self.dbman = dbman
-        self.setinput()
-
-    def setinput(self):
-        pass
     
     def call(self, mids, writedb = False):
         """
@@ -48,7 +51,7 @@ class nonApiGetPrices(object):
 
             # selections for all the market ids
             selections, emids = bdaqnonapiparse.\
-                                ParsenonApiGetPrices(response.read(),
+                                ParseNonApiGetPrices(response.read(),
                                                      ids)
             allselections.update(selections)
             allemids = allemids + emids

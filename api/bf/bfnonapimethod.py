@@ -7,16 +7,14 @@ Web scraping functionality to replace certain annoying parts of the BF
 Api.
 """
 
-from betman import *
-import bfapiparse
 import bfnonapiparse
-import urllib2
 import datetime
-from betman.all import betlog
+from betman import util, betlog
+from betman.api.apimethod import NonApiMethod
 
-def example():
+def _example():
     """Example for testing."""
-    
+    import urllib2
     exampleurl = ('http://uk-api.betfair.com/www/sports/exchange/readonly'
                   '/v1.0/bymarket?currencyCode=GBP'
                   '&alt=xml&locale=en_GB&types=MARKET_STATE%2CMARKET_RATES'
@@ -30,7 +28,7 @@ def example():
     html = response.read()
     return html
 
-def formula1():
+def _formula1():
     """Example for testing."""
     
     BASEURL = ('http://uk-api.betfair.com/www/sports/exchange/readonly/'
@@ -51,7 +49,12 @@ def formula1():
                      '&marketIds=1.{1}'.format('%2C'.join(typeswanted),mid))
     print url
 
-class nonApigetMarket(object):
+class NonApigetMarket(NonApiMethod):
+    """
+    Get information about a market.  Replacement for ApigetMarket,
+    which is badly throttled (5p/s) when using the free BF API.
+    """
+    
     def __init__(self, urlclient, dbman):
         self.client = urlclient
         self.dbman = dbman
@@ -87,14 +90,15 @@ class nonApigetMarket(object):
             
         return allminfo, allemids
 
-class nonApigetSelections(object):
+class NonApigetSelections(NonApiMethod):
+    """
+    Replacement for ApigetSelections, which is throttled when using
+    the BF free API.
+    """
+    
     def __init__(self, urlclient, dbman):
-        self.client = urlclient
+        super(NonApigetSelections, self).__init__(urlclient)
         self.dbman = dbman
-        self.setinput()
-
-    def setinput(self):
-        pass
     
     def call(self, mids, writedb = False):
         """

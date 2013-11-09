@@ -1,3 +1,9 @@
+# bfnonapiparse.py
+# James Mithen
+# jamesmithen@gmail.com
+#
+# Functions for parsing output of BF non-Api (webscraping) calls.
+
 import datetime
 import xml.etree.ElementTree as etree
 from betman import const, Selection, betlog
@@ -33,8 +39,11 @@ def ParseSelections(mids, xmlstr):
     return selections
 
 def ParsenonAPIgetMarket(jstr, mids):
-    """Parse json data, return market info as dictionary with mids as
-    keys."""    
+    """
+    Parse json data, return market info as dictionary with mids as
+    keys.
+    """
+    
     data = json.loads(jstr)
 
     # dictionary of dictionaries
@@ -89,8 +98,11 @@ def ParsenonAPIgetMarket(jstr, mids):
 
 
 def ParseJsonSelections(jstr, mids):
-    """Parse json data, return selections as dictionary with mids as
-    keys."""
+    """
+    Parse json data, return selections as dictionary with mids as
+    keys.
+    """
+    
     data = json.loads(jstr)
 
     # dictionary of dictionaries
@@ -122,11 +134,12 @@ def ParseJsonSelections(jstr, mids):
                         # no odds available to lay
                         lay = [(None, None)]
 
-                    selections[mid][sid] = Selection(name, sid, mid,
+                    selections[mid][sid] = Selection(const.BFID, name,
+                                                     sid, mid,
                                                      None, None, None,
                                                      None, None, back,
                                                      lay, None, None,
-                                                     const.BFID)
+                                                     **runner)
 
     # check how many markets we got selections for.
     # note, if we didn't get all markets, probably some have been

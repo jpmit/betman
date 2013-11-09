@@ -16,7 +16,7 @@ from betman import database, const
 
 # list of events (BDAQ names) that we are interested in.  See
 # betman.matchmarkets.matchconst for list of possible names.
-EVENT_NAMES = ['Horse Racing']
+EVENT_NAMES = ['Soccer']
 
 dbman = database.DBMaster()
 #dbman.cleanse()
@@ -47,7 +47,7 @@ bdaqmids = [m.id for m in bdaqmatches]
 
 # get selection dictionary for the markets that match.  second
 # argument here ensures we write to the database.
-bfseldict, bfemids = bfapi.GetSelections(bfmids, True)
+bfseldict, bfemids = bfapi.GetSelections_nApi(bfmids, True)
 bdaqseldict, bdaqemids = bdaqapi.GetSelections_nApi(bdaqmids, True)
 
 # get selections ordered by market
