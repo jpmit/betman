@@ -42,11 +42,11 @@ def Login():
     claus.set_reqheader(rhead)
 
 # get all the root events
-GetActiveEvents = bfapimethod.ApigetActiveEventTypes(clglob).call
+GetActiveEventTypes = bfapimethod.ApigetActiveEventTypes(clglob).call
 
 # get markets will get markets for the selected top level ids
-GetUKMarkets = bfapimethod.ApigetAllMarkets(cluk, dbman).call
-GetAUSMarkets = bfapimethod.ApigetAllMarkets(claus, dbman).call
+GetAllMarketsUK = bfapimethod.ApigetAllMarkets(cluk, dbman).call
+GetAllMarketsAUS = bfapimethod.ApigetAllMarkets(claus, dbman).call
     
 # selections and prices for markets - not using the Api
 GetSelections = bfnonapimethod.nonApigetSelections(cluknonapi,

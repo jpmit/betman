@@ -1,7 +1,6 @@
 # matchsoccer.py
 # James Mithen
 # jamesmithen@gmail.com
-# Try to match markets between BF and BDAQ (!)
 
 from betman import database, const, betlog
 import numpy as np
@@ -27,7 +26,6 @@ def bdaqconvert(s):
     # remove city for stoke, hull etc..
     s = s.replace('Hull City','Hull')
     s = s.replace('Stoke City','Stoke')
-    #
     s = s.replace('Bayern Munich','B Munich')
     
     return s
@@ -39,12 +37,16 @@ def bfconvert(s):
     s = s.replace('Airtricity','Irish')
     return s
 
-def MatchSoccer(BDAQMarkets, BFMarkets):
-    """Return list of tuples (m1,m2) where m1 and m2 are the matching
-    markets"""
+def match_soccer(BDAQMarkets, BFMarkets):
+    """
+    Return list of tuples (m1,m2) where m1 and m2 are the matching
+    markets.
+    """
+    
     # conversion from bdaq to bf market names; keys are bdaq market
     # names
-    mname = {'Win Market': ['Winner', 'Winner 2013/14', 'Winner 2013', 'Winner 2014'],
+    mname = {'Win Market': ['Winner', 'Winner 2013/14',
+                            'Winner 2013', 'Winner 2014'],
              'Match Odds': ['Match Odds'],
              'Half-Time/Full-Time': ['Half-Time/Full-Time'],
              'First Scoring Play': ['First Scoring Play'],
@@ -63,12 +65,3 @@ def MatchSoccer(BDAQMarkets, BFMarkets):
                     matches.append((m1,m2))
                     break
     return matches
-
-if __name__ == '__main__':
-    dbman = database.DBMaster()
-
-    # test matching of rugby union markets
-    #BDAQMarkets = dbman.ReturnMarkets('SELECT * FROM markets where exchange_id=? and market_name LIKE ?', (const.BDAQID,'|Soccer%'))
-    #BFMarkets =  dbman.ReturnMarkets('SELECT * FROM markets where exchange_id=? and market_name LIKE ?', (const.BFID,'|Soccer%'))
-
-    matches = MatchSoccer(BDAQMarkets, BFMarkets)

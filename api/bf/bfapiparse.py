@@ -6,17 +6,37 @@
 
 from betman import const, Market, Event, order
 from betman.all.betexception import ApiError
+import datetime
+
+def _check_errors(res):
+    """
+    Check errors from BF API response.  This function is called before
+    extracting the data using the functions below.
+    We check (i) Any API errors, which are contained in the header
+             (ii) Any 'service specific' errors.
+    """
+
+    # first we check any overall API
+    api_ecode = res.header.errorCode
+
+    if api_ecode != 'OK':
+        raise ApiError, api_ecode
+
+    # next, we check any 'service specific errors'
+    service_ecode = res.errorCode
+
+    if service_ecode != 'OK':
+        raise ApiError, api_ecode        
 
 def ParsegetMUBets(res, odict):
 
-    ecode = res.header.errorCode
-    tstamp = res.header.timestamp
-    
-    if ecode != 'OK':
-        raise ApiError, 'getMUBets error, errorcode {0}'.format(ecode)
-
+    # here we override checking of errors, since the BF API returns an
+    # error if no results are returned, but from our perspective there
+    # is no problem with this, we just return an empty dict.
     if res.errorCode == 'NO_RESULTS':
         return {}
+
+    _check_errors(res)
 
     # note we could get back more items than orders here, since an order
     # may have been partially matched to 2 or more others.
@@ -60,15 +80,8 @@ def ParsegetMUBets(res, odict):
 
 def ParseplaceBets(res, olist):
 
-    ecode = res.header.errorCode
-    tstamp = res.header.timestamp
+    _check_errors(res)
     
-    if ecode != 'OK':
-        raise ApiError, 'placeBets error, errorcode {0}'.format(ecode)
-
-    if const.DEBUG:
-        print res
-
     # check that we have one result for each order executed
     assert len(res.betResults.PlaceBetsResult) == len(olist)
 
@@ -95,32 +108,29 @@ def ParseplaceBets(res, olist):
 def ParsegetActiveEventTypes(res):
     events = []
     for e in res.eventTypeItems.EventType:
-        events.append(Event(e.name, e.id, const.BFID))
+        events.append(Event(e.name, e.id))
     return events
 
 def ParsegetAllMarkets(res):
-    markets = []
 
-    # check if there is some marketdata,
-    if res.marketData is None:
-        raise ApiError, ('no market data returned, BF minorErrorCode'
-                         ' {0}'.format(res.minorErrorCode))
+    _check_errors(res)
+    markets = []
         
     for mdata in res.marketData.split(':')[1:]:
         fields = mdata.split('~')
         # we will need to remove this erroneous Group D rubbish
         # at some point (!)        
         # fields are (in order, see also BF documentation):
-        # [0] Market ID 
-        # [1] Market name
-        # [2] Market Type
-        # [3] Market Status
-        # [4] Event Date
-        # [5] Menu Path
-        # [6] Event Hierarchy (ids)
-        # [7] Bet Delay
-        # [8] Exchange Id (1 for UK/Worldwide, 2 for AUS)
-        # [9] ISO3 Country code
+        # [0]  Market ID 
+        # [1]  Market name
+        # [2]  Market Type
+        # [3]  Market Status
+        # [4]  Event Date
+        # [5]  Menu Path
+        # [6]  Event Hierarchy (ids)
+        # [7]  Bet Delay
+        # [8]  Exchange Id (1 for UK/Worldwide, 2 for AUS)
+        # [9]  ISO3 Country code
         # [10] Last Refresh - time since cached data refreshed
         # [11] Number of Runners
         # [12] Number of Winners
@@ -134,11 +144,31 @@ def ParsegetAllMarkets(res):
         # note parent id is the root one, we are skipping any
         # intermediate event ids
         pid = int(fields[6].split('/')[1])
-        # are we inrunning?
-        if fields[3] == 'ACTIVE':
+        # Note from BF docs market status can be
+        # ACTIVE 	  Market is open and available for betting.
+        # CLOSED 	  Market is finalised, bets to be settled.
+        # INACTIVE  Market is not yet available for betting.
+        # SUSPENDED Market is temporarily closed for betting, possibly
+        #           due to pending action such as a goal scored during
+        #           an in-play match or removing runners from a race.
+        #
+        # Here we use bet delay to determine whether market is in
+        # running or not.
+        delay = int(fields[7])
+        if delay != 0:
             inrun = True
         else:
             inrun = False
-        markets.append(Market(name, myid, pid, inrun, None, const.BFID))
+        # market starttime, from seconds since 1970 GMT
+        starttime = datetime.datetime.fromtimestamp(int(fields[4]) / 1000)
+        # total matched in GBP
+        matched = float(fields[13])
+        
+        # we pass the entire string from BF as the last argument here,
+        # so that we can access all the data from the API if necessary
+        # via properties['data'].
+        markets.append(Market(const.BFID, name, myid, pid, inrun,
+                              **{'data': mdata, 'starttime': starttime,
+                                 'totalmatched': matched}))
 
     return markets

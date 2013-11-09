@@ -1,11 +1,21 @@
 from operator import attrgetter
 import bfapiparse
-from betman import const, Event
-from betman.all import betlog
+from betman import const, Event, betlog
+from betman.api.apimethod import ApiMethod
+
+"""
+Function for logging into Betfar and classes for calling the Betfair
+Api Methods.  These are not designed to be called from user
+applications directly; rather, use the interface in bfapi.py by
+calling e.g. bfapi.GetActiveEventTypes().
+"""
 
 def BFLogin(clglob):
-    """Login to BF and return RequestHeader that contains session id
-    information."""
+    """
+    Login to BF and return RequestHeader that contains session id
+    information.
+    """
+    
     req = clglob.client.factory.create('ns1:LoginReq')
     req.ipAddress = 0
     req.locationId = 0
@@ -20,28 +30,34 @@ def BFLogin(clglob):
 
     # we need the session token from the response
     stoken = res[0].sessionToken
-    # set up Api request header using this
+    
+    # set up Api request header using the session token
     reqheader = clglob.client.factory.create('ns1:APIRequestHeader')
     reqheader.clientStamp = 0
     reqheader.sessionToken = stoken
     return reqheader
 
+def _add_header(apiclass):
+    """
+    Add the request header to the ApiMethod object. The most important
+    thing this contains is the BF session token to the SOAP request.
+    This function is called when making any API request (see any of
+    the call methods in the classes below.
+    """
+    
+    apiclass.req.header = apiclass.client.reqheader
+
 # classes that implement the global methods
 
-class ApigetActiveEventTypes(object):
+class ApigetActiveEventTypes(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
-        self.createinput()
+        super(ApigetActiveEventTypes, self).__init__(apiclient)
         
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:GetEventTypesReq')
-
-    def addheader(self):
-        """The header contains the session token"""
-        self.req.header = self.client.reqheader
         
     def call(self):
-        self.addheader()
+        _add_header(self)
         betlog.betlog.info('calling BF Api getActiveEventTypes')        
         response = self.client.service.getActiveEventTypes(self.req)
         events = bfapiparse.ParsegetActiveEventTypes(response)
@@ -52,20 +68,16 @@ class ApigetActiveEventTypes(object):
 
 # classes that can be called with either uk or aus exchange
 
-class ApigetAllMarkets(object):
+class ApigetAllMarkets(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApigetAllMarkets, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:GetAllMarketsReq')
-
-    def addheader(self):
-        self.req.header = self.client.reqheader
         
     def call(self, ids):
-        self.addheader()
+        _add_header(self)
         aofint = self.client.factory.create('ns1:ArrayOfInt')
         aofint.int = ids
         self.req.eventTypeIds = aofint
@@ -78,23 +90,19 @@ class ApigetAllMarkets(object):
                                     response.header.timestamp)
         return allmarkets
 
-class ApiplaceBets(object):
+class ApiplaceBets(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApiplaceBets, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:PlaceBetsReq')
 
-    def addheader(self):
-        self.req.header = self.client.reqheader
-
-    def makebetlist(self, orderlist):
+    def make_bet_list(self, orderlist):
         blist = []
 
         for o in orderlist:
-            # single PlaceBets object
+            # single PlaceBets ApiMethod
             pbet = self.client.factory.create('ns1:PlaceBets')
             # I don't really know what asianLineId is
             pbet.asianLineId = 0
@@ -122,28 +130,23 @@ class ApiplaceBets(object):
         return blist
         
     def call(self, orderlist):
-        self.addheader()
-        self.req.bets.PlaceBets = self.makebetlist(orderlist)
+        _add_header(self)
+        self.req.bets.PlaceBets = self.make_bet_list(orderlist)
         betlog.betlog.info('calling BF Api placeBets')
         response = self.client.service.placeBets(self.req)
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
-
         return allorders
 
 # cancelBets doesn't seem to be working
-class ApicancelBets(object):
+class ApicancelBets(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApicancelBets, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:CancelBetsReq')
 
-    def addheader(self):
-        self.req.header = self.client.reqheader
-
-    def getcbets(self, betids):
+    def get_cbets(self, betids):
         cbets = []
         for b in betids:
             cbet = self.client.factory.create('ns1:CancelBets')
@@ -152,8 +155,8 @@ class ApicancelBets(object):
         return cbets
         
     def call(self, betids):
-        self.addheader()
-        self.req.bets.CancelBets = self.getcbets(betids)
+        _add_header(self)
+        self.req.bets.CancelBets = self.get_cbets(betids)
         betlog.betlog.info('calling BF Api cancelBets')        
         response = self.client.service.cancelBets(self.req)
         
@@ -163,17 +166,13 @@ class ApicancelBets(object):
 
         return response
 
-class ApigetMUBets(object):
+class ApigetMUBets(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApigetMUBets, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:GetMUBetsReq')
-
-    def addheader(self):
-        self.req.header = self.client.reqheader
 
     def fillreq(self, betids, marketid):
         # can be C - cancelled, L - lapsed, M - Matched, MU - Matched
@@ -205,7 +204,7 @@ class ApigetMUBets(object):
         # will return all matched and unmatched bets.  However,
         # bfapiparse.ParsegetMUBets will have to be modified to make
         # this work.
-        self.addheader()
+        _add_header(self)
 
         # make orders into a dict, where key is order reference
         odict = {}
@@ -226,64 +225,53 @@ class ApigetMUBets(object):
             
         return allorders
 
-class ApigetMarket(object):
+class ApigetMarket(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApigetMarket, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:GetMarketReq')
         self.req.includeCouponLinks = False
-
-    def addheader(self):
-        self.req.header = self.client.reqheader
         
     def call(self, mid):
-        self.addheader()
+        _add_header(self)
         self.req.marketId = mid
         betlog.betlog.info('calling BF Api getMarket')        
         response = self.client.service.getMarket(self.req)
         return response
 
 # this is a lite service compared to getMarket above
-class ApigetMarketInfo(object):
+class ApigetMarketInfo(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApigetMarketInfo, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:GetMarketInfoReq')
-
-    def addheader(self):
-        self.req.header = self.client.reqheader
         
     def call(self, mid):
-        self.addheader()
+        _add_header(self)
         self.req.marketId = mid
         betlog.betlog.info('calling BF Api getMarketInfo')
         response = self.client.service.getMarketInfo(self.req)
         return response
 
 # not fully implemented yet (do not use)
-class ApigetMarketPricesCompressed(object):
+class ApigetMarketPricesCompressed(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApigetMarketPricesCompressed, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
-        self.req = self.client.factory.create('ns1:GetMarketPricesCompressedReq')
-
-    def addheader(self):
-        self.req.header = self.client.reqheader
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('ns1:GetMarketPricesCompressedReq')
         
     def call(self, mid):
-        self.addheader()
+        _add_header(self)
         self.req.marketId = mid
         result = self.client.service.getMarketPricesCompressed(self.req)
-        # 
+
 #        allselections = bffunctions.ParseBFPrices(result)
 #        if const.WRITEDB:
 #            self.dbman.WriteSelections(allselections, result.header.timestamp)
@@ -292,20 +280,16 @@ class ApigetMarketPricesCompressed(object):
         return result
 
 # not fully implemented yet (do not use)
-class ApigetMarketPrices(object):
+class ApigetMarketPrices(ApiMethod):
     def __init__(self, apiclient, dbman):
-        self.client = apiclient.client
+        super(ApigetMarketPrices, self).__init__(apiclient)
         self.dbman = dbman
-        self.createinput()
 
-    def createinput(self):
+    def create_req(self):
         self.req = self.client.factory.create('ns1:GetMarketPricesReq')
-
-    def addheader(self):
-        self.req.header = self.client.reqheader
         
     def call(self, mid):
-        self.addheader()
+        _add_header(self)
         self.req.marketId = mid
         result = self.client.service.getMarketPrices(self.req)
         return result

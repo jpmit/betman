@@ -9,15 +9,15 @@ import exchangedata
 
 class Event(object):
     """A top level event"""
-    def __init__(self, name, myid, pid, pname=None):
+    def __init__(self, name, myid, **kwargs):
         # convert name to ascii string and ignore any funky unicode
         # characters
         self.name = name.encode('ascii', 'ignore')
         self.id = myid
-        # parent id
-        self.pid = pid
-        self.pname = pname
 
+        # store all information that comes from the API
+        self.properties = kwargs
+        
     def __repr__(self):
         return ' '.join([self.name, str(self.id)])
 
@@ -26,9 +26,10 @@ class Event(object):
 
 class Market(object):
     """A market"""
-    def __init__(self, name, myid, pid, inrunning, pname=None,
-                 exid = const.BDAQID):
-         # will need to change this when get BF going
+    def __init__(self, exid, name, myid, pid, inrunning,
+                 **kwargs):
+
+        # exchange ID, either const.BDAQID or const.BFID
         self.exid = exid
         # convert name to ascii string and ignore any funky unicode
         # characters
@@ -38,9 +39,17 @@ class Market(object):
         self.id = myid
         # parent id
         self.pid = pid
-        self.pname = pname
         # is the market 'in running?'
         self.inrunning = inrunning
+
+        # store all information that comes from the API
+        self.properties = kwargs
+
+        # store the start time
+        if self.exid == const.BFID:
+            self.starttime =  self.properties['starttime']
+        else:
+            self.starttime = self.properties['_StartTime']
 
     def __repr__(self):
         return ' '.join([self.name, str(self.id)])
@@ -49,7 +58,7 @@ class Market(object):
         return self.__repr__()
 
 class Selection(object):
-    """A selection"""
+    """A selection."""
     def __init__(self, name, myid, marketid, mback, mlay, lastmatched,
                  lastmatchedprice, lastmatchedamount, backprices,
                  layprices, src=None, wsn=None, exid=const.BDAQID):

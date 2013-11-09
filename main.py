@@ -25,21 +25,21 @@ dbman = database.DBMaster()
 bdaqelist = EVENT_NAMES
 bfelist = [matchconst.EVENTMAP[k] for k in bdaqelist]
 
-#bdaqapi.set_user('jimmybob','')
 # get top level events for BF and BDAQ
 bdaqevents = bdaqapi.ListTopLevelEvents()
 bfapi.Login()
-bfevents = bfapi.GetActiveEvents()
+bfevents = bfapi.GetActiveEventTypes()
 
 # get markets for just a couple of event types
-bdaqmarkets = bdaqapi.GetMarkets([ev.id for ev in bdaqevents
-                                  if ev.name in bdaqelist])
-bfmarkets = bfapi.GetUKMarkets([ev.id for ev in bfevents
-                                if ev.name in bfelist])
+bdaqmarkets = bdaqapi.\
+              GetEventSubTreeNoSelections([ev.id for ev in bdaqevents
+                                           if ev.name in bdaqelist])
+bfmarkets = bfapi.GetAllMarketsUK([ev.id for ev in bfevents
+                                   if ev.name in bfelist])
 
 # get matching markets: note, for horse racing, this takes a long time
 # since it needs to call the BF API, which is heavily throttled.
-matchmarks = marketmatcher.GetMatchMarkets(bdaqmarkets, bfmarkets)
+matchmarks = marketmatcher.get_match_markets(bdaqmarkets, bfmarkets)
 bdaqmatches = [m[0] for m in matchmarks]
 bfmatches = [m[1] for m in matchmarks]
 bfmids = [m.id for m in bfmatches]
@@ -48,14 +48,16 @@ bdaqmids = [m.id for m in bdaqmatches]
 # get selection dictionary for the markets that match.  second
 # argument here ensures we write to the database.
 bfseldict, bfemids = bfapi.GetSelections(bfmids, True)
-bdaqseldict, bdaqemids = bdaqapi.GetSelectionsnonAPI(bdaqmids, True)
+bdaqseldict, bdaqemids = bdaqapi.GetSelections_nApi(bdaqmids, True)
 
 # get selections ordered by market
 bfselections = [[bfseldict[m][s] for s in bfseldict[m]] for m in bfmids]
-bdaqselections = [[bdaqseldict[m][s] for s in bdaqseldict[m]] for m in bdaqmids]
+bdaqselections = [[bdaqseldict[m][s] for s in bdaqseldict[m]]
+                  for m in bdaqmids]
 
 # get matching selections for each selection in matching markets
-matchsels = marketmatcher.GetMatchSelections(bdaqselections, bfselections)
+matchsels = marketmatcher.get_match_selections(bdaqselections,
+                                               bfselections)
 
 # if we are interested in horse racing, write times of races to file
 # (TODO: make this a bit cleaner).

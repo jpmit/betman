@@ -77,14 +77,14 @@ class BDAQApiClient(object):
             astring = ('version="{0}" currency="GBP" languageCode="en" '
                        'username="{1}" '
                        'xmlns="http://www.GlobalBettingExchange'
-                       '.com/ExternalApi/"'.format(const.BDAQAPIVERSION,
+                       '.com/ExternalAPI/"'.format(const.BDAQAPIVERSION,
                                                    name))
         if self.service == BDAQApiClient._SECURE:
             # we send the username and password in the SOAP header
             astring = ('version="{0}" currency="GBP" languageCode="en" '
                        'username="{1}" password="{2}" '
                        'xmlns="http://www.GlobalBettingExchange'
-                       '.com/ExternalApi/"'.format(const.BDAQAPIVERSION,
+                       '.com/ExternalAPI/"'.format(const.BDAQAPIVERSION,
                                                    name,
                                                    password))
         # set header

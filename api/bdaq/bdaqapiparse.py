@@ -76,7 +76,8 @@ def _ParseEventClassifier(eclass, name='', markets=[]):
     else:
         if hasattr(eclass, 'Markets'):
             for mtype in eclass.Markets:
-                markets.append(Market(name + '|' + mtype._Name,
+                markets.append(Market(const.BDAQID,
+                                      name + '|' + mtype._Name,
                                       mtype._Id,
                                       pid,
                                       mtype._IsCurrentlyInRunning,

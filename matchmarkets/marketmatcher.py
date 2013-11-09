@@ -1,41 +1,49 @@
 # marketmatcher.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Functionality for finding pairs of matching markets, i.e. the same
-# market on BDAQ and BF
+
+"""
+Functionality for finding pairs of matching markets, i.e. the same
+market on BDAQ and BF.
+"""
 
 from betman import const, database, betlog
+from betman.all.betexception import MatchError
 from matchconst import EVENTMAP
 import matchformula1
 import matchrugbyunion
 import matchsoccer
 import matchhorse
 
-class MatchError(Exception): pass
-
-# functions for matching two markets from the same event
-# the event key used here is the BDAQ one
-_MATCHFNS = {'Formula 1': matchformula1.MatchFormula1,
-            'Rugby Union': matchrugbyunion.MatchRugbyUnion,
-            'Soccer' : matchsoccer.MatchSoccer,
-             'Horse Racing': matchhorse.MatchHorse
+# functions for matching two markets from the same event. The event
+# key used here is the BDAQ one.
+_MATCHFNS = {'Formula 1':    matchformula1.match_formula1,
+             'Rugby Union':  matchrugbyunion.match_rugbyunion,
+             'Soccer' :      matchsoccer.match_soccer,
+             'Horse Racing': matchhorse.match_horse
             }
 
 def _matchevent(m1s, m2s, eventname):
-    """Call appropriate function to match markets m1s and m2s,
-    as determined by the name"""
+    """
+    Call appropriate function to match markets m1s and m2s, as
+    determined by the name of the event.
+    """
+
     if eventname not in _MATCHFNS:
         raise MatchError, "don't know how to match {0}"\
               .format(eventname)
+    
     # this will return a list of tuples (m1,m2) where m1 and m2 are
     # the matching markets.
     return _MATCHFNS[eventname](m1s, m2s)
 
-def GetMatchMarkets(m1s, m2s):
-    """Get matching markets.
+def get_match_markets(m1s, m2s):
+    """
+    Get matching markets.
     m1s are BDAQ markets
-    m2s are BF markets."""
+    m2s are BF markets.
+    """
+
     matchms = []
     # we need to go match m1s and m2s by event types
     # first get all event names for markets in m1s
@@ -67,8 +75,11 @@ def GetMatchMarkets(m1s, m2s):
     return matchms
 
 def _matchselection(sel, sellist):
-    """Return selection in sellist that 'matches' sel, or None if
-    no match found"""
+    """
+    Return selection in sellist that 'matches' sel, or None if no
+    match found.
+    """
+    
     # the BDAQ horse racing selections have numbers in them, but the
     # BF ones dont', so lets remove the numbers from the BDAQ
     # selections.
@@ -90,11 +101,13 @@ def _matchselection(sel, sellist):
             return s
     return None
 
-def GetMatchSelections(m1sels, m2sels):
-    """Get matching selections.
+def get_match_selections(m1sels, m2sels):
+    """
+    Get matching selections.
     sel1s are BDAQ markets
     sel2s are BF markets.
     """
+
     # sel1s and sel2s should be [[s1,s2,s3m...],[s1,s2,s3,...]]
     # i.e. a list of lists, where each sub list is a list of selection
     # objects corresponding to a particular market

@@ -13,6 +13,9 @@ class ApiMethod(object):
     def __init__(self, apiclient):
         """Set client, either read-only or secure."""
         self.client = apiclient.client
+        # note this will call the derived class method, assuming it
+        # exists, and not the method below.
+        self.create_req()
 
     def create_req(self):
         """Create the request object for the Api call."""

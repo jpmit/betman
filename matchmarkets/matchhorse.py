@@ -2,34 +2,38 @@
 # James Mithen
 # jamesmithen@gmail.com
 
-# Try to match markets for horse racing. Note: This calls some BF API
-# functions.
-
 import re
 import time
 import datetime
 from betman.api.bf import bfapi
 from betman import betlog
 
-# conversion from BF course name to BDAQ course name
-COURSES = {'Donc'  : 'Doncaster',
+# conversion from BF course name to BDAQ course name.  BF course names
+# on left, BDAQ course names on right.
+COURSES = {'Ayr'   : 'Ayr',    
            'Bang'  : 'Bangor',
-           'Sand'  : 'Sandown',
-           'Wolv'  : 'Wolverhampton',
-           'DownR' : 'Down Royal',
            'Bath'  : 'Bath',
+           'Catt'  : 'Catterick',           
            'Chest' : 'Chester',
+           'Curr'  : 'Curragh',           
+           'Donc'  : 'Doncaster',
+           'DownR' : 'Down Royal',
+           'Kelso' : 'Kelso',           
            'Kemp'  : 'Kempton',
-           'Curr'  : 'Curragh',
-           'Newm'  : 'Newmarket',
-           'Catt'  : 'Catterick',
-           'Ayr'   : 'Ayr',
-           'Newb'  : 'Newbury',
-           'List'  : 'Listowel'}
+           'List'  : 'Listowel',
+           'Naas'  : 'Naas',
+           'Newb'  : 'Newbury',           
+           'Newm'  : 'Newmarket',           
+           'Sand'  : 'Sandown',
+           'Winc'  : 'Wincanton',
+           'Wolv'  : 'Wolverhampton'}
 
-def MatchHorse(bdaqmarkets, bfmarkets):
-    """Return list of tuples (m1,m2) where m1 and m2 are the matching
-    markets"""
+
+def match_horse(bdaqmarkets, bfmarkets):
+    """
+    Return list of tuples (m1,m2) where m1 and m2 are the matching
+    markets.
+    """
 
     # we will only match 'win' markets, and not 'place markets'
     bdaqwinmarkets = [m for m in bdaqmarkets if
@@ -37,26 +41,11 @@ def MatchHorse(bdaqmarkets, bfmarkets):
     bdaqmarks = []
     for m in bdaqwinmarkets:
         names = m.name.split('|')
-        stime = names[-2][:5]
+        stime = m.starttime
         course = names[-2][6:]
-        date = re.findall('\(.+\)', names[-3])[0][1:-1]
-        # replace th and st in e.g. 13th September
-        date = date.replace('th','')
-        date = date.replace('st','')        
-        print course, date, stime
-        try:
-            # convert date into datetime object
-            dt = datetime.datetime.strptime(stime + ' ' + date,
-                                            '%H:%M %d %B %Y')
-        except:
-            # there must not have been any time given
-            print 'no time'
-            pass
-        else:
-            m.course = course
-            m.starttime = dt
-            # add to list for comparison with BF
-            bdaqmarks.append(m)
+        m.course = course
+        # add to list for comparison with BF
+        bdaqmarks.append(m)
 
     # get dictionary of all the courses for BDAQ
     allcourses = {}
@@ -88,39 +77,19 @@ def MatchHorse(bdaqmarkets, bfmarkets):
             # no BDAQ markets we would want to match with are happening on
             # this course
             continue
+        
         # chop out any (AvB), (RFC), To Be Placed markets etc.
         if (('(AvB)' in names[-2]) or
             ('(RFC)' in names[-2]) or
+            ('TBP' in names[-1]) or
             (names[-1] == 'To Be Placed') or
             (names[-1] == 'Without Fav(s)') or
-            (names[-1] == 'Name The ISP Fav')):
+            (names[-1] == 'Name The ISP Fav') or
+            (names[2]  == 'ANTEPOST')):
             continue
+        
+        # we passed all the criteria: add to list of possible markets
         bfmarks.append(m)
-
-    # for each of these bf markets, get the starttime from
-    # resp.Market.marketDisplayTime, and the number of winners from
-    # resp.Market.numberofWinners
-    bfapi.Login()
-
-    betlog.betlog.debug(('Checking market info for {0} BF markets '
-                         'to match horse racing markets'.format(len(bfmarks))))
-    minfo, emids = bfapi.GetMarketnonAPI([m.id for m in bfmarks])
-
-    # use market info to update the market objects
-    for m in bfmarks:
-        # we might not have the info if it was one of the error mids
-        if m.id in minfo:
-            m.starttime = minfo[m.id]['marketTime']
-            # numwinners should be 1 for all markets        
-            m.numwinners = minfo[m.id]['numberOfWinners']
-        else:
-            # dummy starttime
-            m.starttime = datetime.datetime(1,1,1)
-
-    # if we are in BST (British Summer Time), then convert time to BST
-    # (local) time from GMT.
-    for m in bfmarks:
-        m.starttime = m.starttime + datetime.timedelta(hours=1)
 
     # go through each bdaq market in turn, try to find a matching bf
     # market.

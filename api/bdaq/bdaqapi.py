@@ -80,7 +80,7 @@ ListBlacklistInformation = bdaqapimethod.\
                            ApiListBlacklistInformation(_scl).call
 
 # non Api (screen scraping) functions appear below.  These are
-# suffixed with nApi_.
+# suffixed with _nApi.
 
 # get prices for some market ids
 GetSelections_nApi = bdaqnonapimethod.nonApiGetPrices(_ncl, _dbman).call

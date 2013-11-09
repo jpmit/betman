@@ -16,7 +16,6 @@ in bdaqapi.py by calling e.g. bdaqapi.ListTopLevelEvents().
 class ApiListTopLevelEvents(ApiMethod):
     def __init__(self, apiclient):
         super(ApiListTopLevelEvents, self).__init__(apiclient)
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -41,7 +40,6 @@ class ApiGetEventSubTreeNoSelections(ApiMethod):
         super(ApiGetEventSubTreeNoSelections,
               self).__init__(apiclient)
         self.dbman = dbman
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.create(('GetEventSubTreeNoSele'
@@ -74,7 +72,6 @@ class ApiGetEventSubTreeWithSelections(ApiMethod):
     def __init__(self, apiclient):
         super(ApiGetEventSubTreeWithSelections,
               self).__init__(apiclient)
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -93,7 +90,6 @@ class ApiGetMarketInformation(ApiMethod):
     def __init__(self, apiclient, dbman):
         super(ApiGetMarketInformation, self).__init__(apiclient)
         self.dbman = dbman
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -116,7 +112,6 @@ class ApiGetMarketInformation(ApiMethod):
 class ApiListSelectionsChangedSince(ApiMethod):
     def __init__(self, apiclient):
         super(ApiListSelectionsChangedSince, self).__init__(apiclient)
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -132,7 +127,6 @@ class ApiListSelectionsChangedSince(ApiMethod):
 class ApiListMarketWithdrawalHistory(ApiMethod):
     def __init__(self, apiclient):
         super(ApiListMarketWithdrawalHistory, self).__init__(apiclient)        
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.create(('ListMarketWithdrawal'
@@ -153,7 +147,6 @@ class ApiGetPrices(ApiMethod):
         # time to wait between consecutive calls when calling multiple
         # times.
         self.throttl = throttl
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.create('GetPricesRequest')
@@ -236,7 +229,6 @@ class ApiGetAccountBalances(ApiMethod):
 class ApiListAccountPostings(ApiMethod):
     def __init__(self, apiclient):
         super(ApiListAccountPostings, self).__init__(apiclient)        
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -269,7 +261,6 @@ class ApiListOrdersChangedSince(ApiMethod):
     def __init__(self, apiclient, dbman):
         super(ApiListOrdersChangedSince, self).__init__(apiclient)        
         self.dbman = dbman
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -319,7 +310,6 @@ class ApiListBootstrapOrders(ApiMethod):
     def __init__(self, apiclient, dbman):
         super(ApiListBootstrapOrders, self).__init__(apiclient)
         self.dbman = dbman
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -346,7 +336,6 @@ class ApiListBootstrapOrders(ApiMethod):
 class ApiGetOrderDetails(ApiMethod):
     def __init__(self, apiclient):
         super(ApiGetOrderDetails, self).__init__(apiclient)        
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.create('GetOrderDetailsRequest')
@@ -360,7 +349,6 @@ class ApiPlaceOrdersNoReceipt(ApiMethod):
     def __init__(self, apiclient, dbman):
         super(ApiPlaceOrdersNoReceipt, self).__init__(apiclient)        
         self.dbman = dbman
-        self.create_req()
 
     def create_req(self):
         self.req = self.client.factory.\
@@ -443,7 +431,6 @@ class ApiPlaceOrdersWithReceipt(ApiMethod):
 class ApiCancelOrders(ApiMethod):
     def __init__(self, apiclient, dbman):
         super(ApiCancelOrders, self).__init__(apiclient)
-        self.create_req()
         self.dbman = dbman
 
     def create_req(self):
@@ -464,7 +451,7 @@ class ApiCancelOrders(ApiMethod):
 
 class ApiListBlacklistInformation(ApiMethod):
     def __init__(self, apiclient):
-        self.client = apiclient.client
+        super(ApiListBlacklistInformation, self).__init__(apiclient)
 
     def call(self):
         betlog.betlog.info('calling BDAQ Api ListBlacklistInformation')
