@@ -8,6 +8,7 @@ from betman import const, betlog
 
 class Strategy(object):
     """Base class - a strategy should inherit from this."""
+    
     def __init__(self):
         self.brain = StateMachine()
 
@@ -15,24 +16,34 @@ class Strategy(object):
         self.toplace = {const.BDAQID: [], const.BFID: []}
         
     def get_marketids(self):
-        """Return market ids involved in strategy.  These should be
-        returned as a dict with keys const.BDAQID and const.BFID"""
+        """
+        Return market ids involved in strategy.  These should be
+        returned as a dict with keys const.BDAQID and const.BFID.
+        """
+        
         pass
 
     def get_orders(self):
-        """Return a list of orders involved with a strategy.  These
+        """
+        Return a list of orders involved with a strategy.  These
         should be returned as a dict with keys const.BDAQID and
-        const.BFID"""
+        const.BFID.
+        """
+
         pass
 
     def update(self, prices):
-        """Update prices of any selections using the prices dict
-        passed as argument, then do the thinking and generate orders
-        to create or cancel on the exchanges."""
+        """
+        Update prices of any selections using the prices dict passed
+        as argument, then do the thinking and generate orders to
+        create or cancel on the exchanges.
+        """
+        
         pass
 
 class StrategyGroup(object):
     """Stores a group (i.e. one or more) of strategies."""
+    
     def __init__(self):
         self.strategies = []
 
@@ -46,15 +57,18 @@ class StrategyGroup(object):
         self.strategies.append(strategy)
 
     def update(self, prices):
-        """Update all strategies in the group"""
+        """Update all strategies in the group."""
 
         for strat in self.strategies:
             strat.update(prices)
 
     def get_orders(self):
-        """Order ids for all strategies in the group used for checking
+        """
+        Order ids for all strategies in the group used for checking
         order status.  This shouldn't return order ids which we
-        already know are matched."""
+        already know are matched.
+        """
+        
         oids = {const.BDAQID: [], const.BFID: []}
         for strat in self.strategies:
             # get mid dictionary for strat
@@ -68,6 +82,7 @@ class StrategyGroup(object):
         Return dictionary with keys that are the exchange ids, and
         items that are lists of order objects that we want to place.
         """
+        
         toplace = {const.BDAQID: [], const.BFID: []}
         for strat in self.strategies:
             # get order dictionary for each strat
@@ -79,6 +94,7 @@ class StrategyGroup(object):
 
     def get_marketids(self):
         """Return market ids of all strategies."""
+        
         mids = {const.BDAQID: [], const.BFID: []}
         for strat in self.strategies:
             # get mid dictionary for strat
@@ -94,8 +110,11 @@ class StrategyGroup(object):
         return mids
 
     def remove_marketids(self, exid, mids):
-        """Remove any strategies from the group that depend on any of
-        the market ids (on exchange exid) in list mids."""
+        """
+        Remove any strategies from the group that depend on any of
+        the market ids (on exchange exid) in list mids.
+        """
+        
         if (exid == const.BDAQID):
             s = 'BDAQ'
         else:
@@ -113,6 +132,7 @@ class StrategyGroup(object):
 
 class State(object):
     """Base class - a state should inherit from this."""
+    
     def __init__(self, name):
         self.name = name
 

@@ -2,16 +2,16 @@
 # James Mithen
 # jamesmithen@gmail.com
 
-# Cross exchange strategy.  These inherit from the base classes in
-# strategy.py.
+"""
+Cross exchange strategy.  These inherit from the base classes in
+strategy.py.
+"""
 
 from betman import const, database, order, exchangedata, betlog
 from betman.strategy import strategy
 from betman.api.bdaq import bdaqapi
 
-# commission on winnings taken from both exchanges. The strategies can
-# easily be generalised to the case when the commissions for BDAQ and
-# BF are different.
+# commission on winnings taken from both exchanges.
 _COMMISSION = {const.BDAQID: 0.05, const.BFID: 0.05}
 
 # min bets on each exchange in GBP.  Note once we have improved
@@ -24,11 +24,13 @@ class CXStrategy(strategy.Strategy):
     ex1sel - Selection object for exchange 1 (BetDaq)
     ex2sel - Selection object for exchange 2 (BetDaq)
     """
+    
     def __init__(self, ex1sel, ex2sel, instantonly = True):
         """
         ex1sel      - BDAQ selection
         ex2sel      - BF   selection
         instantonly - if True, only look for 'instant' opportunities.
+                      This means only 'taking' and not 'making'. 
         """
         
         # this gives us self.brain, a StateMachine, and self.toplace,
@@ -74,14 +76,18 @@ class CXStrategy(strategy.Strategy):
 
     def get_marketids(self):
         """Return dictionary of all market ids involved in strategy."""
+        
         return {const.BDAQID: [self.sel1.mid],
                 const.BFID: [self.sel2.mid]}
 
     def get_orders(self):
-        """Return dictionary of all order objects involved in
+        """
+        Return dictionary of all order objects involved in
         strategy.  This is needed so that we can check the status of
         the orders (we only in fact really need this for the BF
-        orders)"""
+        orders).
+        """
+        
         odict = {const.BDAQID: [], const.BFID: []}
         # note: we only care about checking the order status if we
         # don't know for sure whether or not it is matched. We also
@@ -98,8 +104,11 @@ class CXStrategy(strategy.Strategy):
         return odict
         
     def check_instant_opportunity(self):
-        """Can I back on one exchange and lay on the other exchange at
-        prices that are currently on offer?"""
+        """
+        Can I back on one exchange and lay on the other exchange
+        profitably at prices that are currently on offer?.
+        """
+        
         self.opp = False
 
         for s1,s2 in [(self.sel1,self.sel2), (self.sel2,self.sel1)]:
@@ -115,18 +124,22 @@ class CXStrategy(strategy.Strategy):
             if self._backlay(oback, olay):
                 # TODO: the odds are good enough, we just need to check if
                 # the volume is there.
-                #bstake, lstake = 
+                # bstake, lstake = 
                 self.store_opportunity(s1, s2, olay, oback, True)
                 return True
         return False
    
     def check_opportunity(self):
-        """Can I offer a better back than currently available, and then
-        back on the other exchange at the current price?"""
+        """
+        Can I offer a better back than currently available, and then
+        back on the other exchange at the current price?
+        """
+        
         self.opp = False
 
         for s1,s2 in [(self.sel1,self.sel2), (self.sel2,self.sel1)]:
-            # lay selection at best current price
+            
+            # lay selection at one better than current price on offer
             olay = s1.make_best_back()
 
             # back selection at best current price
@@ -155,13 +168,15 @@ class CXStrategy(strategy.Strategy):
         return False
 
     def store_opportunity(self, slay, sback, olay, oback, inst=False):
-        """Store details of betting opportunity"""
+        """Store details of betting opportunity."""
+        
         self.opp = True
         self.slay = slay
         self.sback = sback
         self.olay = olay
         self.oback = oback
         self.instant = inst
+        
         # Figure out how much we want to back and how much to lay. For
         # now let us bet the minimum amount possible.  For this we
         # should note that BDAQ has a minimum bet of 0.5, and BF has a
@@ -177,11 +192,13 @@ class CXStrategy(strategy.Strategy):
         self.border = order.Order(sback.exid, sback.id, bstake,
                                   self.oback, 1, **{'mid': sback.mid,
                                                     'src': sback.src,
-                                                    'wsn': sback.wsn})
+                                                    'wsn': sback.wsn,
+                                                    'sname': sback.name})
         self.lorder = order.Order(slay.exid, slay.id, lstake,
                                   self.olay, 2, **{'mid': slay.mid,
                                                    'src': slay.src,
-                                                   'wsn': slay.wsn})
+                                                   'wsn': slay.wsn,
+                                                   'sname': slay.name})
 
     def get_stakes(self, bexid, oback, lexid, olay):
         """Return back and lay stakes."""
@@ -196,12 +213,17 @@ class CXStrategy(strategy.Strategy):
         laystake = lbratio*backstake
         betlog.betlog.debug('Backstake: ${0} Laystake: ${1}'\
                             .format(backstake, laystake))
+        
         # watch out for rounding errors, we may want to be a bit
-        # careful here.
+        # more careful here.
         return round(backstake, 2), round(laystake, 2)
 
     def make_back_order(self):
-        """Place the back order"""
+        """
+        Place the back order.  Note: this does not actually make
+        the order, it only puts the order in the 'toplace' dictionary.
+        """
+        
         if self.border.exid == const.BDAQID:
             # print diagnostic info
             betlog.betlog.debug("placing BDAQ back: {0} @ {1} for ${2}"\
@@ -220,7 +242,11 @@ class CXStrategy(strategy.Strategy):
 
 
     def make_lay_order(self):
-        """Place the lay order"""
+        """
+        Place the lay order.  Note: this does not actually make the
+        order, it only puts the order in the 'toplace' dictionary.
+        """
+        
         if self.lorder.exid == const.BDAQID:
             betlog.betlog.debug("placing BDAQ lay: {0} @ {1} for ${2}"\
                                  .format(self.slay.name, self.olay,
@@ -235,27 +261,32 @@ class CXStrategy(strategy.Strategy):
             pass
 
     def back_order_matched(self):
-        """Return true if the back order has been matched, else false"""
+        """Return true if the back order has been matched, else false."""
+        
         if self.border.status == order.MATCHED:
             return True
         return False
 
     def lay_order_matched(self):
-        """Return true if the lay order has been matched, else false"""
+        """Return true if the lay order has been matched, else false."""
+        
         if self.lorder.status == order.MATCHED:
             return True
         return False
     
     def _backlay(self, bprice, lprice):
-        """Return True if back-lay strategy profitable, else False"""
+        """Return True if back-lay strategy profitable, else False."""
+        
         if bprice > lprice / ((1.0 - _COMMISSION[const.BDAQID])*\
                               (1.0 - _COMMISSION[const.BFID])):
             return True
         return False
 
     def update(self, prices):
-        # important: clear the list of orders to be placed so that we don't
-        # place them again.
+        """Called everytime we have new prices for the markets."""
+        
+        # important: clear the list of orders to be placed so that we
+        # don't place them again.
         self.toplace = {const.BDAQID: [], const.BFID: []}        
         
         # update prices of selections from dictionary
@@ -284,6 +315,11 @@ class CXStrategy(strategy.Strategy):
         self.filter_bets()
 
     def filter_bets(self):
+        """
+        Filter bets that we are about to place.  This allows us e.g.
+        to remove any bets where the stakes are too high.
+        """
+        
         # if we are in 'bothplaced' state, the opportunity was instant
         # so we don't want to filter any bets.
         if self.brain.active_state.name == 'bothplaced':
@@ -319,7 +355,8 @@ class CXStrategy(strategy.Strategy):
                         return
 
 class CXStateInstantOpp(strategy.State):
-    """An instant opportunity"""
+    """An instant opportunity."""
+    
     def __init__(self, cxstrat):
         super(CXStateInstantOpp, self).__init__('instantopp')
         self.cxstrat = cxstrat
@@ -361,7 +398,8 @@ class CXStateLayPlaced(strategy.State):
         self.cxstrat.make_back_order()
 
 class CXStateBothPlaced(strategy.State):
-    """Both bets placed (neither matched as far as we know)"""
+    """Both bets placed (neither matched as far as we know)."""
+    
     def __init__(self, cxstrat):
         super(CXStateBothPlaced, self).__init__('bothplaced')
         self.cxstrat = cxstrat
@@ -382,7 +420,8 @@ class CXStateBothPlaced(strategy.State):
         return None
 
 class CXStateLayMatched(strategy.State):
-    """Lay bet matched, back bet placed"""
+    """Lay bet matched, back bet placed."""
+    
     def __init__(self, cxstrat):
         super(CXStateLayMatched, self).__init__('laymatched')
         self.cxstrat = cxstrat
@@ -396,13 +435,15 @@ class CXStateLayMatched(strategy.State):
             return 'bothmatched'
     
 class CXStateBackMatched(strategy.State):
-    """Back bet matched"""
+    """Back bet matched."""
+    
     def __init__(self, cxstrat):
         super(CXStateBackMatched, self).__init__('backmatched')
         self.cxstrat = cxstrat
 
 class CXStateBothMatched(strategy.State):
-    """Both bets matched"""
+    """Both bets matched."""
+    
     def __init__(self, cxstrat):
         super(CXStateBothMatched, self).__init__('bothmatched')
         self.cxstrat = cxstrat
@@ -412,7 +453,8 @@ class CXStateBothMatched(strategy.State):
         return 'noopp'
 
 class CXStateOpp(strategy.State):
-    """An opportunity"""
+    """An opportunity."""
+    
     def __init__(self, cxstrat):
         super(CXStateOpp, self).__init__('opp')
         self.cxstrat = cxstrat
@@ -428,7 +470,8 @@ class CXStateOpp(strategy.State):
         pass
         
 class CXStateNoOpp(strategy.State):
-    """No betting opportunity"""
+    """No betting opportunity."""
+    
     def __init__(self, cxstrat):
         super(CXStateNoOpp, self).__init__('noopp')
         self.cxstrat = cxstrat
