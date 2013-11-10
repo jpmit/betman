@@ -6,7 +6,7 @@
 
 import time, datetime
 import betman
-from betman import const, database
+from betman import const, database, order
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from betman.all import betlog
@@ -64,10 +64,10 @@ class BetMain(object):
 
     def update_market_prices(self):
         """
-        Get new prices.  Here we use python's threading module to make
-        the requests to BDAQ and BF (approximately) simultaneously.
-        Note that we do not write selection information to the
-        database here.
+        Get new prices.  Here we use python's multiprocessing module
+        to make the requests to BDAQ and BF (approximately)
+        simultaneously.  Note that we do not write selection
+        information to the database here.
         """
 
         betlog.betlog.debug('Updating prices for {0} strategies'\
@@ -85,13 +85,13 @@ class BetMain(object):
         pool = ThreadPool(processes=1)
 
         # update prices from BDAQ API.
-        async_result = pool.apply_async(bdaqapi.GetSelectionsnonAPI,
+        async_result = pool.apply_async(bdaqapi.GetPrices_nApi,
                                         (self.marketids[const.BDAQID],))
 
         # update prices from BF API. Note at the moment there doesn't
         # seem to be a problem with requesting data for markets that
         # have closed, but we may have to change this at a later date.
-        self.prices[const.BFID], bfemids = bfapi.GetSelections\
+        self.prices[const.BFID], bfemids = bfapi.GetPrices_nApi\
                                            (self.marketids[const.BFID])
 
         self.prices[const.BDAQID], bdaqemids = async_result.get()
@@ -174,7 +174,7 @@ class BetMain(object):
             pool = ThreadPool(processes=1)
 
             # place BDAQ order.
-            bdaq_result = pool.apply_async(bdaqapi.PlaceOrders,
+            bdaq_result = pool.apply_async(bdaqapi.PlaceOrdersNoReceipt,
                                            (odict[const.BDAQID],))
 
             # we can only place one bet (at least, only one mid) per
@@ -330,5 +330,5 @@ class BetMain(object):
             self.clock.tick()
         
 if __name__=='__main__':
-    bm = BetMain(1)
+    bm = BetMain(3)
     bm.main_loop()

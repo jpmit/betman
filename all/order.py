@@ -2,7 +2,7 @@
 # James Mithen
 # jamesmithen@gmail.com
 
-# Order objects for exchange
+"""Order object for both exchanges."""
 
 # BDAQ order _Status can be
 # 1 - Unmatched.  Order has SOME amount available for matching.
@@ -25,44 +25,47 @@ BACK = 1
 LAY = 2
 
 class Order(object):
-    """Returned after an order is placed"""
+    """Used to place an order, and returned after an order is placed."""    
+    
     def __init__(self, exid, sid, stake, price, polarity, **kwargs):
+        """
+        Create order from exid (const.BDAQID or const.BFID), selection
+        id, stake (in GBP), price (odds), polarity (O_BACK or O_LAY).
+        """
+        
         self.exid = exid
         self.sid = sid
         self.stake = stake
         self.price = price
         self.polarity = polarity # 1 for back, 2 for lay
 
-        # the status set here is the default and it will be
-        # overwritten by the dict kwargs.
+        # the following are defaults and can be overridden by **kwargs
         self.status = NOTPLACED
-
-        # set default values which may be overridden by **kwargs
-        # selection reset count and withdrawal sequence number (needed
-        # for BDAQ).
+        # BDAQ only: cancel when market goes 'in running' aka 'in play'?
+        self.cancelrunning = True
+        # BF only: persistence type
+        self.persistence = 'NONE'
+        # BDAQ only: cancel if selection is reset?
+        self.cancelreset = False
+        # BDAQ only: selection reset count        
         self.src = 0
-        self.wsn = 0
-
-        # persistence type (used for betfair); default here is 'in
-        # play', which means the order persists (is not cancelled)
-        # when the order goes in play (e.g. when a horse race or
-        # football match starts).
-        self.persistence = 'IP'
+        # BDAQ only: withdrawal selection number        
+        self.wsn = 0              
 
         for kw in kwargs:
             # notable kwargs (and therefore possible instance attributes) are:
-            # oref - reference number from API
-            # status - one of the numbers above e.g. MATCHED
-            # matchedstake - amount of order matched
+            # not set at instantiation:
+            # oref           - reference number from API
+            # matchedstake   - amount of order matched
             # unmatchedstake - amount of order unmatched
-            # strategy - integer for strategy number
-            #
-            # NEEDED FOR PLACING BETS WITH BF BUT NOT BDAQ:
-            # mid - market id
-            #
-            # NEEDED FOR PLACING BETS WITH BDAQ BUT NOT BF:
-            # src - selection reset count
-            # wsn - withdrawal sequence number
+            # sname          - name of the selection that order is for
+            # set at instantiation:
+            # status         - one of the numbers above e.g. O_MATCHED
+            # cancelrunning  - default is True
+            # cancelreset    - default is True
+            # src            - selection reset count
+            # wsn            - withdrawal sequence number
+
             setattr(self, kw, kwargs[kw])
 
     def __repr__(self):
@@ -72,13 +75,3 @@ class Order(object):
 
     def __str__(self):
         return self.__repr__()
-    
-
-## class PlaceOrder(object):
-##     """PlaceOrder holds info necessary to place an order"""
-##     def __init__(self, exid, sid, stake, price, polarity):
-##         self.exid = exid
-##         self.sid = sid
-##         self.stake = stake
-##         self.price = price
-##         self.polarity = polarity # 1 for back, 2 for lay

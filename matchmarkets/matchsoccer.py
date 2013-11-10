@@ -10,10 +10,10 @@ def bdaqconvert(s):
     # first remove anything in brackets, including spaces around
     # brackets
     s = re.sub(r' *\(.*?\) *', '', s)
+    # strip any times like 19:30 out as well as trailing spaces
+    s = re.sub(r'[0-9][0-9]:[0-9][0-9] *', '', s)    
     # strip a colon, anything following and any spaces before...
     s = re.sub(r' *:.*', '', s)
-    # strip any times like 19:30 out as well as trailing spaces
-    s = re.sub(r'[0-9][0-9]:[0-9][0-9] *', '', s)
     # remove 'The - matches the championship
     s = s.replace('The ','')
     # english leagues 1, 2
@@ -27,7 +27,9 @@ def bdaqconvert(s):
     s = s.replace('Hull City','Hull')
     s = s.replace('Stoke City','Stoke')
     s = s.replace('Bayern Munich','B Munich')
-    
+    # remove any leading or trailing spaces
+    #s = s.strip()
+    #print s
     return s
 
 def bfconvert(s):

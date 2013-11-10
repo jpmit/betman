@@ -1,8 +1,8 @@
 # betutil.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Utility stuff for main betting program.
+
+"""Utility stuff for main betting program."""
 
 import os
 import pickle
@@ -14,8 +14,9 @@ PICKPATH = os.path.join(os.path.split(const.MASTERDB)[0],
 PKLPROT = 2
 
 def save_strategies(bdaqids=[], instantonly = True):
-    """Using info in the DB, get strategies and save these to
-    pickle file
+    """
+    Using info in the DB, get strategies and save these to pickle
+    file.
 
     bdaqids - list of BDAQ market ids allowed.  If empty, all market
               ids are allowed.
@@ -49,6 +50,7 @@ def save_strategies(bdaqids=[], instantonly = True):
 
 def pickle_stratgroup(sgroup):
     """Pickle the StrategyGroup object."""
+    
     of = open(PICKPATH, 'wb')
     pickle.dump(sgroup, of, protocol=PKLPROT)
     of.close()
@@ -56,6 +58,7 @@ def pickle_stratgroup(sgroup):
 
 def unpickle_stratgroup():
     """Return StrategyGroup object from pickle file."""
+    
     f = open(PICKPATH, 'rb')
     sgroup = pickle.load(f)
     f.close()

@@ -82,19 +82,19 @@ def _matchselection(sel, sellist):
     Here sel is a BDAQ selection names, and sellist is a list of BF
     selections.
     """
-
-    # Soccer: the BDAQ draw selection is called 'Draw', but the
-    # corresponding BF selection is 'The Draw', so let's rename the
-    # BDAQ selection 'Draw'.
-    if sel == 'Draw':
-        sel = 'The Draw'
     
     # Horse Racing: the BDAQ horse racing selections have numbers in
     # them, but the BF ones dont', so lets remove the numbers from the
     # BDAQ selections.
     selname = ''.join(i for i in sel.name if not i.isdigit())
 
-    # again, the BDAQ horse racing selections, due to our ASCII
+    # Soccer: the BDAQ draw selection is called 'Draw', but the
+    # corresponding BF selection is 'The Draw', so let's rename the
+    # BDAQ selection 'Draw'.
+    if selname == 'Draw':
+        selname = 'The Draw'
+
+    # Horse Racing: the BDAQ horse racing selections, due to our ASCII
     # encoding, contain '&apos;' instead of an apostraphe, so remove
     # this.
     selname = selname.replace('&apos;','')

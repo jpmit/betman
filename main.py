@@ -47,8 +47,8 @@ bdaqmids = [m.id for m in bdaqmatches]
 
 # get selection dictionary for the markets that match.  second
 # argument here ensures we write to the database.
-bfseldict, bfemids = bfapi.GetSelections_nApi(bfmids, True)
-bdaqseldict, bdaqemids = bdaqapi.GetSelections_nApi(bdaqmids, True)
+bfseldict, bfemids = bfapi.GetPrices_nApi(bfmids, True)
+bdaqseldict, bdaqemids = bdaqapi.GetPrices_nApi(bdaqmids, True)
 
 # get selections ordered by market
 bfselections = [[bfseldict[m][s] for s in bfseldict[m]] for m in bfmids]

@@ -414,6 +414,7 @@ class DBMaster(object):
         Selections.  This convenience function will convert the
         database representation to a list of Selection objects.
         """
+        
         try:
             if sqlargs:
                 res = self.cursor.execute(sqlstr, sqlargs)
@@ -434,21 +435,27 @@ class DBMaster(object):
         # lastmatched
         # lastmatchedprice
         # lastmatchedamount
-        selections = [Selection(s[3], s[2], s[1], None, None, None,
-                                None, None,
+        selections = [Selection(s[0], # exchange id
+                                s[3], # name
+                                s[2], # selection id
+                                s[1], # market id
+                                None, # matched back amount
+                                None, # matched lay amount
+                                None, # time last matched
+                                None, # last matched price
+                                None, # last matched amount
                                 # backprices and volumes
                                 [y for y in util.pairwise(s[4:14])],
                                 # layprices and volumes
                                 [y for y in util.pairwise(s[14:24])],
                                 s[24], # selection reset count
-                                s[25], # withdrawal selection number
-                                s[0])
+                                s[25]) # withdrawal selection number
                       for s in seldata]
         
         return selections
 
     def WriteMarkets(self, markets, tstamp):
-        """Write to markets table"""
+        """Write to markets table."""
 
         # check  database is open
         if not self._isopen:

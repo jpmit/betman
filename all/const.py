@@ -1,5 +1,8 @@
 # const.py
-# some constants that are useful globally
+# James Mithen
+# jamesmithen@gmail.com
+
+"""Some constants that are useful globally."""
 
 import suds
 import sys
@@ -30,7 +33,7 @@ BDAQAPIVERSION = '2'
 
 # BDAQ username and password
 BDAQUSER = 'jimmybob'
-BDAQPASS = '0am14th0uARTIST'
+BDAQPASS = 'Alm0stTheEnd0fTheW0rld'
 
 # BF username and password
 BFUSER = 'mithen'
