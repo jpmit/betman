@@ -48,11 +48,10 @@ GetActiveEventTypes = bfapimethod.ApigetActiveEventTypes(clglob).call
 GetAllMarketsUK = bfapimethod.ApigetAllMarkets(cluk, dbman).call
 GetAllMarketsAUS = bfapimethod.ApigetAllMarkets(claus, dbman).call
     
-# selections and prices for markets - not using the Api
-GetSelections_nApi = bfnonapimethod.NonApigetSelections(cluknonapi,
-                                                        dbman).call
+# get static market information
 GetMarket = bfapimethod.ApigetMarket(cluk, dbman).call
-GetMarketnonApi = bfnonapimethod.NonApigetMarket(cluknonapi, dbman).call
+
+# get (additional(?)) market info
 GetMarketInfo = bfapimethod.ApigetMarketInfo(cluk, dbman).call
 
 #GetSelections = bfapimethod.ApigetMarket(cluk, dbman).call
@@ -65,3 +64,12 @@ CancelBets = bfapimethod.ApicancelBets(cluk, dbman).call
 
 # this only checks if matched or unmatched at the moment
 GetBetStatus = bfapimethod.ApigetMUBets(cluk, dbman).call
+
+# non Api (screen scraping) functions appear below.  These are suffixed with _nApi.
+
+# get market information
+GetMarket_nApi = bfnonapimethod.NonApigetMarket(cluknonapi, dbman).call
+
+# get prices
+GetPrices_nApi = bfnonapimethod.NonApigetPrices(cluknonapi,
+                                                dbman).call

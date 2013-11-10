@@ -83,4 +83,4 @@ ListBlacklistInformation = bdaqapimethod.\
 # suffixed with _nApi.
 
 # get prices for some market ids
-GetSelections_nApi = bdaqnonapimethod.NonApiGetPrices(_ncl, _dbman).call
+GetPrices_nApi = bdaqnonapimethod.NonApiGetPrices(_ncl, _dbman).call

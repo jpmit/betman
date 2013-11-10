@@ -1,8 +1,8 @@
 # bdaqnonapiparse.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Functions for parsing output of BDAQ non-Api (webscraping) calls.
+
+"""Functions for parsing output of BDAQ non-Api (webscraping) calls."""
 
 import json
 import re

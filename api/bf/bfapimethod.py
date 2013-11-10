@@ -124,7 +124,9 @@ class ApiplaceBets(ApiMethod):
             pbet.selectionId = o.sid
             pbet.size = o.stake
             # maximum amount of money want to risk for BSP bet (???
-            # see BF Api docs).
+            # see BF Api docs).  Here we are not doing any BSP
+            # (Betfair Starting Price) betting, so this does not
+            # apply.
             pbet.bspLiability = 0.0 
             blist.append(pbet)
         return blist

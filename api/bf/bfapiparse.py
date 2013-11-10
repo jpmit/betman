@@ -20,12 +20,14 @@ def _check_errors(res):
     api_ecode = res.header.errorCode
 
     if api_ecode != 'OK':
+        print res
         raise ApiError, api_ecode
 
     # next, we check any 'service specific errors'
     service_ecode = res.errorCode
 
     if service_ecode != 'OK':
+        print res
         raise ApiError, api_ecode        
 
 def ParsegetMUBets(res, odict):

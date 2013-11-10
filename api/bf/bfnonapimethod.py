@@ -56,7 +56,7 @@ class NonApigetMarket(NonApiMethod):
     """
     
     def __init__(self, urlclient, dbman):
-        self.client = urlclient
+        super(NonApigetMarket, self).__init__(urlclient)
         self.dbman = dbman
 
     def call(self, mids):
@@ -90,14 +90,14 @@ class NonApigetMarket(NonApiMethod):
             
         return allminfo, allemids
 
-class NonApigetSelections(NonApiMethod):
+class NonApigetPrices(NonApiMethod):
     """
-    Replacement for ApigetSelections, which is throttled when using
+    Replacement for ApigetPrices, which is throttled when using
     the BF free API.
     """
     
     def __init__(self, urlclient, dbman):
-        super(NonApigetSelections, self).__init__(urlclient)
+        super(NonApigetPrices, self).__init__(urlclient)
         self.dbman = dbman
     
     def call(self, mids, writedb = False):
@@ -129,7 +129,7 @@ class NonApigetSelections(NonApiMethod):
             betlog.betlog.debug('BF Selection URL: {0}'.format(url))
 
             # make the HTTP request
-            betlog.betlog.info('calling BF nonApi getSelections')            
+            betlog.betlog.info('calling BF nonApi getPrices')            
             response = self.client.call(url)
 
             # selections for all the market ids
