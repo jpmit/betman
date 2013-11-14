@@ -36,3 +36,67 @@
         m.starttime = m.starttime + datetime.timedelta(hours=1)
 
 
+# multiprocessing (now replaced with multithreading)
+# update prices from BDAQ API.
+async_result = pool.apply_async(bdaqapi.GetPrices_nApi,
+                                (self.marketids[const.BDAQID],))
+
+# update prices from BF API. Note at the moment there doesn't
+# seem to be a problem with requesting data for markets that
+# have closed, but we may have to change this at a later date.
+self.prices[const.BFID], bfemids = bfapi.GetPrices_nApi\
+                                   (self.marketids[const.BFID])
+
+self.prices[const.BDAQID], bdaqemids = async_result.get()
+
+# multiprocessing for placing bets (again replaced by multithreading).
+       
+        if (odict[const.BDAQID]) and (odict[const.BFID]):
+            # we are betting on both exchanges, so we use two
+            # threads to send the orders simultaneously.
+            pool = ThreadPool(processes=1)
+
+            # place BDAQ order.
+            bdaq_result = pool.apply_async(bdaqapi.PlaceOrdersNoReceipt,
+                                           (odict[const.BDAQID],))
+
+            # we can only place one bet (at least, only one mid) per
+            # API call for BF
+            nbfbets = len(odict[const.BFID])
+            if nbfbets == 1:
+                bfo = bfapi.PlaceBets(odict[const.BFID])
+                saveorders[const.BFID].update(bfo)
+            else:
+                # more than one BF bet; (try to) place this
+                # asynchronously
+                bf_results = [None]*(nbfbets - 1)
+                for bnum in range(nbfbets - 1):
+                    bf_results[bnum] = pool.apply_async(bfapi.PlaceBets,
+                                                        ([odict[const.BFID][bnum]],))
+                bfo = bfapi.PlaceBets([odict[const.BFID][-1]])
+                saveorders[const.BFID].update(bfo)
+                
+                # fetch the bf results
+                for resp in bf_results:
+                    d = resp.get()
+                    saveorders[const.BFID].update(d)
+
+            # fetch the BDAQ results
+            bdo = bdaq_result.get()
+            saveorders[const.BDAQID].update(bdo)
+
+        else:
+            # betting on BDAQ or BF or neither but not both - no
+            # need for extra thread
+
+            if odict[const.BDAQID]:
+                # place the orders
+                bdo = bdaqapi.PlaceOrders(odict[const.BDAQID])
+                saveorders[const.BDAQID].update(bdo)
+                # Annoying!  The BF API only allows us to make bets for
+                # one market at a time (although we can make multiple bets
+                # - up to 60 apparently - for each market.
+            if odict[const.BFID]:
+                for plorder in odict[const.BFID]:
+                    bfo = bfapi.PlaceBets([plorder])
+                    saveorders[const.BFID].update(bfo)

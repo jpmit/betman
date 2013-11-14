@@ -176,13 +176,13 @@ class ApiGetPrices(ApiMethod):
                 
             betlog.betlog.info('calling BDAQ Api GetPrices')
             result = self.client.service.GetPrices(self.req)
-            selections =  apiparse.ParseGetPrices(ids, result)
+            selections =  bdaqapiparse.ParseGetPrices(ids, result)
             allselections = allselections + selections
 
-        if const.WRITEDB:
+        #if const.WRITEDB:
             # collapse list of lists to a flat list
-            writeselections = [i for sub in allselections for i in sub]
-            self.dbman.WriteSelections(writeselections, result.Timestamp)
+        #    writeselections = [i for sub in allselections for i in sub]
+        #    self.dbman.WriteSelections(writeselections, result.Timestamp)
 
         return allselections
 
@@ -440,7 +440,7 @@ class ApiCancelOrders(ApiMethod):
         self.req.OrderHandle = [o.oref for o in olist]
         betlog.betlog.info('calling BDAQ Api CancelOrders')
         result = self.client.service.CancelOrders(self.req)
-        ol = apiparse.ParseCancelOrders(result, olist)
+        ol = bdaqapiparse.ParseCancelOrders(result, olist)
         return ol
 
 #class ApiCancelOrders(ApiMethod):

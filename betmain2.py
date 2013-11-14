@@ -11,7 +11,7 @@ from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from betman.all import betlog
 import betutil
-from multiprocessing.pool import ThreadPool
+import multi
 
 # in practicemode, we won't place any bets
 PRACTICEMODE = False
@@ -52,6 +52,7 @@ class BetMain(object):
         except IOError:
             betlog.betlog.warn(('Could not read pickle file: attempting'
                                 ' to read strategies from database'))
+            
             # save strategies from DB to pickle file
             betutil.save_strategies()
 
@@ -82,33 +83,22 @@ class BetMain(object):
         betlog.betlog.debug('BF market ids total: {0}'.\
                             format(len(self.marketids[const.BFID])))
 
-        pool = ThreadPool(processes=1)
-
-        # update prices from BDAQ API.
-        async_result = pool.apply_async(bdaqapi.GetPrices_nApi,
-                                        (self.marketids[const.BDAQID],))
-
-        # update prices from BF API. Note at the moment there doesn't
-        # seem to be a problem with requesting data for markets that
-        # have closed, but we may have to change this at a later date.
-        self.prices[const.BFID], bfemids = bfapi.GetPrices_nApi\
-                                           (self.marketids[const.BFID])
-
-        self.prices[const.BDAQID], bdaqemids = async_result.get()
+        # this is multithreaded so that we send requests to BDAQ and
+        # BF at roughly the same time.
+        self.prices, emids = multi.update_prices(self.marketids)
 
         # remove any strategies from the strategy list that depend on
         # any of the BDAQ or BF markets in emids.
-        if bdaqemids:
-            self.stratgroup.remove_marketids(const.BDAQID, bdaqemids)
-            self.marketids = self.stratgroup.get_marketids()
-        
-        if bfemids:
-            self.stratgroup.remove_marketids(const.BFID, bfemids)
-            self.marketids = self.stratgroup.get_marketids()
+        for myid in [const.BDAQID, const.BFID]:
+            if emids[myid]:
+                self.stratgroup.remove_marketids(myid, emids[myid])
+                # refresh the dict of market ids that our strategy
+                # uses.
+                self.marketids = self.stratgroup.get_marketids()
 
         # if we deleted any strategies, re-save the pickle so we only
         # load valid strategies at startup
-        if bdaqemids or bfemids:
+        if emids[const.BDAQID] or emids[const.BFID]:
             betutil.pickle_stratgroup(self.stratgroup)
 
     def unmatched_orders(self, exid):
@@ -163,66 +153,18 @@ class BetMain(object):
         saveorders = {const.BDAQID: {}, const.BFID: {}}
 
         if PRACTICEMODE:
+            # we don't make any real money bets in practice mode
             return
-
+ 
         if (odict[const.BDAQID]) or (odict[const.BFID]):
             betlog.betlog.debug('making orders: {0}'.format(odict))
 
-        if (odict[const.BDAQID]) and (odict[const.BFID]):
-            # we are betting on both exchanges, so we use two
-            # threads to send the orders simultaneously.
-            pool = ThreadPool(processes=1)
-
-            # place BDAQ order.
-            bdaq_result = pool.apply_async(bdaqapi.PlaceOrdersNoReceipt,
-                                           (odict[const.BDAQID],))
-
-            # we can only place one bet (at least, only one mid) per
-            # API call for BF
-            nbfbets = len(odict[const.BFID])
-            if nbfbets == 1:
-                bfo = bfapi.PlaceBets(odict[const.BFID])
-                saveorders[const.BFID].update(bfo)
-            else:
-                # more than one BF bet; (try to) place this
-                # asynchronously
-                bf_results = [None]*(nbfbets - 1)
-                for bnum in range(nbfbets - 1):
-                    bf_results[bnum] = pool.apply_async(bfapi.PlaceBets,
-                                                        ([odict[const.BFID][bnum]],))
-                bfo = bfapi.PlaceBets([odict[const.BFID][-1]])
-                saveorders[const.BFID].update(bfo)
-                
-                # fetch the bf results
-                for resp in bf_results:
-                    d = resp.get()
-                    saveorders[const.BFID].update(d)
-
-            # fetch the BDAQ results
-            bdo = bdaq_result.get()
-            saveorders[const.BDAQID].update(bdo)
-
-        else:
-            # betting on BDAQ or BF or neither but not both - no
-            # need for extra thread
-
-            if odict[const.BDAQID]:
-                # place the orders
-                bdo = bdaqapi.PlaceOrders(odict[const.BDAQID])
-                saveorders[const.BDAQID].update(bdo)
-                # Annoying!  The BF API only allows us to make bets for
-                # one market at a time (although we can make multiple bets
-                # - up to 60 apparently - for each market.
-            if odict[const.BFID]:
-                for plorder in odict[const.BFID]:
-                    bfo = bfapi.PlaceBets([plorder])
-                    saveorders[const.BFID].update(bfo)
-
-        # now save the order information to the DB.
-        if (odict[const.BDAQID]) or (odict[const.BFID]):
+            # call multithreaded make orders so that we make order
+            # requests for BDAQ and BF simultaneously.
+            saveorders = multi.make_orders(odict)
 
             # update the dictionary of orders that we have placed
-            # since starting the application; this
+            # since starting the application.
             self.orders[const.BDAQID].update(saveorders[const.BDAQID])
             self.orders[const.BFID].update(saveorders[const.BFID])
 

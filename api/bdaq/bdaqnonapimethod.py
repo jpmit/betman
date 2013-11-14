@@ -44,7 +44,7 @@ class NonApiGetPrices(NonApiMethod):
             url = self.client.pricesurl + midstring + '&ccyCode=GBP'
 
             betlog.betlog.info('calling BDAQ nonApi GetPrices')
-            betlog.betlog.debug('BDAQ Selection URL: {0}'.format(url))
+            #betlog.betlog.debug('BDAQ Selection URL: {0}'.format(url))
 
             # make the HTTP request
             response = self.client.call(url)

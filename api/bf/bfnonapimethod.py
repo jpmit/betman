@@ -75,7 +75,7 @@ class NonApigetMarket(NonApiMethod):
                                            '&marketIds={0}'.\
                                            format(midstring))
 
-            betlog.betlog.debug('BF getMarket URL: {0}'.format(url))
+            #betlog.betlog.debug('BF getMarket URL: {0}'.format(url))
 
             # make the HTTP request
             betlog.betlog.info('calling BF nonApi getMarket')            
@@ -126,7 +126,7 @@ class NonApigetPrices(NonApiMethod):
                                            '_PRICES_BEST'
                                            '&marketIds={0}'.format(midstring))
 
-            betlog.betlog.debug('BF Selection URL: {0}'.format(url))
+            #betlog.betlog.debug('BF Selection URL: {0}'.format(url))
 
             # make the HTTP request
             betlog.betlog.info('calling BF nonApi getPrices')            
