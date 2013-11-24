@@ -101,15 +101,18 @@ class MatchListCtrl(wx.ListCtrl):
         for (m1, m2) in mmarks:
             item = (m1.name.split('|')[-2],
                     m1.starttime.strftime('%d/%m/%y %H:%M'),
-                    '0.0',
-                    '0.0')
+                    # note the BDAQ total matched did not come
+                    # directly from the API here (see
+                    # matchguifunctions.py).
+                    m1.properties['totalmatched'],
+                    m2.properties['totalmatched'])
             # add the item to the list box
             self.Append(item)
 
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.SetColumnWidth(1, 100)
-        self.SetColumnWidth(2, 200)
-        self.SetColumnWidth(3, 200)        
+        self.SetColumnWidth(1, 200)
+        self.SetColumnWidth(2, 150)
+        self.SetColumnWidth(3, 150)        
         
 class EventPanel(scrolledpanel.ScrolledPanel):
     def __init__(self, parent, style=wx.TAB_TRAVERSAL|wx.BORDER_SUNKEN):

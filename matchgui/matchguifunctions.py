@@ -13,7 +13,13 @@ MATCH_CACHE = {}
 BDAQ_EVENTS = []
 BF_EVENTS = []
 
+def _sort_match(item):
+    """Sort matching markets by BDAQ start time"""
+    return item[0].starttime
+
 def match_markets(bdaqename):
+    global BDAQ_EVENTS, BF_EVENTS, MATCH_CACHE
+    
     # return cached info
     if bdaqename in MATCH_CACHE:
         return MATCH_CACHE[bdaqename]
@@ -39,6 +45,16 @@ def match_markets(bdaqename):
     # get matching markets: note, for horse racing, this takes a long time
     # since it needs to call the BF API, which is heavily throttled.
     matchmarks = marketmatcher.get_match_markets(bdaqmarkets, bfmarkets)
+
+    # get prices for all BDAQ markets, in order to get the total
+    # matched, since this is not returned by the API call to get
+    # markets.
+    bdaqsels = bdaqapi.GetPrices([m[0].id for m in matchmarks])
+    for (i, sels) in enumerate(bdaqsels):
+        matchmarks[i][0].properties['totalmatched'] = sels[0].properties['totalmatched']
+
+    # sort matching markets by starttime
+    matchmarks.sort(key=_sort_match)
 
     MATCH_CACHE[bdaqename] = matchmarks
 

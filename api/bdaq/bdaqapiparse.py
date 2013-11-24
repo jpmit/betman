@@ -96,6 +96,12 @@ def ParseGetPrices(marketids, resp):
 
     allselections = []
     for (mid, mprice) in zip(marketids, resp.MarketPrices):
+        # there are a few things about the market returned before the
+        # selection types.  The main thing we want is the total
+        # matched amount on the market, since this is not available
+        # via the getmarkets call (unlike for BF).
+        total_matched = mprice._TotalMatchedAmount
+        
         # list of selections for this marketid
         allselections.append([])
         # go through each selection for the market.  For some reason
@@ -157,8 +163,13 @@ def ParseGetPrices(marketids, resp):
                 lastmatchoccur = sel._LastMatchedOccurredAt
                 lastmatchprice = sel._LastMatchedPrice
                 lastmatchamount = sel._LastMatchedForSideAmount
-            # the only data directly concerning the selection that we
-            # are not storing in the selection instance is the
+            # store all the selection information and the total
+            # matched amount from the header
+            kwdict = dict(sel)
+            kwdict['totalmatched'] = total_matched
+            
+            # Note the only data directly concerning the selection
+            # that we are not storing in the selection instance is the
             # 'deduction factor'.
             allselections[-1].append(Selection(const.BDAQID, sel._Name, sel._Id,
                                                mid,
@@ -169,7 +180,7 @@ def ParseGetPrices(marketids, resp):
                                                lastmatchamount,
                                                bprices, lprices,
                                                sel._ResetCount, wsn,
-                                               **dict(sel)))
+                                               **kwdict))
     return allselections
 
 def ParseListBootstrapOrders(resp):
