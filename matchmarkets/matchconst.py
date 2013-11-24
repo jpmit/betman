@@ -14,6 +14,8 @@
 # Poker
 # Politics
 
+# keys here are BDAQ event name, values are corresponding BF event
+# name.
 EVENTMAP = {'American Football'          : 'American Football',
             'Australian Rules'           : 'Australian Rules', 
             'Baseball'                   : 'Baseball',         
@@ -25,14 +27,14 @@ EVENTMAP = {'American Football'          : 'American Football',
             'GAA' 				           : 'Gaelic Games',
             'Golf'                       : 'Golf',             
             'Greyhound Racing'           : 'Greyhound Racing',
-            'Greyhound - Todays Card'    : 'Greyhound - Todays Card',
+#            'Greyhound - Todays Card'    : 'Greyhound - Todays Card',
             'Horse Racing'               : 'Horse Racing',
-            'Horse Racing - Todays Card' : 'Horse Racing',
-            'Mixed Martial Arts'         : 'Mixed Martial Arts',
+#            'Horse Racing - Todays Card' : 'Horse Racing',
+#            'Mixed Martial Arts'         : 'Mixed Martial Arts',
             'Rugby League'               : 'Rugby League',       
             'Rugby Union'                : 'Rugby Union',        
             'Soccer'                     : 'Soccer',
-            'Soccer - Fixtures'          : 'Soccer',
+#            'Soccer - Fixtures'          : 'Soccer',
             'Special Bets'               : 'Special Bets',       
             'Tennis'                     : 'Tennis'             
 }
