@@ -37,6 +37,9 @@ class MyFrame(wx.Frame):
         icon = wx.Icon(path, wx.BITMAP_TYPE_PNG)
         self.SetIcon(icon)
 
+        # StatusBar
+        self.CreateStatusBar()
+
 class MainPanel(wx.Panel):
     def __init__(self, parent, *args, **kwargs):
         super(MainPanel, self).__init__(parent, *args, **kwargs)
@@ -52,12 +55,7 @@ class MainPanel(wx.Panel):
         t1_sz.Add(wx.StaticText(self,
                                 label='List of matching markets for event: {0}'\
                                 .format(ename)))
-        #t2_sz = wx.BoxSizer(wx.HORIZONTAL)
-        #t2_sz.Add(wx.StaticText(self,
-        #                        label='BLOB'*20))
-        #sizer.Add(t1_sz)
         sizer.AddSpacer(20)
-        #sizer.Add(t2_sz)
 
         self.lst = MatchListCtrl(self, ename) 
         sizer.Add(self.lst, 1, wx.EXPAND)
@@ -68,8 +66,42 @@ class MainPanel(wx.Panel):
         # Event Handlers
         self.Bind(wx.EVT_LIST_ITEM_SELECTED,
                   self.OnItemSelected)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK,
+                  self.OnRightClick)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED,
+                  self.OnDClick)
+
+    def PopulateMarket(self, event, name, index):
+        """Give market prices etc."""
+        
+        self.Clear()
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        name_sz = wx.BoxSizer(wx.HORIZONTAL)
+        name_sz.Add(wx.StaticText(self, label=name))
+        sizer.Add(name_sz)
+
+        # get market selection prices for both BDAQ and BF
+        bdaqsels, bfsels = matchguifunctions.market_prices(event,
+                                                           index)
+        print bdaqsels, bfsels
+
+        for sel in bdaqsels:
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(self, label=sel.name))
+            for p in sel.backprices:
+                sz.Add(wx.StaticText(self, label=str(p) + '    '))
+            sizer.AddSpacer(50)
+            for p in sel.layprices:
+                sz.Add(wx.StaticText(self, label=str(p) + '    '))
+            sizer.Add(sz)
+                    
+        self.SetSizer(sizer)
+        self.Layout()
+        pass
 
     def OnItemSelected(self, event):
+        """Write data on selected market to status bar."""
+        
         selected_row = event.GetIndex()
         val = []
         for column in range(3):
@@ -78,6 +110,28 @@ class MainPanel(wx.Panel):
         # Show what was selected in the frames status bar
         frame = self.GetTopLevelParent()
         frame.PushStatusText(",".join(val))
+
+    def OnRightClick(self, event):
+        """Create menu with options."""
+
+        print 'trying to create a menu'
+        self._menu = wx.Menu()
+        self._menu.Append(wx.ID_CUT)
+        self._menu.Append(wx.ID_COPY)
+        self._menu.Append(wx.ID_PASTE)
+        self.PopupMenu(self._menu)
+        pass
+
+    def OnDClick(self, event):
+        """Zoom to market prices etc."""
+
+        selected_row = event.GetIndex()
+        selected_event = self.GetTopLevelParent().epanel.\
+                         GetSelectedEvent()
+        # market name
+        name = self.lst.GetItem(selected_row, 0).GetText()
+        self.PopulateMarket(selected_event, name, selected_row)
+        print 'double clicked!!!'
 
     def Clear(self):
         for child in self.GetChildren():
@@ -134,6 +188,8 @@ class EventPanel(scrolledpanel.ScrolledPanel):
 
         # store whether one is clicked
         self.selected_obj = None
+        # selected event name
+        self.ename = None
 
     def AppendEvent(self, ename):
         """Add another event."""
@@ -151,8 +207,11 @@ class EventPanel(scrolledpanel.ScrolledPanel):
             
         self.selected_obj = event.GetEventObject()
         self.selected_obj.SetBackgroundColour('yellow')
-        ename = self.selected_obj.GetLabel()
-        self.rpanel.Populate(ename)
+        self.ename = self.selected_obj.GetLabel()
+        self.rpanel.Populate(self.ename)
+
+    def GetSelectedEvent(self):
+        return self.ename
 
 if __name__ == "__main__":
     app = MyApp(False)

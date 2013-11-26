@@ -17,6 +17,22 @@ def _sort_match(item):
     """Sort matching markets by BDAQ start time"""
     return item[0].starttime
 
+def market_prices(bdaqename, index):
+    global MATCH_CACHE
+
+    # get bdaq and bf market
+    bdaqmark, bfmark = MATCH_CACHE[bdaqename][index]
+
+    # get prices from api
+    bdaqsels = bdaqapi.GetPrices_nApi([bdaqmark.id])
+    bfsels = bfapi.GetPrices_nApi([bfmark.id])
+
+    # should return something here if we didn't get any market
+    # information; in this case bdaqsels[1] and bfsels[1] will be
+    # non-empty (they will contain the single market id only).
+    # Returned below is a list of selections
+    return bdaqsels[0].values()[0].values(), bfsels[0].values()[0].values()
+
 def match_markets(bdaqename):
     global BDAQ_EVENTS, BF_EVENTS, MATCH_CACHE
     
