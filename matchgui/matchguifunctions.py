@@ -17,6 +17,12 @@ def _sort_match(item):
     """Sort matching markets by BDAQ start time"""
     return item[0].starttime
 
+def market_name(bdaqename, index):
+    """Return market name (of BDAQ rather than BF market."""
+
+    global MATCH_CACHE
+    return MATCH_CACHE[bdaqename][index][0].name
+
 def market_prices(bdaqename, index):
     global MATCH_CACHE
 
