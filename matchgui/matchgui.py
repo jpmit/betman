@@ -1,5 +1,6 @@
 import wx
 import os
+import const
 import wx.lib.scrolledpanel as scrolledpanel
 from eventpanel import EventPanel
 from marketpanel import MarketPanel
@@ -10,7 +11,7 @@ class MyApp(wx.App):
     
     def OnInit(self):
         self.frame = MyFrame(None, size=(800, 600),
-                             title="Match GUI")
+                             title=const.NAME)
         self.SetTopWindow(self.frame)
         self.frame.Show()
         
@@ -46,8 +47,38 @@ class MyFrame(wx.Frame):
         icon = wx.Icon(path, wx.BITMAP_TYPE_PNG)
         self.SetIcon(icon)
 
+        # menus
+        menubar = wx.MenuBar()
+        helpmenu = wx.Menu()
+        helpmenu.Append(wx.ID_ABOUT, "About")
+        menubar.Append(helpmenu, "Help")
+        self.SetMenuBar(menubar)
+
         # StatusBar
         self.CreateStatusBar()
+
+        # event handlers
+        self.Bind(wx.EVT_MENU, self.OnAbout, id = wx.ID_ABOUT)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+    def OnAbout(self, event):
+        """Show the about dialog."""
+
+        info = wx.AboutDialogInfo()
+        info.SetName(const.NAME)
+        info.SetVersion("0.1")
+        info.SetCopyright("Copyright (C) 2013 James Mithen")
+        # info.SetWebSite()
+        wx.AboutBox(info)
+
+    def OnClose(self, event):
+        result = wx.MessageBox("Are you sure you want to close?",
+                               style=wx.CENTER|wx.ICON_QUESTION\
+                               |wx.OK|wx.CANCEL, parent=self)
+        if result == wx.NO:
+            event.Veto()
+        else:
+            event.Skip()
 
     def ShowMarketPanel(self):
         self._mpanel.Show()

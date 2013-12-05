@@ -47,6 +47,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         bdaqsels, bfsels = matchguifunctions.market_prices(self.event,
                                                            self.index)
 
+        # content_sizer holds prices on left, crossing panel on right
+        content_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
         # go through each selection in turn and add info to the grid
         # cells.
         for bdaqsel, bfsel in zip(bdaqsels, bfsels):
