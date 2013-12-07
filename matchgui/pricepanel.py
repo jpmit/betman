@@ -1,6 +1,7 @@
 import wx
 import wx.lib.scrolledpanel as scrolledpanel
 import matchguifunctions
+import const
 
 # colours for the buttons
 LBLUE   = (14, 218, 249)
@@ -17,9 +18,14 @@ class PricePanel(scrolledpanel.ScrolledPanel):
     BPAD = 0 # padding around button
     BLSPACING = (10, 10) # spacing between back and lay prices
 
-    def __init__(self, parent):
+    def __init__(self, parent, *args, **kwargs):
 
-        super(PricePanel, self).__init__(parent)
+        super(PricePanel, self).__init__(parent, *args, **kwargs)
+
+        # we need to store a button dictionary so that we can update
+        # prices.  The keys of the dictionary are the BDAQ selection
+        # names.
+        self.btndict = {}
 
     def SetEventIndex(self, event, index):
 
@@ -31,6 +37,14 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
         # draw the panel
         self.DrawLayout()
+
+        # send the event index to the control panel
+        # TODO: this code needs reorganising...
+        pmodel = self.GetTopLevelParent().GetControlPanel().pmodel
+        pmodel.SetEventIndex(self.event, self.index)
+
+    def GetEventIndex(self):
+        return self.event, self.index
 
     def DrawLayout(self):
         
@@ -54,6 +68,10 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # cells.
         for bdaqsel, bfsel in zip(bdaqsels, bfsels):
 
+            dictkey = bdaqsel.name
+            # add to the button dict
+            self.btndict[dictkey] = []
+
             sel_sizer = wx.BoxSizer(wx.HORIZONTAL)
             sel_gridsz = wx.GridSizer(rows = 2, vgap = PricePanel.VGAP,
                                       hgap = PricePanel.HGAP)
@@ -74,9 +92,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             
             # list of buttons
             pbuttons = []
-            bdaqbprices = bdaqsel.padback[:3]
+            bdaqbprices = bdaqsel.padback[:const.NPRICES]
             bdaqbprices.reverse()
-            bdaqlprices = bdaqsel.padlay[:3]
+            bdaqlprices = bdaqsel.padlay[:const.NPRICES]
             
             for odds, stake in bdaqbprices:
                 bt = wx.Button(self, size = PricePanel.BSIZE)
@@ -86,6 +104,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                     bt.SetBackgroundColour(LYELLOW)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
+
+            # add to btndict
+            self.btndict[dictkey].append(pbuttons)
 
             sel_gridsz.AddMany(pbuttons)
             # add spacing between back and lay prices
@@ -100,14 +121,17 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                     bt.SetBackgroundColour(LGREEN)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
+
+            # add to btndict
+            self.btndict[dictkey].append(pbuttons)
             
             sel_gridsz.AddMany(pbuttons)
 
             # list of buttons
             pbuttons = []
-            bfbprices = bfsel.padback[:3]
+            bfbprices = bfsel.padback[:const.NPRICES]
             bfbprices.reverse()
-            bflprices = bfsel.padlay[:3]
+            bflprices = bfsel.padlay[:const.NPRICES]
             
             for odds, stake in bfbprices:
                 bt = wx.Button(self, size = PricePanel.BSIZE)
@@ -117,6 +141,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                     bt.SetBackgroundColour(LBLUE)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
+
+            # add to btndict
+            self.btndict[dictkey].append(pbuttons)
 
             sel_gridsz.AddMany(pbuttons)
             # add spacing between back and lay prices
@@ -131,6 +158,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                     bt.SetBackgroundColour(LPINK)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
+
+            # add to btndict
+            self.btndict[dictkey].append(pbuttons)
 
             sel_gridsz.AddMany(pbuttons)
 
@@ -147,6 +177,34 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         self.SetupScrolling()
         self.Layout()
 
+        print self.btndict.items()
+
     def Clear(self):
         for child in self.GetChildren():
             child.Destroy()
+
+    def UpdateBtnsForSelection(self, bdaqsel, bdaqbprices,
+                               bdaqlprices, bfbprices,
+                               bflprices):
+        for (i, prices) in enumerate([bdaqbprices, bdaqlprices,
+                                      bfbprices, bflprices]):
+            for (j, btn) in enumerate(self.btndict[bdaqsel.name][i]):
+                odds, stake = prices[j][0], prices[j][1]
+                btn[0].SetLabel('{0}\n{1}'.format(odds, stake))
+
+    def OnUpdatePrices(self, pmodel):
+        # draw the prices onto the labels...
+        print 'updating price panel!'
+        for bdaqsel, bfsel in zip(pmodel.bdaqsels, pmodel.bfsels):
+            # bdaq prices
+            bdaqbprices = bdaqsel.padback[:const.NPRICES]
+            bdaqbprices.reverse()
+            bdaqlprices = bdaqsel.padlay[:const.NPRICES]
+            # bfprices
+            bfbprices = bfsel.padback[:const.NPRICES]
+            bfbprices.reverse()
+            bflprices = bfsel.padlay[:const.NPRICES]
+
+            self.UpdateBtnsForSelection(bdaqsel, bdaqbprices,
+                                        bdaqlprices, bfbprices,
+                                        bflprices)

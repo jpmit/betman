@@ -1,2 +1,2 @@
 NAME = "Match GUI"
-
+NPRICES = 3

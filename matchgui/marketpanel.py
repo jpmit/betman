@@ -20,6 +20,7 @@ class MarketPanel(wx.Panel):
         t1_sz.Add(wx.StaticText(self,
                                 label='List of matching markets for event: {0}'\
                                 .format(ename)))
+        sizer.Add(t1_sz)
         sizer.AddSpacer(20)
 
         self.lst = MatchListCtrl(self, ename) 

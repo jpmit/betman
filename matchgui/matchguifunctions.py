@@ -124,10 +124,20 @@ def match_markets(bdaqename):
     # matched, since this is not returned by the API call to get
     # markets.
     bdaqsels = bdaqapi.GetPrices([m[0].id for m in matchmarks])
-    for (i, sels) in enumerate(bdaqsels):
-        matchmarks[i][0].properties['totalmatched'] = sels[0].\
-                                                      properties['totalmatched']
 
+    # remove any markets for which we didn't get any bdaq sels
+    rem = [i for i in range(len(bdaqsels)) if not bdaqsels[i]]
+    print 'removing markets', rem
+    rem.reverse()
+    for i in rem:
+        matchmarks.pop(i)
+        bdaqsels.pop(i)
+
+    for (i, sels) in enumerate(bdaqsels):
+        if sels:
+            matchmarks[i][0].properties['totalmatched'] = sels[0].\
+                                                          properties['totalmatched']
+        
     # sort matching markets by starttime; NB could sort them by the
     # BDAQ official display order at some point if necessary.
     matchmarks.sort(key=_sort_match)
