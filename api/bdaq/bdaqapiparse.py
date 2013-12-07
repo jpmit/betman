@@ -100,7 +100,13 @@ def ParseGetPrices(marketids, resp):
         # selection types.  The main thing we want is the total
         # matched amount on the market, since this is not available
         # via the getmarkets call (unlike for BF).
-        total_matched = mprice._TotalMatchedAmount
+
+        if hasattr(mprice, '_TotalMatchedAmount'):
+            # TODO: figure out why not every market price has this
+            # attribute.
+            total_matched = mprice._TotalMatchedAmount
+        else:
+            total_matched = 0.0
         
         # list of selections for this marketid
         allselections.append([])
@@ -110,8 +116,10 @@ def ParseGetPrices(marketids, resp):
 
         # are there any selections?
         if not hasattr(mprice,'Selections'):
-            # can reach here if market suspended
-            break
+            # can reach here if market suspended, in this case
+            # mprice._ReturnCode = 16, corresponding to 'market
+            # neither suspended nor active'.
+            continue
 
         nsel = len(mprice.Selections)
 
