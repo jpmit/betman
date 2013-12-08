@@ -2,6 +2,8 @@ import wx
 import wx.lib.scrolledpanel as scrolledpanel
 import matchguifunctions
 import const
+import graphframe
+import models
 
 # colours for the buttons
 LBLUE   = (14, 218, 249)
@@ -27,7 +29,19 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # names.
         self.btndict = {}
 
+        # store a dictionary of graphs that are currently open, keys
+        # are again the BDAQ selection names, values are true/false
+        self.graphs_open = {}
+
+        # models for graphs.
+        self.graph_models = {}
+
     def SetEventIndex(self, event, index):
+        """
+        Set event and index.  This method is sort of like a second
+        initialization method, since setting the event index means
+        knowing which market and hence the selections etc.
+        """
 
         self.event = event
         self.index = index
@@ -40,13 +54,35 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
         # send the event index to the control panel
         # TODO: this code needs reorganising...
-        pmodel = self.GetTopLevelParent().GetControlPanel().pmodel
-        pmodel.SetEventIndex(self.event, self.index)
+        self.pmodel = self.GetTopLevelParent().GetControlPanel().pmodel
+        self.pmodel.SetEventIndex(self.event, self.index)
+        
+        # setup information from graphs
+        self.SetupGraphs()
+
+    def SetupGraphs(self):
+        """
+        This is only called once, immediately after we set the event
+        and index.
+        """
+        #self.graphs_open = {}
+        #self.graph_models = {}
+        
+        for k in self.btndict:
+            # set all graphs to closed
+            self.graphs_open[k] = False
+            
+            # create a model for each selection
+            self.graph_models[k] = models.GraphPriceModel(k)
+
+            # each graph model is updated by the main price model
+            self.pmodel.AddListener(self.graph_models[k].UpdatePrices)
 
     def GetEventIndex(self):
         return self.event, self.index
 
     def DrawLayout(self):
+        # todo: simplify this
         
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         name_sz = wx.BoxSizer(wx.HORIZONTAL)
@@ -84,10 +120,17 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                                     size = (PricePanel.BSIZE[0]*2,
                                             PricePanel.BSIZE[1]*2),
                                     style = wx.ALIGN_CENTER)
+
+            # button for graph
+            selbtn = wx.Button(self, label = 'Graph')
+            selbtn.Bind(wx.EVT_BUTTON,
+                        lambda evt, name=dictkey: self.OnGraphButton(evt, name))
+            
             selname.Wrap(2*PricePanel.BSIZE[0])
             name_sizer.AddStretchSpacer()
             name_sizer.Add(selname, 0, wx.CENTER)
             name_sizer.AddStretchSpacer()
+            name_sizer.Add(selbtn, 0, wx.CENTER)
             sel_sizer.Add(name_sizer, 0, wx.CENTER)
             
             # list of buttons
@@ -177,11 +220,36 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         self.SetupScrolling()
         self.Layout()
 
-        print self.btndict.items()
-
     def Clear(self):
         for child in self.GetChildren():
             child.Destroy()
+
+    def OnGraphButton(self, event, key):
+        # we only open a new graph frame if we don't already have one
+        # open for the selection.
+        if not self.graphs_open[key]:
+            frame = graphframe.GraphFrame(key)
+            frame.Bind(wx.EVT_CLOSE, self.OnCloseGraph)
+            frame.Show()
+            self.graphs_open[key] = True
+
+            # add listener so that when the appropriate graph model
+            # updates its data, the graph can be redrawn.
+            self.graph_models[key].AddListener(frame.panel.OnUpdatePrices)
+
+    def OnCloseGraph(self, event):
+        obj = event.GetEventObject()
+        # remove listener
+        key = obj.key
+        print obj, key
+        self.graph_models[key].RemoveListener(obj.panel.OnUpdatePrices)
+        
+        print "killed graph window with key", key
+        self.graphs_open[key] = False
+
+        # allow the window to actually be closed
+        event.Skip()
+        pass
 
     def UpdateBtnsForSelection(self, bdaqsel, bdaqbprices,
                                bdaqlprices, bfbprices,
