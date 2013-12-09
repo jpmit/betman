@@ -142,9 +142,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             for odds, stake in bdaqbprices:
                 bt = wx.Button(self, size = PricePanel.BSIZE)
                 if odds is None:
-                    bt.SetBackgroundColour(GREY)
+                    bt.SetBackgroundColour(const.GREY)
                 else:
-                    bt.SetBackgroundColour(LYELLOW)
+                    bt.SetBackgroundColour(const.LYELLOW)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
 
@@ -159,9 +159,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             for odds, stake in bdaqlprices:
                 bt = wx.Button(self, size = PricePanel.BSIZE)
                 if odds is None:
-                    bt.SetBackgroundColour(GREY)
+                    bt.SetBackgroundColour(const.GREY)
                 else:
-                    bt.SetBackgroundColour(LGREEN)
+                    bt.SetBackgroundColour(const.LGREEN)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
 
@@ -179,7 +179,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             for odds, stake in bfbprices:
                 bt = wx.Button(self, size = PricePanel.BSIZE)
                 if odds is None:
-                    bt.SetBackgroundColour(GREY)
+                    bt.SetBackgroundColour(const.GREY)
                 else:
                     bt.SetBackgroundColour(LBLUE)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
