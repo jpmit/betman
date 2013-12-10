@@ -1,6 +1,7 @@
 import wx
 import matchguifunctions
 from pricepanel import PricePanel
+import const
 
 class MarketPanel(wx.Panel):
     """Panel that displays a list of markets for a given event."""
@@ -23,7 +24,18 @@ class MarketPanel(wx.Panel):
         sizer.Add(t1_sz)
         sizer.AddSpacer(20)
 
-        self.lst = MatchListCtrl(self, ename) 
+        # __init__ of MatchListCtrl will get the events
+        # show progress box
+        self.dialog = wx.ProgressDialog(const.NAME,
+                                        "Loading markets for {0}".format(ename),
+                                        parent = self, style = wx.PD_APP_MODAL | wx.PD_SMOOTH)
+        self.dialog.Pulse()
+        self.timer = wx.Timer()
+        self.Bind(wx.EVT_TIMER, self.Pulse, self.timer)
+        self.timer.Start(100)
+        self.lst = MatchListCtrl(self, ename)
+        self.DestroyDialog()
+        
         sizer.Add(self.lst, 1, wx.EXPAND)
         self.SetSizer(sizer)
         self.Layout()
@@ -35,6 +47,13 @@ class MarketPanel(wx.Panel):
                   self.OnRightClick)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED,
                   self.OnDClick)
+
+    def Pulse(self, event):
+        self.dialog.Pulse()
+
+    def DestroyDialog(self):
+        self.timer.Stop()
+        self.dialog.Destroy()
 
     def PopulateMarket(self, event, name, index):
         """Give market prices etc."""

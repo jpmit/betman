@@ -5,13 +5,6 @@ import const
 import graphframe
 import models
 
-# colours for the buttons
-LBLUE   = (14, 218, 249)
-LPINK   = (219, 162, 197)
-GREY    = (86, 86, 86)
-LGREEN  = (151, 226, 176)
-LYELLOW = (235, 234, 194)
-
 class PricePanel(scrolledpanel.ScrolledPanel):
     # constants for the layout
     BSIZE = (50, 50) # button size (that displays odds and stakes)
@@ -181,7 +174,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                 if odds is None:
                     bt.SetBackgroundColour(const.GREY)
                 else:
-                    bt.SetBackgroundColour(LBLUE)
+                    bt.SetBackgroundColour(const.LBLUE)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
 
@@ -196,9 +189,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             for odds, stake in bflprices:
                 bt = wx.Button(self, size = PricePanel.BSIZE)
                 if odds is None:
-                    bt.SetBackgroundColour(GREY)
+                    bt.SetBackgroundColour(const.GREY)
                 else:
-                    bt.SetBackgroundColour(LPINK)
+                    bt.SetBackgroundColour(const.LPINK)
                     bt.SetLabel('{0}\n{1}'.format(odds, stake))
                 pbuttons.append((bt, 0, wx.ALL, PricePanel.BPAD))
 
