@@ -56,7 +56,7 @@ class EventPanel(scrolledpanel.ScrolledPanel):
         # show the market panel if it isn't already shown
         parent.ShowMarketPanel()
 
-        # populate the panel with the BF and BDAQ events
+        # populate the panel with the BF and BDAQ markets
         parent.GetMarketPanel().Populate(self.ename)
 
     def GetSelectedEvent(self):

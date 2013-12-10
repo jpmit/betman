@@ -19,7 +19,6 @@ class AbstractModel(object):
 class PriceModel(AbstractModel):
     def __init__(self):
         super(PriceModel, self).__init__()
-        #self.addListener(self.print_something)
         self.bdaqsels = []
         self.bfsels = []
         self.event = None
@@ -38,8 +37,36 @@ class PriceModel(AbstractModel):
                                                    self.index)
         self.indexdict = {s.name : i for (i,s) in enumerate(self.bdaqsels)}
         
-        # update should call the function that updates the GUI
+        # update should call the function that updates the view
         self.Update()
+
+class MatchMarketsModel(AbstractModel):
+    """Stores data on matching markets for all the different events."""
+    
+    def __init__(self):
+        super(MatchMarketsModel, self).__init__()
+        # key to match_cache is event name, value is list of tuples
+        # (m1, m2) where m1 and m2 are the matching markets (m1 is the
+        # BDAQ market, m2 is the BF market.
+        self.match_cache = {}
+
+    def FetchMatches(self, ename):
+        """
+        Fetch list of matching events for event ename. If not already
+        cached, this will use the BF and BDAQ APIs.
+        """
+
+        print 'updating the model'
+        
+        if ename not in self.match_cache:
+            # code to set match cache
+            self.match_cache[ename] = matchguifunctions.match_markets(ename)
+
+        # update should call the function that updates the view
+        self.Update()
+
+    def GetMatches(self, ename):
+        return self.match_cache[ename]
 
 class GraphPriceModel(AbstractModel):
     NPOINTS = 100
