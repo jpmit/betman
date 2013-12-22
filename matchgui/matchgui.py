@@ -6,6 +6,7 @@ from eventpanel import EventPanel
 from marketpanel import MarketPanel
 from pricepanel import PricePanel
 from controlpanel import ControlPanel
+from imgpanel import SplashPanel
 
 class MyApp(wx.App):
     """Main app instance."""
@@ -30,20 +31,21 @@ class MyFrame(wx.Frame):
 
         # two panel layout: the left panel is always the EventPanel.
         # The right panel starts off as a MarketPanel (which is
-        # empty), but this can change.
+        # empty), but this can change to be a PricePanel.  
         self._epanel = EventPanel(self)
+
         self._splitter = wx.SplitterWindow(self)
         self._mpanel = MarketPanel(self._splitter)
         self._ppanel = PricePanel(self._splitter)
-        self._cpanel = ControlPanel(self._splitter, style = wx.BORDER_SUNKEN)
-        #self._ppanel.Hide()
-        #self._cpanel.Hide()
-        self.ShowMarketPanel()
+        self._cpanel = ControlPanel(self._splitter,
+                                    style = wx.BORDER_SUNKEN)
+        self._spanel = SplashPanel(self._splitter, 'logo.png')
+        self.ShowSplashPanel()
+        #self.ShowMarketPanel()
 
         # layout
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer.Add(self._epanel, 0, wx.EXPAND | wx.ALL, 10)
-        #self.sizer.Add(self._mpanel, 1, wx.EXPAND)
         self.sizer.Add(self._splitter, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
@@ -87,17 +89,48 @@ class MyFrame(wx.Frame):
         else:
             event.Skip()
 
+    def ShowSplashPanel(self):
+        """
+        In the main window show the splash panel.  This is called at
+        startup only.
+        """
+
+        self._splitter.SplitVertically(self._spanel, self._cpanel)
+        self._splitter.Unsplit()
+        self._splitter.Layout()
+        self.Layout()
+
     def ShowMarketPanel(self):
-        # stop the timer on the control panel if it is running!
+        """
+        In the main window show the Market Panel, which displays
+        matching markets for a particular event, and hide all other
+        panels.
+        """
+
+        # hide the splash panel (this will only have an effect the
+        # first time this fn is called).
+        self._spanel.Hide()
+        
+        # stop the timer on the control panel if it is running! The
+        # timer updates market prices.  Note we may want to change
+        # this at some point.
         self._cpanel.StopTimerIfRunning()
         self._ppanel.Hide()
         self._mpanel.Show()
         self._splitter.SplitVertically(self._mpanel, self._cpanel)
+        
+        # unsplit means we only show the left panel of the splitter
+        # window.
         self._splitter.Unsplit()
         self._splitter.Layout()
         self.Layout()
 
     def ShowPricePanel(self):
+        """
+        In the main window show the Price Panel, which displays prices
+        for a given Market pair, alongisde the control panel.
+        """
+        
         self._mpanel.Hide()
         self._ppanel.Show()
         self._splitter.SplitVertically(self._ppanel, self._cpanel)

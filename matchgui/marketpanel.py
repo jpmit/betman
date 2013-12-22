@@ -17,27 +17,63 @@ class MarketPanel(wx.Panel):
         
         # The listener will update the view
         self.mmodel.AddListener(self.lst.OnGetMatchEvents)
+
+        self.CreateLayout()
+
+    def CreateLayout(self):
+        """
+        Create the layout of the panel, and add the event handlers.
+        """
+
+        # Main sizer
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        # Sizer for the title text
+        tsz = wx.BoxSizer(wx.HORIZONTAL)
+        self.ttext = wx.StaticText(self)
+
+        tsz.Add(self.ttext)
+        sizer.Add(tsz)
+        sizer.AddSpacer(20)
+        
+        sizer.Add(self.lst, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+
+        # Event Handlers
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED,
+                  self.OnItemSelected)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK,
+                  self.OnRightClick)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED,
+                  self.OnDClick)
+
+    def SetEvent(self, ename):
+        """
+        Use the event name to set the title of the Market Panel.
+        """
+
+        self.ttext.SetLabel('List of matching markets for event: {0}'\
+                            .format(ename))
         
     def Populate(self, ename):
         """
-        Populate panel with matching events for the selected event
-        name.
+        This is called when the corresponding button on the event
+        panel (on LHS) is clicked.  We populate panel with matching
+        events for the selected event name.
         """
+
+        # set event for the panel
+        self.SetEvent(ename)
 
         # set event for the MatchListCtrl
         self.lst.SetEvent(ename)
 
-        # get matching markets for this event (update the model)
+        # get matching markets for this event (update the model), note
+        # that the model will update the view (the ListCtrl) via its
+        # listener function.
         self.mmodel.FetchMatches(ename)
         
         #self.Clear()
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        t1_sz = wx.BoxSizer(wx.HORIZONTAL)
-        t1_sz.Add(wx.StaticText(self,
-                                label='List of matching markets for event: {0}'\
-                                .format(ename)))
-        sizer.Add(t1_sz)
-        sizer.AddSpacer(20)
 
         # __init__ of MatchListCtrl will get the events
         # show progress box
@@ -49,18 +85,8 @@ class MarketPanel(wx.Panel):
         #self.Bind(wx.EVT_TIMER, self.Pulse, self.timer)
         #self.timer.Start(100)
         #self.DestroyDialog()
-        
-        sizer.Add(self.lst, 1, wx.EXPAND)
-        self.SetSizer(sizer)
-        self.Layout()
 
-        # Event Handlers
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED,
-                  self.OnItemSelected)
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK,
-                  self.OnRightClick)
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED,
-                  self.OnDClick)
+        self.Layout()
 
     def Pulse(self, event):
         self.dialog.Pulse()
@@ -141,20 +167,24 @@ class MatchListCtrl(wx.ListCtrl):
 
     def OnGetMatchEvents(self, mmodel):
         """
-        Called by the MatchMarketsModel. Update the view.
+        Listener function called by the MatchMarketsModel, to update
+        the view.  We add the items, which are pairs of markets, to the ListCtrl
         """
 
-        print 'updating the view!!'
-
+        # note this only retreives information from the model; it does
+        # not update the model.
         mmarks = mmodel.GetMatches(self.ename)
+
+        # Clear any existing items on the ListCtrl
+        self.DeleteAllItems()
 
         for (m1, m2) in mmarks:
             item = (m1.name.split('|')[-2],
                     m1.starttime.strftime('%d/%m/%y %H:%M'),
-                    # note the BDAQ total matched did not come
-                    # directly from the API here (see
-                    # matchguifunctions.py).
                     m1.properties['totalmatched'],
                     m2.properties['totalmatched'])
             # add the item to the list box
             self.Append(item)
+
+        # set column width of event name to be sufficiently large
+        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
