@@ -1,7 +1,12 @@
 import matchguifunctions
+from betman.strategy import strategy, cxstrategy, mmstrategy
+from betman import const
 
 class AbstractModel(object):
-    """Modified version from Robin Dunn's book, page 137."""
+    """
+    Modified version from Robin Dunn's book, page 137.  Used as a base
+    class for the other models below, used in the MVC design.
+    """
 
     def __init__(self):
         self.listeners = []
@@ -13,10 +18,25 @@ class AbstractModel(object):
         self.listeners.remove(listenerFunc)
 
     def Update(self):
+        """
+        Update the information in the model, from DB/BDAQ API etc.
+        """
+
+        # note this function should be overloaded; this line is simply
+        # indicating that the overloaded function should normally call
+        # UpdateViews before returning.
+        self.UpdateViews()
+
+    def UpdateViews(self):
+        """
+        Execute all the listener functions, thus updating the views.
+        """
+        
         for eachFunc in self.listeners:
             eachFunc(self)
 
 class PriceModel(AbstractModel):
+    
     def __init__(self):
         super(PriceModel, self).__init__()
         self.bdaqsels = []
@@ -28,7 +48,18 @@ class PriceModel(AbstractModel):
         self.event = event
         self.index = index
 
-    def SetPrices(self):
+    def PricesDict(self):
+        """Return prices dict that the strategies can use."""
+
+        bdaqmid = self.bdaqsels[0].mid
+        bfmid = self.bfsels[0].mid
+
+        pdict = {const.BDAQID: {bdaqmid: {s.id : s for s in self.bdaqsels}},
+                 const.BFID: {bfmid: {s.id : s for s in self.bfsels}}}
+
+        return pdict
+
+    def Update(self):
         """Use the BDAQ and BF apis to refresh the prices."""
         
         print 'called the event'
@@ -38,7 +69,44 @@ class PriceModel(AbstractModel):
         self.indexdict = {s.name : i for (i,s) in enumerate(self.bdaqsels)}
         
         # update should call the function that updates the view
-        self.Update()
+        self.UpdateViews()
+
+class MarketMakingModel(AbstractModel):
+
+    def __init__(self):
+        super(MarketMakingModel, self).__init__()
+
+    def InitStrategies(self, bdaqsels, bfsels):
+        pass
+        
+    def Update(self, pmodel):
+        print 'updating MM model'
+        self.UpdateViews()
+
+class ArbitrageModel(AbstractModel):
+
+    def __init__(self):
+        super(ArbitrageModel, self).__init__()
+
+        # the arbitrage model owns a group of strategies.  each
+        # individual strategy involves a pair of selections.
+        self.stratgroup = strategy.StrategyGroup()
+
+    def InitStrategies(self, bdaqsels, bfsels):
+        for (bdsel, bfsel) in zip(bdaqsels, bfsels):
+            self.stratgroup.add(cxstrategy.CXStrategy(bdsel, bfsel))
+
+    def Update(self, pmodel):
+        print 'updating Arb model'
+
+        # we need to update the strategy group with a prices
+        # dictionary.
+        self.stratgroup.update(pmodel.PricesDict())
+        # probably call the functionality to make bets somewhere
+        # here...
+
+        # progagate the updates
+        self.UpdateViews()
 
 class MatchMarketsModel(AbstractModel):
     """Stores data on matching markets for all the different events."""
@@ -55,31 +123,31 @@ class MatchMarketsModel(AbstractModel):
         Fetch list of matching events for event ename. If not already
         cached, this will use the BF and BDAQ APIs.
         """
-
-        print 'updating the model'
         
         if ename not in self.match_cache:
             # code to set match cache
-            self.match_cache[ename] = matchguifunctions.match_markets(ename)
+            self.match_cache[ename] = matchguifunctions.\
+                                      match_markets(ename)
 
         # update should call the function that updates the view
-        self.Update()
+        self.UpdateViews()
 
     def GetMatches(self, ename):
         return self.match_cache[ename]
 
 class GraphPriceModel(AbstractModel):
     NPOINTS = 100
+    
     def __init__(self, bdaqselname):
         super(GraphPriceModel, self).__init__()
 
         self.bdaqselname = bdaqselname
 
         # store best back and lay prices on bdaq and bf
-        self.bdaqback = [None]*GraphPriceModel.NPOINTS
-        self.bdaqlay = [None]*GraphPriceModel.NPOINTS
-        self.bfback = [None]*GraphPriceModel.NPOINTS
-        self.bflay = [None]*GraphPriceModel.NPOINTS
+        self.bdaqback = [None]*self.NPOINTS
+        self.bdaqlay = [None]*self.NPOINTS
+        self.bfback = [None]*self.NPOINTS
+        self.bflay = [None]*self.NPOINTS
 
     def UpdatePrices(self, pmodel):
         """This receives updates from the main price model above."""

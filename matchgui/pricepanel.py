@@ -6,6 +6,10 @@ import graphframe
 import models
 
 class PricePanel(scrolledpanel.ScrolledPanel):
+    """
+    Panel that shows the market prices.
+    """
+    
     # constants for the layout
     BSIZE = (50, 50) # button size (that displays odds and stakes)
     VGAP = 0
@@ -46,7 +50,8 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         self.DrawLayout()
 
         # send the event index to the control panel
-        # TODO: this code needs reorganising...
+
+        # pricing model (shared with control panel).
         self.pmodel = self.GetTopLevelParent().GetControlPanel().pmodel
         self.pmodel.SetEventIndex(self.event, self.index)
         
@@ -58,8 +63,6 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         This is only called once, immediately after we set the event
         and index.
         """
-        #self.graphs_open = {}
-        #self.graph_models = {}
         
         for k in self.btndict:
             # set all graphs to closed
@@ -89,6 +92,12 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # get market selection prices for both BDAQ and BF
         bdaqsels, bfsels = matchguifunctions.market_prices(self.event,
                                                            self.index)
+
+        # WARNING: this really should not be here; this code needs to
+        # be reorganised
+        # using the selections, initialise the strategy models
+        self.GetTopLevelParent().GetControlPanel().mmmodel.InitStrategies(bdaqsels, bfsels)
+        self.GetTopLevelParent().GetControlPanel().arbmodel.InitStrategies(bdaqsels, bfsels)
 
         # content_sizer holds prices on left, crossing panel on right
         content_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -254,8 +263,14 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                 btn[0].SetLabel('{0}\n{1}'.format(odds, stake))
 
     def OnUpdatePrices(self, pmodel):
+        """
+        Draw the updated prices.  Note that this 'view' function is
+        called by the listener function of the model.
+        """
+        
         # draw the prices onto the labels...
         print 'updating price panel!'
+        
         for bdaqsel, bfsel in zip(pmodel.bdaqsels, pmodel.bfsels):
             # bdaq prices
             bdaqbprices = bdaqsel.padback[:const.NPRICES]

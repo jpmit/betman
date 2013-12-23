@@ -25,7 +25,8 @@ class CXStrategy(strategy.Strategy):
     ex2sel - Selection object for exchange 2 (BetDaq)
     """
     
-    def __init__(self, ex1sel, ex2sel, instantonly = True):
+    def __init__(self, ex1sel = None, ex2sel = None,
+                 instantonly = True):
         """
         ex1sel      - BDAQ selection
         ex2sel      - BF   selection
@@ -239,7 +240,6 @@ class CXStrategy(strategy.Strategy):
                                         self.border.stake))
             # this just puts it in the list to be placed.            
             self.toplace[const.BFID] = [self.border]
-
 
     def make_lay_order(self):
         """

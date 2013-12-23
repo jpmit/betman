@@ -114,7 +114,7 @@ class MyFrame(wx.Frame):
         # stop the timer on the control panel if it is running! The
         # timer updates market prices.  Note we may want to change
         # this at some point.
-        self._cpanel.StopTimerIfRunning()
+        self._cpanel.StopUpdatesIfRunning()
         self._ppanel.Hide()
         self._mpanel.Show()
         self._splitter.SplitVertically(self._mpanel, self._cpanel)

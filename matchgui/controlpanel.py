@@ -6,46 +6,129 @@ class ControlPanel(wx.Panel):
 
     def __init__(self, parent, *args, **kwargs):
         super(ControlPanel, self).__init__(parent, *args, **kwargs)
+
+        # draw buttons etc.
         self.CreateLayout()
 
+        # timer and associated events
         self.timer = wx.Timer(self)
-        self.pmodel = models.PriceModel()
-        # when the model updates, we call the OnUpdatePrices method of
-        # the PricePanel.
-        ppanel = self.GetTopLevelParent().GetPricePanel()
-#        event, index = ppanel.GetEventIndex()
-#        self.pmodel.SetEventIndex(event, index)
-        self.pmodel.AddListener(ppanel.OnUpdatePrices)
         self.Bind(wx.EVT_TIMER, self.OnTimerEvent)
         self.Bind(wx.EVT_SPINCTRL, self.OnUpdateSpinCtrl)
 
-        # update prices on the pricepanel
-        #ppanel.OnUpdatePrices(self.pmodel)
+        # reference to the price panel, which contains the prices and
+        # stakes for the currently selected market.
+        ppanel = self.GetTopLevelParent().GetPricePanel()
+
+        # models for MVC: we have (i) a pricing model, which, when
+        # updated will get the latest prices and stakes for BF and
+        # BDAQ, (ii) a model for the market marking strategy, which
+        # will be updated by the pricing model and (iii) a model for
+        # the arbitrage strategy, again updated by the pricing model.
+        self.pmodel = models.PriceModel()
+        self.mmmodel = models.MarketMakingModel()
+        self.arbmodel = models.ArbitrageModel()
+
+        # when the model is updated, we draw the prices and stakes
+        # onto the main panel.
+        self.pmodel.AddListener(ppanel.OnUpdatePrices)
         
     def CreateLayout(self):
         sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.freqspin = wx.SpinCtrl(self, -1, min = 1, max = 100)
-        self.but = wx.ToggleButton(self)
-        self.SetButtonLabelColor(False)
+
+        # button for starting / stopping refreshing prices
+        self.startbut = wx.ToggleButton(self)
+        self.SetStartButtonLabelColor(False)
+
+        # button for starting market making strategy
+        self.mmbutton = wx.ToggleButton(self, label = 'Make Market')
+        self.mmbutton.Disable()
+
+        # button for starting arbitrage strategy
+        self.arbbutton = wx.ToggleButton(self, label = 'Arbitrage Market')
+        self.arbbutton.Disable()
+
+        # event binding for the buttons
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnStartButtonClick,
+                  self.startbut)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnMarketMakingButtonClick,
+                  self.mmbutton)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnArbButtonClick,
+                  self.arbbutton)
         
         h_sizer.Add(self.freqspin)
-        h_sizer.Add(self.but)
+        h_sizer.Add(self.startbut)
         sizer.Add(h_sizer)
-
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnUpdateClick, self.but)
+        sizer.Add(self.arbbutton)
+        sizer.Add(self.mmbutton)
 
         self.SetSizer(sizer)
         self.Layout()
 
-    def SetButtonLabelColor(self, pressed):
+    def OnStartButtonClick(self, event):
+        """Called when the start button is clicked."""
+
+        pressed = self.IsStartButtonPressed()
+        self.SetStartButtonLabelColor(pressed)
+
         if pressed:
-            self.but.SetBackgroundColour('red')
-            self.but.SetLabel('Stop')
+            # enable mm and arb buttons
+            self.mmbutton.Enable()
+            self.arbbutton.Enable()
+            # start the timer running
+            print 'timer set to {0}'.format(self.freqspin.GetValue())
+            self.timer.Start(self.freqspin.GetValue() * 1000)
         else:
-            self.but.SetBackgroundColour('green')
-            self.but.SetLabel('Start')
+            if self.timer.IsRunning():
+                # this will stop the price model being updated, and
+                # therefore also the arb and mm models.
+                self.timer.Stop()
+
+            self.mmbutton.SetValue(False)
+            self.arbbutton.SetValue(False)
+            # disable mm and arb buttons; this changes their
+            # appearance so that they don't look like they can be
+            # clicked.
+            self.mmbutton.Disable()
+            self.arbbutton.Disable()
+
+    def IsStartButtonPressed(self):
+        """
+        Convenience function for determining whether the start button
+        is pressed.
+        """
+
+        return self.startbut.GetValue()
+
+    def OnArbButtonClick(self, event):
+        """Called when the arb button is clicked."""
+
+        if self.IsStartButtonPressed():
+            if self.arbbutton.GetValue():
+                # the pricing model will now update the arbmodel
+                self.pmodel.AddListener(self.arbmodel.Update)
+            else:
+                self.pmodel.RemoveListener(self.arbmodel.Update)
+
+    def OnMarketMakingButtonClick(self, event):
+        """Called when the market making button is clicked."""
+
+        if self.IsStartButtonPressed():
+            if self.mmbutton.GetValue():
+                # the pricing model will now update the mm model
+                self.pmodel.AddListener(self.mmmodel.Update)
+            else:
+                self.pmodel.RemoveListener(self.mmmodel.Update)
+
+    def SetStartButtonLabelColor(self, pressed):
+        if pressed:
+            self.startbut.SetBackgroundColour('red')
+            self.startbut.SetLabel('Stop')
+        else:
+            self.startbut.SetBackgroundColour('green')
+            self.startbut.SetLabel('Start')
 
     def OnUpdateSpinCtrl(self, event):
         """Allow changing update frequency if timer is running."""
@@ -55,27 +138,22 @@ class ControlPanel(wx.Panel):
             self.timer.Start(self.freqspin.GetValue() * 1000)
 
     def OnTimerEvent(self, event):
-        # update the model (get the BF and BDAQ prices)
-        self.pmodel.SetPrices()
+        
+        # update the price model (get the BF and BDAQ prices).  This
+        # will update the view (prices shown in GUI) via listener
+        # function.
+        self.pmodel.Update()
 
-    def StopTimerIfRunning(self):
+        # if we are currently operating either mm or arb strategies,
+        # update these.
+        if self.mmbutton.GetValue():
+            self.mmmodel.Update(self.pmodel)
+        if self.arbbutton.GetValue():
+            self.arbmodel.Update(self.pmodel)
+
+    def StopUpdatesIfRunning(self):
         """Called when control panel is hidden."""
-        
-        if self.timer.IsRunning():
-            self.timer.Stop()
-            self.SetButtonLabelColor(False)
-            # set button pushed status to False
-            self.but.SetValue(False)
 
-    def OnUpdateClick(self, event):
-
-        isPressed = self.but.GetValue()
-        self.SetButtonLabelColor(isPressed)
-
-        if self.timer.IsRunning():
-            self.timer.Stop()
-        else:
-            print 'timer set to {0}'.format(self.freqspin.GetValue())
-            self.timer.Start(self.freqspin.GetValue() * 1000)
-        
-        print "start updates"
+        # set the start button to off, then call the normal event handler.
+        self.startbut.SetValue(False)
+        self.OnStartButtonClick(None)

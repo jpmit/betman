@@ -4,6 +4,8 @@
 
 # Market making strategy.
 
+from betman.strategy import strategy
+
 class MMStrategy(strategy.Strategy):
     """Market making strategy"""
     def __init__(self):
