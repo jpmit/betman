@@ -94,6 +94,7 @@ class ArbitrageModel(AbstractModel):
 
     def InitStrategies(self, bdaqsels, bfsels):
         for (bdsel, bfsel) in zip(bdaqsels, bfsels):
+            #print bdsel.name, bdsel.mid, bdsel.id, bfsel.name, bfsel.mid, bfsel.id
             self.stratgroup.add(cxstrategy.CXStrategy(bdsel, bfsel))
 
     def Update(self, pmodel):

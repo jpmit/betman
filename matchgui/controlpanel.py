@@ -60,9 +60,9 @@ class ControlPanel(wx.Panel):
         
         h_sizer.Add(self.freqspin)
         h_sizer.Add(self.startbut)
+        h_sizer.Add(self.arbbutton)
+        h_sizer.Add(self.mmbutton)
         sizer.Add(h_sizer)
-        sizer.Add(self.arbbutton)
-        sizer.Add(self.mmbutton)
 
         self.SetSizer(sizer)
         self.Layout()
@@ -105,22 +105,22 @@ class ControlPanel(wx.Panel):
     def OnArbButtonClick(self, event):
         """Called when the arb button is clicked."""
 
-        if self.IsStartButtonPressed():
-            if self.arbbutton.GetValue():
+        if self.arbbutton.GetValue():
+            if self.IsStartButtonPressed():            
                 # the pricing model will now update the arbmodel
                 self.pmodel.AddListener(self.arbmodel.Update)
-            else:
-                self.pmodel.RemoveListener(self.arbmodel.Update)
+        else:
+            self.pmodel.RemoveListener(self.arbmodel.Update)
 
     def OnMarketMakingButtonClick(self, event):
         """Called when the market making button is clicked."""
 
-        if self.IsStartButtonPressed():
-            if self.mmbutton.GetValue():
-                # the pricing model will now update the mm model
+        if self.mmbutton.GetValue():
+            # the pricing model will now update the mm model
+            if self.IsStartButtonPressed():                
                 self.pmodel.AddListener(self.mmmodel.Update)
-            else:
-                self.pmodel.RemoveListener(self.mmmodel.Update)
+        else:
+            self.pmodel.RemoveListener(self.mmmodel.Update)
 
     def SetStartButtonLabelColor(self, pressed):
         if pressed:
@@ -143,13 +143,6 @@ class ControlPanel(wx.Panel):
         # will update the view (prices shown in GUI) via listener
         # function.
         self.pmodel.Update()
-
-        # if we are currently operating either mm or arb strategies,
-        # update these.
-        if self.mmbutton.GetValue():
-            self.mmmodel.Update(self.pmodel)
-        if self.arbbutton.GetValue():
-            self.arbmodel.Update(self.pmodel)
 
     def StopUpdatesIfRunning(self):
         """Called when control panel is hidden."""
