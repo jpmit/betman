@@ -56,6 +56,9 @@ class StrategyGroup(object):
     def add(self, strategy):
         self.strategies.append(strategy)
 
+    def clear(self):
+        self.strategies = []
+
     def update(self, prices):
         """Update all strategies in the group."""
 

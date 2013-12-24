@@ -117,6 +117,9 @@ class ArbitrageModel(AbstractModel):
         # progagate the updates
         self.UpdateViews()
 
+    def Clear(self):
+        self.stratgroup.clear()
+
 class MatchMarketsModel(AbstractModel):
     """Stores data on matching markets for all the different events."""
     

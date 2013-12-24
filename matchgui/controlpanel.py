@@ -150,3 +150,9 @@ class ControlPanel(wx.Panel):
         # set the start button to off, then call the normal event handler.
         self.startbut.SetValue(False)
         self.OnStartButtonClick(None)
+
+        # clear the arb and mm strategies; this means that when we
+        # navigate to a new market, we won't have residual strategies
+        # from the old market that try to update.
+        self.mmmodel.Clear()
+        self.arbmodel.Clear()
