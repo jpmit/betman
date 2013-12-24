@@ -10,6 +10,10 @@ class MarketPanel(wx.Panel):
     def __init__(self, parent, *args, **kwargs):
         super(MarketPanel, self).__init__(parent, *args, **kwargs)
 
+        # we don't know the event name at initialisation, we set this
+        # when the user clicks an event e.g. 'Rugby Union'
+        self.ename = None
+
         # Control stores the list of matching markets
         self.lst = MatchListCtrl(self)
 
@@ -28,9 +32,10 @@ class MarketPanel(wx.Panel):
         # Main sizer
         sizer = wx.BoxSizer(wx.VERTICAL)
         
-        # Sizer for the title text
+        # Sizer for the title text and refresh button
         tsz = wx.BoxSizer(wx.HORIZONTAL)
         self.ttext = wx.StaticText(self)
+        refbut = wx.Button(self, wx.ID_REFRESH)
 
         tsz.Add(self.ttext)
         sizer.Add(tsz)
@@ -40,6 +45,7 @@ class MarketPanel(wx.Panel):
         self.SetSizer(sizer)
 
         # Event Handlers
+        self.Bind(wx.EVT_BUTTON, self.OnRefresh, refbut)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED,
                   self.OnItemSelected)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK,
@@ -52,8 +58,12 @@ class MarketPanel(wx.Panel):
         Use the event name to set the title of the Market Panel.
         """
 
+        self.ename = ename
         self.ttext.SetLabel('List of matching markets for event: {0}'\
-                            .format(ename))
+                            .format(self.ename))
+
+    def OnRefresh(self, event):
+        self.mmodel.FetchMatches(self.ename, refresh = True)
         
     def Populate(self, ename):
         """

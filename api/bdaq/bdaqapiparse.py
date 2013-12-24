@@ -41,6 +41,7 @@ def ParseGetEventSubTreeNoSelections(resp):
     
     allmarkets = []
     markets = []
+    
     # go through each event class in turn, an event class is
     # e.g. 'Rugby Union','Formula 1', etc.
     # slight trick here:
@@ -53,6 +54,7 @@ def ParseGetEventSubTreeNoSelections(resp):
     for evclass in data:
         _ParseEventClassifier(evclass,'', markets)
         allmarkets = allmarkets + markets
+        
     # hack: currently markets are duplicated multiple times (is this
     # an API error?); we want only unique markets here
     umarkets = util.unique(allmarkets)
@@ -81,6 +83,7 @@ def _ParseEventClassifier(eclass, name='', markets=[]):
                                       mtype._Id,
                                       pid,
                                       mtype._IsCurrentlyInRunning,
+                                      mtype._StartTime,
                                       **dict(mtype)))
 
 def ParseGetPrices(marketids, resp):
@@ -96,6 +99,7 @@ def ParseGetPrices(marketids, resp):
 
     allselections = []
     for (mid, mprice) in zip(marketids, resp.MarketPrices):
+        
         # there are a few things about the market returned before the
         # selection types.  The main thing we want is the total
         # matched amount on the market, since this is not available
@@ -110,6 +114,7 @@ def ParseGetPrices(marketids, resp):
         
         # list of selections for this marketid
         allselections.append([])
+
         # go through each selection for the market.  For some reason
         # the Api is returning every selection twice, although this
         # could be an error with the SOAP library (?).

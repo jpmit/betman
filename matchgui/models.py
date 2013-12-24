@@ -1,6 +1,8 @@
 import matchguifunctions
 from betman.strategy import strategy, cxstrategy, mmstrategy
 from betman import const
+from betman.database import DBMaster
+from betman.matchmarkets.matchconst import EVENTMAP
 
 class AbstractModel(object):
     """
@@ -112,29 +114,63 @@ class ArbitrageModel(AbstractModel):
 class MatchMarketsModel(AbstractModel):
     """Stores data on matching markets for all the different events."""
     
+    # if usedb is set, we will initialise the match cache from the
+    # sqlite database.
+    USEDB = True
+    
     def __init__(self):
         super(MatchMarketsModel, self).__init__()
+
         # key to match_cache is event name, value is list of tuples
         # (m1, m2) where m1 and m2 are the matching markets (m1 is the
         # BDAQ market, m2 is the BF market.
-        self.match_cache = {}
+        self._match_cache = {}
 
-    def FetchMatches(self, ename):
+        # singleton that controls DB access
+        self._dbman = DBMaster()
+
+        if self.USEDB:
+            self.InitMatchCacheFromDB()
+        else:
+            self.InitMatchCacheEmpty()
+
+    def InitMatchCacheEmpty(self):
         """
-        Fetch list of matching events for event ename. If not already
-        cached, this will use the BF and BDAQ APIs.
+        Initialise the matching markets cache as empty.
         """
         
-        if ename not in self.match_cache:
-            # code to set match cache
-            self.match_cache[ename] = matchguifunctions.\
-                                      match_markets(ename)
+        for ename in EVENTMAP:
+            self._match_cache[ename] = []
+
+    def InitMatchCacheFromDB(self):
+        """
+        Initialise the matching markets cache from the SQLite
+        database.
+        """
+
+        for ename in EVENTMAP:
+            self._match_cache[ename] = self._dbman.\
+                                       ReturnMarketMatches([ename])
+
+    def FetchMatches(self, ename, refresh = False):
+        """
+        Fetch matching markets for a particular event name.  If
+        refresh is Ture, update the matching markets first by using
+        the BDAQ and BF APIs.
+        """
+
+        if refresh:
+            # code to set match cache; note this will automatically
+            # save the details to the DB, providing WRITEDB = True in
+            # code/betman/all/const.py.
+            self._match_cache[ename] = matchguifunctions.\
+                                       match_markets(ename)
 
         # update should call the function that updates the view
         self.UpdateViews()
 
     def GetMatches(self, ename):
-        return self.match_cache[ename]
+        return self._match_cache[ename]
 
 class GraphPriceModel(AbstractModel):
     NPOINTS = 100

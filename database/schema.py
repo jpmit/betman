@@ -1,9 +1,11 @@
- # schemas.py
+# schemas.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Schemas for SQL tables. These are stored here for easy access in
-# case of future modification.
+
+"""
+Schemas for SQL tables. These are stored here for easy access in case
+of future modification.
+"""
 
 from betman.all.betexception import DbError
 
@@ -36,7 +38,8 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
               MARKETS:    ('(exchange_id int NOT NULL,'
                            ' market_id   long NOT NULL,'
                            ' market_name text NOT NULL,'
-                           ' in_running bool,'
+                           ' in_running bool NOT NULL,'
+                           ' start_time text NOT NULL,'
                            ' last_checked text NOT NULL)'),
               # might only actually want more like 3 back and lay
               # prices later on.

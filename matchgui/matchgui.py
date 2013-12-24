@@ -39,9 +39,10 @@ class MyFrame(wx.Frame):
         self._ppanel = PricePanel(self._splitter)
         self._cpanel = ControlPanel(self._splitter,
                                     style = wx.BORDER_SUNKEN)
+
+        # splash panel is ugly place holder at the moment
         self._spanel = SplashPanel(self._splitter, 'logo.png')
         self.ShowSplashPanel()
-        #self.ShowMarketPanel()
 
         # layout
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)

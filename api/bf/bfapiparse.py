@@ -143,9 +143,11 @@ def ParsegetAllMarkets(res):
         # the full name of the market
         name = fields[5].replace('\\','|') + '|' + fields[1]
         myid = int(fields[0])
+        
         # note parent id is the root one, we are skipping any
         # intermediate event ids
         pid = int(fields[6].split('/')[1])
+        
         # Note from BF docs market status can be
         # ACTIVE 	  Market is open and available for betting.
         # CLOSED 	  Market is finalised, bets to be settled.
@@ -161,6 +163,7 @@ def ParsegetAllMarkets(res):
             inrun = True
         else:
             inrun = False
+            
         # market starttime, from seconds since 1970 GMT
         starttime = datetime.datetime.fromtimestamp(int(fields[4]) / 1000)
         # total matched in GBP
@@ -170,6 +173,7 @@ def ParsegetAllMarkets(res):
         # so that we can access all the data from the API if necessary
         # via properties['data'].
         markets.append(Market(const.BFID, name, myid, pid, inrun,
+                              starttime, 
                               **{'data': mdata, 'starttime': starttime,
                                  'totalmatched': matched}))
 

@@ -33,6 +33,7 @@ def ParseSelections(mids, xmlstr):
                                               None, None, None, None,
                                               bprices, lprices,
                                               const.BFID))
+            
     # selections is a list of lists, e.g. selections[0] is a list
     # whose elements are Selection objects for the market with id
     # mids[0].

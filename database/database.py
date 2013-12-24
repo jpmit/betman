@@ -1,4 +1,4 @@
- # database.py
+# database.py
 # James Mithen
 # jamesmithen@gmail.com
 #
@@ -81,9 +81,12 @@ class DBMaster(object):
         self.conn.commit()
 
     def ReturnMarketMatches(self, elist=[]):
-        """Return market matches.  If list of event names elist is not
+        """
+        Return market matches.  If list of event names elist is not
         given, return all markets in marketmatches table.  If given,
-        elist should be a list of BDAQ Event names."""
+        elist should be a list of BDAQ Event names.
+        """
+
         # Note: there is definitely a much better way to accomplish
         # what is below using joins.  Once I actually know something
         # about SQL I shall come back to this.
@@ -354,14 +357,14 @@ class DBMaster(object):
             raise DbError, 'received malformed SQL statement'
         except ValueError:
             raise DbError, ('wrong parameters passed to SQL '
-                                'statement')
+                            'statement')
         mdata = res.fetchall()
-        # create Market objects from results of market data
-        # pid and pname both None since we are not storing this info
-        # in the database!
+
+        # create Market objects from results of market data pid is
+        # None since we are not storing this info in the database...
         # Note also we need to convert sqlite int into bool for
         # inrunning status of market.
-        markets = [Market(m[2], m[1], None, bool(m[3]), None, m[0])
+        markets = [Market(m[0], m[2], m[1], None, bool(m[3]), m[4])
                    for m in mdata]
         
         return markets
@@ -470,7 +473,7 @@ class DBMaster(object):
         # accomplishing that.
         qins = ('INSERT INTO {0} (exchange_id, '
                 'market_id, market_name, in_running,'
-                'last_checked) values '
+                'start_time, last_checked) values '
                 '(?, ?, ?, ?, ?)'.format(schema.MARKETS))
         qupd = ('UPDATE {0} SET in_running=?,last_checked=? '
                 'WHERE exchange_id=? and market_id=?'.\
@@ -479,7 +482,8 @@ class DBMaster(object):
         for m in markets:
             try:
                 self.cursor.execute(qins, (m.exid, m.id, m.name,
-                                           m.inrunning, tstamp))
+                                           m.inrunning, m.starttime,
+                                           tstamp))
             except sqlite3.IntegrityError:
                 # already have (exchange_id, market_id)
                 # update inrunning status and timestamp

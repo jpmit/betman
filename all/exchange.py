@@ -28,7 +28,7 @@ class Event(object):
 class Market(object):
     """A market."""
     
-    def __init__(self, exid, name, myid, pid, inrunning,
+    def __init__(self, exid, name, myid, pid, inrunning, starttime,
                  **kwargs):
 
         # exchange ID, either const.BDAQID or const.BFID
@@ -43,15 +43,13 @@ class Market(object):
         self.pid = pid
         # is the market 'in running?'
         self.inrunning = inrunning
+        # time at which the market starts is not necessarily the time
+        # it goes in running: e.g. for markets like Premiership winner
+        # etc.
+        self.starttime = starttime
 
         # store all information that comes from the API
         self.properties = kwargs
-
-        # store the start time
-        if self.exid == const.BFID:
-            self.starttime =  self.properties['starttime']
-        else:
-            self.starttime = self.properties['_StartTime']
 
     def __repr__(self):
         return ' '.join([self.name, str(self.id)])
