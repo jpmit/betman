@@ -32,6 +32,11 @@ def market_name(bdaqename, index):
     global MATCH_CACHE
     return MATCH_CACHE[bdaqename][index][0].name
 
+def set_match_cache(cache):
+    global MATCH_CACHE
+
+    MATCH_CACHE = cache
+
 def display_order(bdaqmid):
     minfo = bdaqapi.GetMarketInformation([bdaqmid])
     order = [None]*len(minfo.Markets.Selections)
@@ -93,10 +98,6 @@ def market_prices(bdaqename, index):
 
 def match_markets(bdaqename):
     global BDAQ_EVENTS, BF_EVENTS, MATCH_CACHE
-    
-    # return cached info
-    if bdaqename in MATCH_CACHE:
-        return MATCH_CACHE[bdaqename]
 
     # get corresponding BF event name
     bfename = matchconst.EVENTMAP[bdaqename]

@@ -46,14 +46,22 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # remove any previous event from the panel if necessary
         self.Clear()
 
-        # draw the panel
-        self.DrawLayout()
-
-        # send the event index to the control panel
-
         # pricing model (shared with control panel).
         self.pmodel = self.GetTopLevelParent().GetControlPanel().pmodel
         self.pmodel.SetEventIndex(self.event, self.index)
+
+        # update the pricing model to get selection information (views
+        # = False ensures that the update doesn't yet propagate to the
+        # views.)
+        self.pmodel.Update(views = False)
+
+        # match markets model is needed so we can draw name of event
+        # etc. in the price panel.
+        self.mmodel = self.GetTopLevelParent().GetMarketPanel().mmodel
+        self.name = self.mmodel.GetMarketName(self.event, self.index)
+
+        # draw the panel
+        self.DrawLayout()
         
         # setup information from graphs
         self.SetupGraphs()
@@ -84,14 +92,12 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         name_sz = wx.BoxSizer(wx.HORIZONTAL)
 
         # get market name
-        name = matchguifunctions.market_name(self.event, self.index)
-        name_sz.Add(wx.StaticText(self, label = name))
+        name_sz.Add(wx.StaticText(self, label = self.name))
         main_sizer.Add(name_sz)
         main_sizer.AddSpacer(50)
 
         # get market selection prices for both BDAQ and BF
-        bdaqsels, bfsels = matchguifunctions.market_prices(self.event,
-                                                           self.index)
+        bdaqsels, bfsels = self.pmodel.GetSels()
 
         # WARNING: this really should not be here; this code needs to
         # be reorganised

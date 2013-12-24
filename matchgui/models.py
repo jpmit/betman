@@ -61,7 +61,12 @@ class PriceModel(AbstractModel):
 
         return pdict
 
-    def Update(self):
+    def GetSels(self):
+        """Return lists bdaqsels, bfsels."""
+
+        return self.bdaqsels, self.bfsels
+
+    def Update(self, views = True):
         """Use the BDAQ and BF apis to refresh the prices."""
         
         print 'called the event'
@@ -69,9 +74,10 @@ class PriceModel(AbstractModel):
                                      market_prices(self.event,
                                                    self.index)
         self.indexdict = {s.name : i for (i,s) in enumerate(self.bdaqsels)}
-        
-        # update should call the function that updates the view
-        self.UpdateViews()
+
+        if views:
+            # update should call the function that updates the view
+            self.UpdateViews()
 
 class MarketMakingModel(AbstractModel):
 
@@ -96,7 +102,7 @@ class ArbitrageModel(AbstractModel):
 
     def InitStrategies(self, bdaqsels, bfsels):
         for (bdsel, bfsel) in zip(bdaqsels, bfsels):
-            #print bdsel.name, bdsel.mid, bdsel.id, bfsel.name, bfsel.mid, bfsel.id
+            print bdsel.name, bdsel.mid, bdsel.id, bfsel.name, bfsel.mid, bfsel.id
             self.stratgroup.add(cxstrategy.CXStrategy(bdsel, bfsel))
 
     def Update(self, pmodel):
@@ -152,10 +158,20 @@ class MatchMarketsModel(AbstractModel):
             self._match_cache[ename] = self._dbman.\
                                        ReturnMarketMatches([ename])
 
+        # set global cache in matchguifunctions to match this one
+        matchguifunctions.set_match_cache(self._match_cache)
+
+    def GetMarketName(self, ename, index):
+        """
+        Return market name for particular event with particular index.
+        """
+        
+        return self._match_cache[ename][index][0].name
+
     def FetchMatches(self, ename, refresh = False):
         """
         Fetch matching markets for a particular event name.  If
-        refresh is Ture, update the matching markets first by using
+        refresh is True, update the matching markets first by using
         the BDAQ and BF APIs.
         """
 

@@ -174,7 +174,6 @@ def ParsegetAllMarkets(res):
         # via properties['data'].
         markets.append(Market(const.BFID, name, myid, pid, inrun,
                               starttime, 
-                              **{'data': mdata, 'starttime': starttime,
-                                 'totalmatched': matched}))
+                              **{'data': mdata, 'totalmatched': matched}))
 
     return markets

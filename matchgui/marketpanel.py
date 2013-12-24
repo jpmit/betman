@@ -38,6 +38,7 @@ class MarketPanel(wx.Panel):
         refbut = wx.Button(self, wx.ID_REFRESH)
 
         tsz.Add(self.ttext)
+        tsz.Add(refbut)
         sizer.Add(tsz)
         sizer.AddSpacer(20)
         
@@ -61,6 +62,7 @@ class MarketPanel(wx.Panel):
         self.ename = ename
         self.ttext.SetLabel('List of matching markets for event: {0}'\
                             .format(self.ename))
+#        self.tsz.Layout()
 
     def OnRefresh(self, event):
         self.mmodel.FetchMatches(self.ename, refresh = True)
@@ -189,10 +191,15 @@ class MatchListCtrl(wx.ListCtrl):
         self.DeleteAllItems()
 
         for (m1, m2) in mmarks:
+            # we default to '?' here, since if the markets came from
+            # the DB, we don't store the total matched price.  In that
+            # case, we need to refresh the prices to get an update.
+            m1matched = m1.properties.get('totalmatched', '?')
+            m2matched = m2.properties.get('totalmatched', '?')            
             item = (m1.name.split('|')[-2],
                     m1.starttime.strftime('%d/%m/%y %H:%M'),
-                    m1.properties['totalmatched'],
-                    m2.properties['totalmatched'])
+                    m1matched,
+                    m2matched)
             # add the item to the list box
             self.Append(item)
 

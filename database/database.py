@@ -34,7 +34,10 @@ class DBMaster(object):
 
     def open(self):
         if not self._isopen:
-            self.conn = sqlite3.connect(const.MASTERDB)
+            # detect types means we can read and write datetime
+            # objects no problemo.
+            self.conn = sqlite3.connect(const.MASTERDB,
+                                        detect_types=sqlite3.PARSE_DECLTYPES)
             self.cursor = self.conn.cursor()
             self._isopen = True
 
@@ -464,9 +467,6 @@ class DBMaster(object):
         if not self._isopen:
             self.open()
         
-        data = [(m.exid, m.id, m.name, m.inrunning, tstamp)
-                for m in markets]
-        
         # if a row doesn't exist with this exchange id and market id
         # we insert it, otherwise we update (since inrunning could have
         # changed).  This is probably not the most efficient way of
@@ -474,7 +474,7 @@ class DBMaster(object):
         qins = ('INSERT INTO {0} (exchange_id, '
                 'market_id, market_name, in_running,'
                 'start_time, last_checked) values '
-                '(?, ?, ?, ?, ?)'.format(schema.MARKETS))
+                '(?, ?, ?, ?, ?, ?)'.format(schema.MARKETS))
         qupd = ('UPDATE {0} SET in_running=?,last_checked=? '
                 'WHERE exchange_id=? and market_id=?'.\
                 format(schema.MARKETS))

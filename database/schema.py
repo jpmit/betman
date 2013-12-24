@@ -39,8 +39,8 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' market_id   long NOT NULL,'
                            ' market_name text NOT NULL,'
                            ' in_running bool NOT NULL,'
-                           ' start_time text NOT NULL,'
-                           ' last_checked text NOT NULL)'),
+                           ' start_time timestamp NOT NULL,'
+                           ' last_checked timestamp NOT NULL)'),
               # might only actually want more like 3 back and lay
               # prices later on.
               SELECTIONS: ('(exchange_id  int  NOT NULL,'
@@ -73,7 +73,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            # withdrawal selection number (needed for
                            # placing bet on BDAQ, NULL for BF)
                            ' wsn          int,'
-                           ' last_checked text)'),
+                           ' last_checked timestamp)'),
               # strategy is the strategy type
               # polarity can be either 1 (back) or 2 (lay)
               # matched is the amount (up to stake) that has been matched
@@ -93,7 +93,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' matched      real NOT NULL,'
                            ' unmatched    real NOT NULL,'
                            ' status       int  NOT NULL,'
-                           ' tstamp       text NOT NULL)'),
+                           ' tstamp       timestamp NOT NULL)'),
               MATCHORDERS: ('(order1_id   int  primary key, '
                             ' order2_id   int  NOT NULL, '
                             ' tplaced     text NOT NULL)'),
@@ -102,7 +102,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                             ' balance     real NOT NULL,'
                             ' credit      real NOT NULL,'
                             ' exposure    real NOT NULL,'
-                            ' tstamp      text NOT NULL)'),
+                            ' tstamp      timestamp NOT NULL)'),
               # HISTPRICES has the same schema as SELECTIONS
               HISTPRICES: ('(exchange_id  int  NOT NULL,'
                            ' market_id    long NOT NULL,'
@@ -130,7 +130,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' lvol_5       real,'
                            ' src          int,'
                            ' wsn          int,'
-                           ' last_checked text)'),
+                           ' last_checked timestamp)'),
               # HISTORDERS has the same schema as ORDERS
               HISTORDERS:     ('(order_id     int  NOT NULL, '
                                ' exchange_id  int  NOT NULL,'
@@ -143,7 +143,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                                ' matched      real NOT NULL,'
                                ' unmatched    real NOT NULL,'
                                ' status       int  NOT NULL,'
-                               ' tstamp       text NOT NULL)')              
+                               ' tstamp       timestamp NOT NULL)')              
               }
 
 def getschema(tname):
