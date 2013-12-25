@@ -191,15 +191,11 @@ class MatchListCtrl(wx.ListCtrl):
         self.DeleteAllItems()
 
         for (m1, m2) in mmarks:
-            # we default to '?' here, since if the markets came from
-            # the DB, we don't store the total matched price.  In that
-            # case, we need to refresh the prices to get an update.
-            m1matched = m1.properties.get('totalmatched', '?')
-            m2matched = m2.properties.get('totalmatched', '?')            
+
             item = (m1.name.split('|')[-2],
                     m1.starttime.strftime('%d/%m/%y %H:%M'),
-                    m1matched,
-                    m2matched)
+                    m1.totalmatched,
+                    m2.totalmatched)
             # add the item to the list box
             self.Append(item)
 

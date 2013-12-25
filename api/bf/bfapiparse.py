@@ -173,7 +173,6 @@ def ParsegetAllMarkets(res):
         # so that we can access all the data from the API if necessary
         # via properties['data'].
         markets.append(Market(const.BFID, name, myid, pid, inrun,
-                              starttime, 
-                              **{'data': mdata, 'totalmatched': matched}))
+                              starttime, matched, **{'data': mdata}))
 
     return markets

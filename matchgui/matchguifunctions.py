@@ -1,10 +1,17 @@
 # matchguifunctions.py
+# James Mithen
+# jamesmithen@gmail.com
 
+"""A lot of ugly stuff that goes on behind the scenes..."""
+
+import datetime
+from operator import itemgetter
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 import betman.matchmarkets.marketmatcher as marketmatcher
 import betman.matchmarkets.matchconst as matchconst
 from betman import database, const
+
 
 class GuiError(Exception):
     pass
@@ -136,8 +143,13 @@ def match_markets(bdaqename):
 
     for (i, sels) in enumerate(bdaqsels):
         if sels:
-            matchmarks[i][0].properties['totalmatched'] = sels[0].\
-                                                          properties['totalmatched']
+            matchmarks[i][0].totalmatched = sels[0].\
+                                            properties['totalmatched']
+
+    # update the database since now have totalmatched for the bdaq markets
+    bdmarks = [itemgetter(0)(i) for i in matchmarks]
+    dbman = database.DBMaster()
+    dbman.WriteMarkets(bdmarks, datetime.datetime.now())
         
     # sort matching markets by starttime; NB could sort them by the
     # BDAQ official display order at some point if necessary.

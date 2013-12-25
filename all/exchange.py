@@ -29,7 +29,7 @@ class Market(object):
     """A market."""
     
     def __init__(self, exid, name, myid, pid, inrunning, starttime,
-                 **kwargs):
+                 totalmatched = None, **kwargs):
 
         # exchange ID, either const.BDAQID or const.BFID
         self.exid = exid
@@ -47,6 +47,9 @@ class Market(object):
         # it goes in running: e.g. for markets like Premiership winner
         # etc.
         self.starttime = starttime
+        # total amount matched on market (note this defaults to None
+        # and not 0.0).
+        self.totalmatched = totalmatched
 
         # store all information that comes from the API
         self.properties = kwargs

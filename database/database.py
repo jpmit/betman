@@ -1,8 +1,8 @@
 # database.py
 # James Mithen
 # jamesmithen@gmail.com
-#
-# Interface for interacting with database
+
+"""Interface for interacting with database"""
 
 import os
 import sqlite3
@@ -367,7 +367,8 @@ class DBMaster(object):
         # None since we are not storing this info in the database...
         # Note also we need to convert sqlite int into bool for
         # inrunning status of market.
-        markets = [Market(m[0], m[2], m[1], None, bool(m[3]), m[4])
+        markets = [Market(m[0], m[2], m[1], None, bool(m[4]), m[5],
+                          m[3])
                    for m in mdata]
         
         return markets
@@ -468,27 +469,30 @@ class DBMaster(object):
             self.open()
         
         # if a row doesn't exist with this exchange id and market id
-        # we insert it, otherwise we update (since inrunning could have
-        # changed).  This is probably not the most efficient way of
-        # accomplishing that.
+        # we insert it, otherwise we update (since inrunning and
+        # totalmatched could have changed).  This is probably not the
+        # most efficient way of accomplishing that.
         qins = ('INSERT INTO {0} (exchange_id, '
-                'market_id, market_name, in_running,'
+                'market_id, market_name, total_matched, in_running,'
                 'start_time, last_checked) values '
-                '(?, ?, ?, ?, ?, ?)'.format(schema.MARKETS))
-        qupd = ('UPDATE {0} SET in_running=?,last_checked=? '
+                '(?, ?, ?, ?, ?, ?, ?)'.format(schema.MARKETS))
+        qupd = ('UPDATE {0} SET total_matched=?, in_running=?, '
+                'last_checked=? '
                 'WHERE exchange_id=? and market_id=?'.\
                 format(schema.MARKETS))
         
         for m in markets:
             try:
                 self.cursor.execute(qins, (m.exid, m.id, m.name,
+                                           m.totalmatched,
                                            m.inrunning, m.starttime,
                                            tstamp))
             except sqlite3.IntegrityError:
                 # already have (exchange_id, market_id)
                 # update inrunning status and timestamp
-                self.cursor.execute(qupd, (m.inrunning, tstamp, m.exid,
-                                           m.id))
+                self.cursor.execute(qupd, (m.totalmatched,
+                                           m.inrunning, tstamp,
+                                           m.exid, m.id))
         self.conn.commit()
 
     def WriteOrders(self, olist, tstamp):

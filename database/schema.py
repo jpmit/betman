@@ -35,12 +35,15 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' ex2_mid  long NOT NULL,'
                            ' ex2_sid  long NOT NULL,'
                            ' ex2_name text NOT NULL)'),
-              MARKETS:    ('(exchange_id int NOT NULL,'
-                           ' market_id   long NOT NULL,'
-                           ' market_name text NOT NULL,'
-                           ' in_running bool NOT NULL,'
-                           ' start_time timestamp NOT NULL,'
-                           ' last_checked timestamp NOT NULL)'),
+              MARKETS:    ('(exchange_id   int       NOT NULL,'
+                           ' market_id     long      NOT NULL,'
+                           ' market_name   text      NOT NULL,'
+                           # total matched is allowed to be null since
+                           # the BDAQ API doesn't return this.
+                           ' total_matched real,'
+                           ' in_running    bool      NOT NULL,'
+                           ' start_time    timestamp NOT NULL,'
+                           ' last_checked  timestamp NOT NULL)'),
               # might only actually want more like 3 back and lay
               # prices later on.
               SELECTIONS: ('(exchange_id  int  NOT NULL,'

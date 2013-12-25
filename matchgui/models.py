@@ -84,6 +84,13 @@ class MarketMakingModel(AbstractModel):
     def __init__(self):
         super(MarketMakingModel, self).__init__()
 
+        # the arbitrage model owns a group of strategies.  each
+        # individual strategy involves a pair of selections.
+        self.stratgroup = strategy.StrategyGroup()
+
+    def Clear(self):
+        self.stratgroup.clear()
+
     def InitStrategies(self, bdaqsels, bfsels):
         pass
         
@@ -102,7 +109,6 @@ class ArbitrageModel(AbstractModel):
 
     def InitStrategies(self, bdaqsels, bfsels):
         for (bdsel, bfsel) in zip(bdaqsels, bfsels):
-            print bdsel.name, bdsel.mid, bdsel.id, bfsel.name, bfsel.mid, bfsel.id
             self.stratgroup.add(cxstrategy.CXStrategy(bdsel, bfsel))
 
     def Update(self, pmodel):
