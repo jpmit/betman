@@ -46,6 +46,7 @@ def set_match_cache(cache):
 
 def display_order(bdaqmid):
     minfo = bdaqapi.GetMarketInformation([bdaqmid])
+    print minfo
     order = [None]*len(minfo.Markets.Selections)
     for m in minfo.Markets.Selections:
         order[m._DisplayOrder - 1] = m._Id

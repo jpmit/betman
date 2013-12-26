@@ -20,8 +20,8 @@ class Strategy(object):
         Return market ids involved in strategy.  These should be
         returned as a dict with keys const.BDAQID and const.BFID.
         """
-        
-        pass
+
+        return {const.BDAQID: [], const.BFID: []}
 
     def get_orders(self):
         """
@@ -30,7 +30,7 @@ class Strategy(object):
         const.BFID.
         """
 
-        pass
+        return {const.BDAQID: [], const.BFID: []}
 
     def update(self, prices):
         """
@@ -55,6 +55,12 @@ class StrategyGroup(object):
 
     def add(self, strategy):
         self.strategies.append(strategy)
+
+    def remove(self, strategy):
+        try:
+            self.strategies.remove(strategy)
+        except ValueError:
+            print 'no strategy found to remove'
 
     def clear(self):
         self.strategies = []

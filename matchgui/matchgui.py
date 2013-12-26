@@ -8,11 +8,8 @@ from pricepanel import PricePanel
 from controlpanel import ControlPanel
 from imgpanel import SplashPanel
 import managers
-import betman.strategy.strategy as strategy
+from betman.strategy import strategy
 
-# each tick in the application corresponds to this time in
-# milliseconds.
-TICK_LENGTH_MS = 1000
 
 class MyApp(wx.App):
     """Main app instance."""
@@ -50,7 +47,7 @@ class MyApp(wx.App):
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTick, self.timer)
-        self.timer.Start(TICK_LENGTH_MS)
+        self.timer.Start(const.TICK_LENGTH_MS)
 
     def OnTick(self, event):
 
@@ -67,6 +64,9 @@ class MyApp(wx.App):
 
         # make any new orders and save
         self.omanager.make_orders()
+
+        # update the view
+        self.frame._cpanel.pmodel.Update()
 
 class MyFrame(wx.Frame):
     """Main window."""

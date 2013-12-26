@@ -46,19 +46,18 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # remove any previous event from the panel if necessary
         self.Clear()
 
-        # pricing model (shared with control panel).
-        self.pmodel = self.GetTopLevelParent().GetControlPanel().pmodel
-        self.pmodel.SetEventIndex(self.event, self.index)
-
-        # update the pricing model to get selection information (views
-        # = False ensures that the update doesn't yet propagate to the
-        # views.)
-        self.pmodel.Update(views = False)
-
         # match markets model is needed so we can draw name of event
         # etc. in the price panel.
         self.mmodel = self.GetTopLevelParent().GetMarketPanel().mmodel
         self.name = self.mmodel.GetMarketName(self.event, self.index)
+        self.bdaqmid, self.bfmid = self.mmodel.GetMids(self.event, self.index)
+
+        # pricing model (shared with control panel).
+        self.pmodel = self.GetTopLevelParent().GetControlPanel().pmodel
+        self.pmodel.SetEventIndex(self.event, self.index)
+        self.pmodel.SetMids(self.bdaqmid, self.bfmid)
+        # get selection information from BDAQ and BF
+        self.pmodel.InitSels()
 
         # draw the panel
         self.DrawLayout()
@@ -276,8 +275,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         
         # draw the prices onto the labels...
         print 'updating price panel!'
-        
-        for bdaqsel, bfsel in zip(pmodel.bdaqsels, pmodel.bfsels):
+
+        bdaqsels, bfsels = pmodel.GetSels()
+        for bdaqsel, bfsel in zip(bdaqsels, bfsels):
             # bdaq prices
             bdaqbprices = bdaqsel.padback[:const.NPRICES]
             bdaqbprices.reverse()

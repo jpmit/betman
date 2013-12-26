@@ -3,6 +3,7 @@ from betman.strategy import strategy, cxstrategy, mmstrategy
 from betman import const
 from betman.database import DBMaster
 from betman.matchmarkets.matchconst import EVENTMAP
+from managers import UPDATED
 
 class AbstractModel(object):
     """
@@ -41,43 +42,62 @@ class PriceModel(AbstractModel):
     
     def __init__(self):
         super(PriceModel, self).__init__()
+        # sels are updated to keep the current selection prices
         self.bdaqsels = []
         self.bfsels = []
         self.event = None
         self.index = None
+        self.ustrat = None
 
     def SetEventIndex(self, event, index):
         self.event = event
         self.index = index
 
-    def PricesDict(self):
-        """Return prices dict that the strategies can use."""
+    def SetMids(self, bdaqmid, bfmid):
+        self.bdaqmid = bdaqmid
+        self.bfmid = bfmid
 
-        bdaqmid = self.bdaqsels[0].mid
-        bfmid = self.bfsels[0].mid
+    #def PricesDict(self):
+    #    """Return prices dict that the strategies can use."""
 
-        pdict = {const.BDAQID: {bdaqmid: {s.id : s for s in self.bdaqsels}},
-                 const.BFID: {bfmid: {s.id : s for s in self.bfsels}}}
+    #    bdaqmid = self.bdaqsels[0].mid
+    #    bfmid = self.bfsels[0].mid
 
-        return pdict
+    #    pdict = {const.BDAQID: {bdaqmid: {s.id : s for s in self.bdaqsels}},
+    #             const.BFID: {bfmid: {s.id : s for s in self.bfsels}}}
+
+    #    return pdict
+
+    def InitSels(self):
+        self.bdaqsels, self.bfsels = matchguifunctions.\
+                                     market_prices(self.event,
+                                                   self.index)
 
     def GetSels(self):
         """Return lists bdaqsels, bfsels."""
 
         return self.bdaqsels, self.bfsels
 
-    def Update(self, views = True):
-        """Use the BDAQ and BF apis to refresh the prices."""
-        
-        print 'called the event'
-        self.bdaqsels, self.bfsels = matchguifunctions.\
-                                     market_prices(self.event,
-                                                   self.index)
-        self.indexdict = {s.name : i for (i,s) in enumerate(self.bdaqsels)}
+    def Update(self):
+        # check if we have an update strategy and it was updated last
+        # tick.
+        if self.ustrat:
+            if getattr(self.ustrat, UPDATED):
+                # use self.ustrat.prices here
+                self.UpdateViews()
 
-        if views:
-            # update should call the function that updates the view
-            self.UpdateViews()
+    #def Update(self, views = True):
+    #    """Use the BDAQ and BF apis to refresh the prices."""
+    #    
+    #    print 'called the event'
+    #    self.bdaqsels, self.bfsels = matchguifunctions.\
+    #                                 market_prices(self.event,
+    #                                               self.index)
+    #    self.indexdict = {s.name : i for (i,s) in enumerate(self.bdaqsels)}
+    #
+    #    if views:
+    #        # update should call the function that updates the view
+    #        self.UpdateViews()
 
 class MarketMakingModel(AbstractModel):
 
@@ -156,6 +176,12 @@ class MatchMarketsModel(AbstractModel):
         
         for ename in EVENTMAP:
             self._match_cache[ename] = []
+
+    def GetMids(self, ename, index):
+        bdaqmid = self._match_cache[ename][index][0].id
+        bfmid = self._match_cache[ename][index][1].id
+        
+        return bdaqmid, bfmid
 
     def InitMatchCacheFromDB(self):
         """

@@ -104,6 +104,7 @@ class ApiGetMarketInformation(ApiMethod):
         """
 
         self.req.MarketIds = ids
+        betlog.betlog.info('calling BDAQ Api GetMarketInformation')
         result = self.client.service.GetMarketInformation(self.req)
         # note the raw data is returned here
         return result

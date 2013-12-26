@@ -1,5 +1,8 @@
 import wx
 import models
+import const
+from betman.strategy import updatestrategy
+import managers
 
 class ControlPanel(wx.Panel):
     """Panel for setting market refresh rate, etc."""
@@ -11,8 +14,8 @@ class ControlPanel(wx.Panel):
         self.CreateLayout()
 
         # timer and associated events
-        self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.OnTimerEvent, self.timer)
+#        self.timer = wx.Timer(self)
+#        self.Bind(wx.EVT_TIMER, self.OnTimerEvent, self.timer)
         self.Bind(wx.EVT_SPINCTRL, self.OnUpdateSpinCtrl)
 
         # reference to the price panel, which contains the prices and
@@ -31,6 +34,9 @@ class ControlPanel(wx.Panel):
         # when the model is updated, we draw the prices and stakes
         # onto the main panel.
         self.pmodel.AddListener(ppanel.OnUpdatePrices)
+
+        # update strategy
+        self.ustrat = None
         
     def CreateLayout(self):
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -67,6 +73,20 @@ class ControlPanel(wx.Panel):
         self.SetSizer(sizer)
         self.Layout()
 
+    def AddUpdateStrat(self):
+        print self.pmodel.bdaqmid, self.pmodel.bfmid
+        self.ustrat = updatestrategy.\
+                      UpdateStrategy(bdaqmids = [self.pmodel.bdaqmid],
+                                     bfmids = [self.pmodel.bfmid])
+        # set update tick frequency to match selection
+        setattr(self.ustrat, managers.UTICK, self.freqspin.GetValue())
+        wx.GetApp().stratgroup.add(self.ustrat)
+        self.pmodel.ustrat = self.ustrat
+
+    def RemoveUpdateStrat(self):
+        wx.GetApp().stratgroup.remove(self.ustrat)
+        self.pmodel.ustrat = None
+
     def OnStartButtonClick(self, event):
         """Called when the start button is clicked."""
 
@@ -77,14 +97,18 @@ class ControlPanel(wx.Panel):
             # enable mm and arb buttons
             self.mmbutton.Enable()
             self.arbbutton.Enable()
+            # we add an update strategy to the global strategy group,
+            self.AddUpdateStrat()
+                
             # start the timer running
-            print 'timer set to {0}'.format(self.freqspin.GetValue())
-            self.timer.Start(self.freqspin.GetValue() * 1000)
+#            print 'timer set to {0}'.format(self.freqspin.GetValue())
+#            self.timer.Start(self.freqspin.GetValue() * const.TICK_LENGTH_MS)
         else:
-            if self.timer.IsRunning():
+            self.RemoveUpdateStrat()
+ #           if self.timer.IsRunning():
                 # this will stop the price model being updated, and
                 # therefore also the arb and mm models.
-                self.timer.Stop()
+ #               self.timer.Stop()
 
             self.mmbutton.SetValue(False)
             self.arbbutton.SetValue(False)
@@ -132,22 +156,25 @@ class ControlPanel(wx.Panel):
 
     def OnUpdateSpinCtrl(self, event):
         """Allow changing update frequency if timer is running."""
-        
-        if self.timer.IsRunning():
-            self.timer.Stop()
-            self.timer.Start(self.freqspin.GetValue() * 1000)
 
-    def OnTimerEvent(self, event):
+        # alter tick for update strategy
+        pass
+#        if self.timer.IsRunning():
+#            self.timer.Stop()
+#            self.timer.Start(self.freqspin.GetValue() * 1000)
+
+    #def OnTimerEvent(self, event):
         
         # update the price model (get the BF and BDAQ prices).  This
         # will update the view (prices shown in GUI) via listener
         # function.
-        self.pmodel.Update()
+    #    self.pmodel.Update()
 
     def StopUpdatesIfRunning(self):
         """Called when control panel is hidden."""
 
-        # set the start button to off, then call the normal event handler.
+        # set the start button to off, then call the normal event
+        # handler.
         self.startbut.SetValue(False)
         self.OnStartButtonClick(None)
 

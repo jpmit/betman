@@ -7,3 +7,7 @@ LPINK   = (219, 162, 197) # BF lay
 GREY    = (86, 86, 86)    # No price
 LYELLOW = (235, 234, 194) # BDAQ back
 LGREEN  = (151, 226, 176) # BDAQ lay
+
+# each tick in the application corresponds to this time in
+# milliseconds.
+TICK_LENGTH_MS = 1000
