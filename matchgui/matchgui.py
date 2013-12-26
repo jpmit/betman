@@ -8,7 +8,7 @@ from pricepanel import PricePanel
 from controlpanel import ControlPanel
 from imgpanel import SplashPanel
 import managers
-from betman import strategy
+import betman.strategy.strategy as strategy
 
 # each tick in the application corresponds to this time in
 # milliseconds.
@@ -66,9 +66,7 @@ class MyApp(wx.App):
                                   managers.UPDATED)
 
         # make any new orders and save
-
-        
-
+        self.omanager.make_orders()
 
 class MyFrame(wx.Frame):
     """Main window."""
