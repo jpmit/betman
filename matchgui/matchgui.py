@@ -7,6 +7,12 @@ from marketpanel import MarketPanel
 from pricepanel import PricePanel
 from controlpanel import ControlPanel
 from imgpanel import SplashPanel
+import managers
+from betman import strategy
+
+# each tick in the application corresponds to this time in
+# milliseconds.
+TICK_LENGTH_MS = 1000
 
 class MyApp(wx.App):
     """Main app instance."""
@@ -16,8 +22,53 @@ class MyApp(wx.App):
                              title=const.NAME)
         self.SetTopWindow(self.frame)
         self.frame.Show()
+
+        self.SetupManagers()
+        self.SetupTimer()
         
         return True
+
+    def SetupManagers(self):
+        """
+        Setup strategy group and managers to deal with getting new
+        prices and new orders.
+        """
+
+        # strategygroup stores all currently executing strategies
+        # (initialised as empty).
+        self.stratgroup = strategy.StrategyGroup()
+
+        # the managers are used to manage fetching pricing and making
+        # orders for the strategy group.
+        self.omanager = managers.OrderManager(self.stratgroup)
+        self.pmanager = managers.PricingManager(self.stratgroup)
+
+    def SetupTimer(self):
+        """
+        Setup timer that
+        """
+
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnTick, self.timer)
+        self.timer.Start(TICK_LENGTH_MS)
+
+    def OnTick(self, event):
+
+        # update any outstanding orders.
+        self.omanager.update_order_information()
+
+        # get prices for any strategies in the strategy group that
+        # want new prices this tick.
+        self.pmanager.update_prices()
+
+        # update strategies which got new prices this tick.
+        self.stratgroup.update_if(self.pmanager.prices,
+                                  managers.UPDATED)
+
+        # make any new orders and save
+
+        
+
 
 class MyFrame(wx.Frame):
     """Main window."""

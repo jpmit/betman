@@ -12,7 +12,7 @@ class ControlPanel(wx.Panel):
 
         # timer and associated events
         self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.OnTimerEvent)
+        self.Bind(wx.EVT_TIMER, self.OnTimerEvent, self.timer)
         self.Bind(wx.EVT_SPINCTRL, self.OnUpdateSpinCtrl)
 
         # reference to the price panel, which contains the prices and

@@ -65,6 +65,15 @@ class StrategyGroup(object):
         for strat in self.strategies:
             strat.update(prices)
 
+    def update_if(self, prices, attr):
+        """
+        Update all strategies in group if attr of strategy is True.
+        """
+
+        for strat in self.strategies:
+            if getattr(strat, attr):
+                strat.update(prices)
+
     def get_orders(self):
         """
         Order ids for all strategies in the group used for checking
