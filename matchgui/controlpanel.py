@@ -10,14 +10,12 @@ class ControlPanel(wx.Panel):
     def __init__(self, parent, *args, **kwargs):
         super(ControlPanel, self).__init__(parent, *args, **kwargs)
 
+        # reference to main app object.
+        self.app = wx.GetApp()
+        
         # draw buttons etc.
         self.CreateLayout()
-
-        # timer and associated events
-#        self.timer = wx.Timer(self)
-#        self.Bind(wx.EVT_TIMER, self.OnTimerEvent, self.timer)
-        self.Bind(wx.EVT_SPINCTRL, self.OnUpdateSpinCtrl)
-
+        
         # reference to the price panel, which contains the prices and
         # stakes for the currently selected market.
         ppanel = self.GetTopLevelParent().GetPricePanel()
@@ -27,7 +25,10 @@ class ControlPanel(wx.Panel):
         # BDAQ, (ii) a model for the market marking strategy, which
         # will be updated by the pricing model and (iii) a model for
         # the arbitrage strategy, again updated by the pricing model.
-        self.pmodel = wx.GetApp().pmodel
+        self.pmodel = self.app.pmodel
+
+        # may want to remove these once we have individual strats for
+        # each selection pair.
         self.mmmodel = models.MarketMakingModel()
         self.arbmodel = models.ArbitrageModel()
 
@@ -43,6 +44,7 @@ class ControlPanel(wx.Panel):
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.freqspin = wx.SpinCtrl(self, -1, min = 1, max = 100)
+        self.Bind(wx.EVT_SPINCTRL, self.OnUpdateSpinCtrl)        
 
         # button for starting / stopping refreshing prices
         self.startbut = wx.ToggleButton(self)
@@ -101,17 +103,8 @@ class ControlPanel(wx.Panel):
             self.arbbutton.Enable()
             # we add an update strategy to the global strategy group,
             self.AddUpdateStrat()
-                
-            # start the timer running
-#            print 'timer set to {0}'.format(self.freqspin.GetValue())
-#            self.timer.Start(self.freqspin.GetValue() * const.TICK_LENGTH_MS)
         else:
             self.RemoveUpdateStrat()
- #           if self.timer.IsRunning():
-                # this will stop the price model being updated, and
-                # therefore also the arb and mm models.
- #               self.timer.Stop()
-
             self.mmbutton.SetValue(False)
             self.arbbutton.SetValue(False)
             # disable mm and arb buttons; this changes their
@@ -160,18 +153,9 @@ class ControlPanel(wx.Panel):
         """Allow changing update frequency if timer is running."""
 
         # alter frequency for update strategy
-        setattr(self.ustrat, managers.UTICK, self.freqspin.GetValue())        
-
-#        if self.timer.IsRunning():
-#            self.timer.Stop()
-#            self.timer.Start(self.freqspin.GetValue() * 1000)
-
-    #def OnTimerEvent(self, event):
-        
-        # update the price model (get the BF and BDAQ prices).  This
-        # will update the view (prices shown in GUI) via listener
-        # function.
-    #    self.pmodel.Update()
+        if self.ustrat != None:
+            setattr(self.ustrat, managers.UTICK,
+                    self.freqspin.GetValue()) 
 
     def StopUpdatesIfRunning(self):
         """Called when control panel is hidden."""

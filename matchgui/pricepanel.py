@@ -37,8 +37,6 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # the pricing model controls the view (the price grid).
         self.pmodel = self.app.pmodel
 
-#        self.graphs_open = {}
-
     def SetEventIndex(self, event, index):
         """
         Set event and index.  This method is sort of like a second
@@ -73,16 +71,18 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
     def SetupGraphsAndStrategies(self):
         """
-        This is only called once, immediately after we set the event
-        and index.
+        Create models for graphs and strategies.  This is only called
+        once, immediately after we set the event and index.
         """
         
         for (bdaqsel, bfsel) in zip(self.pmodel.bdaqsels, self.pmodel.bfsels):
             # create a model for each selection
-            self.app.graph_models[bdaqsel.name] = models.GraphPriceModel(bdaqsel,
-                                                                         bfsel)
-            self.app.strat_models[bdaqsel.name] = models.StrategyModel(bdaqsel,
-                                                                       bfsel)
+            self.app.graph_models[bdaqsel.name] = models.\
+                                                  GraphPriceModel(bdaqsel,
+                                                                  bfsel)
+            self.app.strat_models[bdaqsel.name] = models.\
+                                                  StrategyModel(bdaqsel,
+                                                                bfsel)
 
     def GetEventIndex(self):
         return self.event, self.index
@@ -233,6 +233,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             strat_sizer.Add(stratsel, 0, wx.CENTER)
             strat_sizer.Add(freqspin, 0, wx.CENTER)
             strat_sizer.Add(gobtn, 0, wx.CENTER)
+            strat_sizer.Add(monbtn, 0, wx.CENTER)
 
             # add strategy stuff to selection sizer
             sel_sizer.Add(strat_sizer)
