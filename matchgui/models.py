@@ -39,15 +39,25 @@ class AbstractModel(object):
             eachFunc(self)
 
 class PriceModel(AbstractModel):
+    """
+    Model used for displaying market prices on the main panel.  The
+    model currently manages only a single market id, with the main
+    pricepanel view in mind.
+
+    The model is linked to an 'UpdateStrategy', which means that the
+    application will automatically collect new market prices.  This
+    class needs to do some bookkeeping so that the view looks okay,
+    e.g. it needs to store the ordering of the selections.
+    """
     
     def __init__(self):
         super(PriceModel, self).__init__()
-        # sels are updated to keep the current selection prices
+        # sels are updated to keep the current selection prices; they
+        # are stored in the order displayed on the main pricing panel.
         self.bdaqsels = []
         self.bfsels = []
         self.event = None
         self.index = None
-        self.ustrat = None
 
     def SetEventIndex(self, event, index):
         self.event = event
@@ -57,47 +67,37 @@ class PriceModel(AbstractModel):
         self.bdaqmid = bdaqmid
         self.bfmid = bfmid
 
-    #def PricesDict(self):
-    #    """Return prices dict that the strategies can use."""
-
-    #    bdaqmid = self.bdaqsels[0].mid
-    #    bfmid = self.bfsels[0].mid
-
-    #    pdict = {const.BDAQID: {bdaqmid: {s.id : s for s in self.bdaqsels}},
-    #             const.BFID: {bfmid: {s.id : s for s in self.bfsels}}}
-
-    #    return pdict
-
     def InitSels(self):
+        """Initialize selections in the correct order."""
+        
         self.bdaqsels, self.bfsels = matchguifunctions.\
                                      market_prices(self.event,
                                                    self.index)
+
+        # indexdict means that the price of a particular bdaq
+        # selection name can be easily found.
+        self.indexdict = {s.name : i for (i, s) in enumerate(self.bdaqsels)}
 
     def GetSels(self):
         """Return lists bdaqsels, bfsels."""
 
         return self.bdaqsels, self.bfsels
 
-    def Update(self):
-        # check if we have an update strategy and it was updated last
-        # tick.
-        if self.ustrat:
-            if getattr(self.ustrat, UPDATED):
-                # use self.ustrat.prices here
-                self.UpdateViews()
+    def Update(self, prices):
+        """
+        Check if we need to update any views this tick, and update if
+        we need to.
+        """
+        if self.index != None:
+            # check that we got new prices for this selection this tick.
+            if self.bdaqmid in prices[const.BDAQID]:
+                self.bdaqsels = [prices[const.BDAQID][self.bdaqmid][i]
+                                 for i in [s.id for s in self.bdaqsels]]
+                self.bfsels = [prices[const.BFID][self.bfmid][i]
+                               for i in [s.id for s in self.bfsels]]
 
-    #def Update(self, views = True):
-    #    """Use the BDAQ and BF apis to refresh the prices."""
-    #    
-    #    print 'called the event'
-    #    self.bdaqsels, self.bfsels = matchguifunctions.\
-    #                                 market_prices(self.event,
-    #                                               self.index)
-    #    self.indexdict = {s.name : i for (i,s) in enumerate(self.bdaqsels)}
-    #
-    #    if views:
-    #        # update should call the function that updates the view
-    #        self.UpdateViews()
+                # call the listener functions.
+                self.UpdateViews()
 
 class MarketMakingModel(AbstractModel):
 
@@ -145,6 +145,7 @@ class ArbitrageModel(AbstractModel):
 
     def Clear(self):
         self.stratgroup.clear()
+    
 
 class MatchMarketsModel(AbstractModel):
     """Stores data on matching markets for all the different events."""
@@ -223,13 +224,32 @@ class MatchMarketsModel(AbstractModel):
     def GetMatches(self, ename):
         return self._match_cache[ename]
 
+class StrategyModel(AbstractModel):
+    """Holds information for a single strategy."""
+
+    def __init__(self, bdaqsel, bfsel):
+        super(StrategyModel, self).__init__() 
+
+        self.bdaqselname = bdaqsel.name
+
+    def Update(self, prices):
+        pass
+
 class GraphPriceModel(AbstractModel):
+    """Holds information for a single graph."""
+    
     NPOINTS = 100
     
-    def __init__(self, bdaqselname):
+    def __init__(self, bdaqsel, bfsel):
         super(GraphPriceModel, self).__init__()
 
-        self.bdaqselname = bdaqselname
+        self.bdaqselname = bdaqsel.name
+
+        # store mid and sid for both BDAQ and BF
+        self.bdaqmid = bdaqsel.mid
+        self.bfmid = bfsel.mid
+        self.bdaqsid = bdaqsel.id
+        self.bfsid = bfsel.id
 
         # store best back and lay prices on bdaq and bf
         self.bdaqback = [None]*self.NPOINTS
@@ -237,30 +257,23 @@ class GraphPriceModel(AbstractModel):
         self.bfback = [None]*self.NPOINTS
         self.bflay = [None]*self.NPOINTS
 
-    def UpdatePrices(self, pmodel):
-        """This receives updates from the main price model above."""
+    def Update(self, prices):
 
-        # This if statement allows us to keep graphs for particular
-        # selections floating around, even if we have now used the GUI
-        # to navigate to a new event...
-        if self.bdaqselname not in pmodel.indexdict:
-            return
+        # check that we got new prices for this selection this tick.
+        if self.bdaqmid in prices[const.BDAQID]:
+            bdaqsel = prices[const.BDAQID][self.bdaqmid][self.bdaqsid]
+            bfsel = prices[const.BFID][self.bfmid][self.bfsid]
 
-        i = pmodel.indexdict[self.bdaqselname]
+            self.bdaqback.append(bdaqsel.padback[0][0])
+            self.bdaqlay.append(bdaqsel.padlay[0][0])
+            self.bfback.append(bfsel.padback[0][0])
+            self.bflay.append(bfsel.padlay[0][0])
 
-        # store latest price in the arrays
-        bdaqsel = pmodel.bdaqsels[i]
-        bfsel = pmodel.bfsels[i]
-        self.bdaqback.append(bdaqsel.padback[0][0])
-        self.bdaqlay.append(bdaqsel.padlay[0][0])
-        self.bfback.append(bfsel.padback[0][0])
-        self.bflay.append(bfsel.padlay[0][0])
+            # get rid of the oldest data
+            self.bdaqback.pop(0)
+            self.bdaqlay.pop(0)
+            self.bfback.pop(0)
+            self.bflay.pop(0)
 
-        # get rid of the oldest data
-        self.bdaqback.pop(0)
-        self.bdaqlay.pop(0)
-        self.bfback.pop(0)
-        self.bflay.pop(0)
-
-        # update should call the function that updates the GUI
-        self.Update()
+            # update the views
+            self.UpdateViews()

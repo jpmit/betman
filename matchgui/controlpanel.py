@@ -27,7 +27,7 @@ class ControlPanel(wx.Panel):
         # BDAQ, (ii) a model for the market marking strategy, which
         # will be updated by the pricing model and (iii) a model for
         # the arbitrage strategy, again updated by the pricing model.
-        self.pmodel = models.PriceModel()
+        self.pmodel = wx.GetApp().pmodel
         self.mmmodel = models.MarketMakingModel()
         self.arbmodel = models.ArbitrageModel()
 
@@ -78,8 +78,10 @@ class ControlPanel(wx.Panel):
         self.ustrat = updatestrategy.\
                       UpdateStrategy(bdaqmids = [self.pmodel.bdaqmid],
                                      bfmids = [self.pmodel.bfmid])
+        
         # set update tick frequency to match selection
-        setattr(self.ustrat, managers.UTICK, self.freqspin.GetValue())
+        updatetick = self.freqspin.GetValue()
+        setattr(self.ustrat, managers.UTICK, updatetick)
         wx.GetApp().stratgroup.add(self.ustrat)
         self.pmodel.ustrat = self.ustrat
 
@@ -157,8 +159,9 @@ class ControlPanel(wx.Panel):
     def OnUpdateSpinCtrl(self, event):
         """Allow changing update frequency if timer is running."""
 
-        # alter tick for update strategy
-        pass
+        # alter frequency for update strategy
+        setattr(self.ustrat, managers.UTICK, self.freqspin.GetValue())        
+
 #        if self.timer.IsRunning():
 #            self.timer.Stop()
 #            self.timer.Start(self.freqspin.GetValue() * 1000)

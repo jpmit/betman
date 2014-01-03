@@ -8,20 +8,24 @@ from pricepanel import PricePanel
 from controlpanel import ControlPanel
 from imgpanel import SplashPanel
 import managers
+import models
 from betman.strategy import strategy
-
 
 class MyApp(wx.App):
     """Main app instance."""
     
     def OnInit(self):
+
+        # setup the engine
+        self.SetupManagers()
+        self.SetupModels()
+        self.SetupTimer()
+
+        # setup the actual GUI
         self.frame = MyFrame(None, size=(1000, 600),
                              title=const.NAME)
         self.SetTopWindow(self.frame)
         self.frame.Show()
-
-        self.SetupManagers()
-        self.SetupTimer()
         
         return True
 
@@ -40,6 +44,20 @@ class MyApp(wx.App):
         self.omanager = managers.OrderManager(self.stratgroup)
         self.pmanager = managers.PricingManager(self.stratgroup)
 
+    def SetupModels(self):
+        """
+        Setup the models that may need to be updated every tick (this
+        is a subset of all the models used in the application.
+        """
+
+        self.pmodel = models.PriceModel()
+        self.strat_models = {}
+        self.graph_models = {}
+
+        # store a key for each graph and strategy frame that is open
+        self.graphs_open = {}
+        self.strats_open = {}
+
     def SetupTimer(self):
         """
         Setup timer that
@@ -50,6 +68,11 @@ class MyApp(wx.App):
         self.timer.Start(const.TICK_LENGTH_MS)
 
     def OnTick(self, event):
+        """
+        Main loop: update any order information, update prices,
+        update strategies, place bets, then use the new prices to
+        update the relevant models.
+        """
 
         # update any outstanding orders.
         self.omanager.update_order_information()
@@ -65,8 +88,25 @@ class MyApp(wx.App):
         # make any new orders and save
         self.omanager.make_orders()
 
-        # update the view
-        self.frame._cpanel.pmodel.Update()
+        # update the relevant models.  We pass new_prices so that we
+        # can update only models whose prices were updated this tick.
+
+        # pricing model
+        self.pmodel.Update(self.pmanager.new_prices)
+
+        # strategy models (keyed by BDAQ selection name).  note that
+        # updating these models is distinct from updating the
+        # underlying strategies (which is done by
+        # self.stratgroup.update_if above).  The models are updated
+        # here so that the views seen by the user are kept current.
+        for k in self.strat_models:
+            self.strat_models[k].Update(self.pmanager.new_prices)
+
+        # graph models (keyed by BDAQ selection name).
+        for k in self.graph_models:
+            self.graph_models[k].Update(self.pmanager.new_prices)
+
+        print 'TICKS', self.pmanager.ticks
 
 class MyFrame(wx.Frame):
     """Main window."""

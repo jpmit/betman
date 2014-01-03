@@ -63,7 +63,13 @@ class PricingManager(object):
     def __init__(self, stratgroup):
 
         self.stratgroup = stratgroup
+
+        # current prices
         self.prices = {const.BDAQID: {}, const.BFID: {}}
+
+        # same as above but only contains mids that were updated in
+        # the last tick.
+        self.new_prices = {const.BDAQID: {}, const.BFID: {}}
 
         # counter to store how many times we have ticked
         self.ticks = 0
@@ -119,7 +125,7 @@ class PricingManager(object):
         print 'updating mids', update_mids
 
         # call BDAQ and BF API
-        prices, emids = multi.update_prices(update_mids)
+        self.new_prices, emids = multi.update_prices(update_mids)
 
         # remove any strategies from the strategy list that depend on
         # any of the BDAQ or BF markets in emids.
@@ -127,5 +133,5 @@ class PricingManager(object):
             if emids[myid]:
                 self.stratgroup.remove_marketids(myid, emids[myid])
 
-        # merge the prices dict into self.prices
-        self.prices.update(prices)
+        # merge the new prices dict into self.prices
+        self.prices.update(self.new_prices)
