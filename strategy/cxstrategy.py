@@ -14,15 +14,15 @@ from betman.api.bdaq import bdaqapi
 # commission on winnings taken from both exchanges.
 _COMMISSION = {const.BDAQID: 0.05, const.BFID: 0.05}
 
-# min bets on each exchange in GBP.  Note once we have improved
-# placing bets on BF, we can have minimum bet of 0.01 on BF!
+# min bets on each exchange in GBP.  Note we can be clever placing
+# bets on BF, we can have minimum bet of 0.01 on BF!
 _MINBETS = {const.BDAQID: 0.5, const.BFID: 2.0}
 
 class CXStrategy(strategy.Strategy):
     """
     Cross exchange strategy
     ex1sel - Selection object for exchange 1 (BetDaq)
-    ex2sel - Selection object for exchange 2 (BetDaq)
+    ex2sel - Selection object for exchange 2 (Betfair)
     """
     
     def __init__(self, ex1sel = None, ex2sel = None,
@@ -365,9 +365,6 @@ class CXStateInstantOpp(strategy.State):
         # place both bets on the to be placed list
         self.cxstrat.toplace[self.cxstrat.border.exid] = [self.cxstrat.border]
         self.cxstrat.toplace[self.cxstrat.lorder.exid] = [self.cxstrat.lorder]
-        
-        #self.cxstrat.make_back_order()
-        #self.cxstrat.make_lay_order()
 
         # change state again
         self.cxstrat.brain.set_state('bothplaced')

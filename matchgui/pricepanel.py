@@ -10,7 +10,8 @@ from betman.strategy import strategy, cxstrategy, mmstrategy
 
 # available strategies, names and 'constructors'
 STRATEGIES = [('Arb', cxstrategy.CXStrategy),
-              ('Make', mmstrategy.MMStrategy)]
+              ('Make BDAQ', mmstrategy.MMStrategy),
+              ('Make BF', mmstrategy.MMStrategy)]
 
 class PricePanel(scrolledpanel.ScrolledPanel):
     """
@@ -310,8 +311,17 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
             # initialise the strategy object with the pair of
             # selections.
+            sname = STRATEGIES[sindx][0]
+
             bdaqsel, bfsel = self.pmodel.GetSelsByBDAQName(key)
-            newstrat = STRATEGIES[sindx][1](bdaqsel, bfsel)
+
+            # slightly hackish (?)
+            if 'BDAQ' in sname:
+                newstrat = STRATEGIES[sindx][1](bdaqsel)
+            elif 'BF' in sname:
+                newstrat = STRATEGIES[sindx][1](bfsel)
+            else:
+                newstrat = STRATEGIES[sindx][1](bdaqsel, bfsel)
 
             # set the update frequency of the strategy
             setattr(newstrat, managers.UTICK, utick)
