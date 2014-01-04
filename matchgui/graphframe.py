@@ -24,7 +24,9 @@ def _normalise_color(color):
     return tuple(new_col)
 
 class CanvasPanel(wx.Panel):
-    LINEWIDTH = 3.0
+    LINEWIDTH = 3.0   # for the 4 main lines
+    VLINEWIDTH = 1.0  # for vertical lines
+    
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.figure = Figure()
@@ -50,21 +52,16 @@ class CanvasPanel(wx.Panel):
         # use the same colors as for the buttons in the GUI
         self.bdaqback_line, = self.axes.plot(xdata, ydata,
                                              color=_normalise_color(const.LYELLOW),
-                                             linewidth=CanvasPanel.LINEWIDTH)
+                                             linewidth=self.LINEWIDTH)
         self.bdaqlay_line, = self.axes.plot(xdata, ydata,
                                             color=_normalise_color(const.LGREEN),
-                                            linewidth=CanvasPanel.LINEWIDTH)
+                                            linewidth=self.LINEWIDTH)
         self.bfback_line, = self.axes.plot(xdata, ydata,
                                            color=_normalise_color(const.LBLUE),
-                                           linewidth=CanvasPanel.LINEWIDTH)
+                                           linewidth=self.LINEWIDTH)
         self.bflay_line, = self.axes.plot(xdata, ydata,
                                           color=_normalise_color(const.LPINK),
-                                          linewidth=CanvasPanel.LINEWIDTH)
-
-    def draw(self):
-        t = np.arange(0.0, 3.0, 0.01)
-        s = np.sin(2 * np.pi * t)
-        self.axes.plot(t, s)
+                                          linewidth=self.LINEWIDTH)
 
     def OnUpdatePrices(self, gmodel):
         print "I'm redrawing the panel!!!"
@@ -79,6 +76,13 @@ class CanvasPanel(wx.Panel):
         self.axes.relim()
         # auto scale the axes
         self.axes.autoscale_view()
+
+        # check if there are any arbitrage opportunities and draw
+        # vertical red line at all these points. we use the newly
+        # rescaled ylims so we know limits for the vertical line.
+        ylim = self.axes.get_ylim()
+        self.axes.plot(gmodel.arbs, ylim[0], ylim[1], color='r',
+                       linewidth=self.VLINEWIDTH)
         
         # this should help to update without needing to resize the
         # canvas?
@@ -92,4 +96,3 @@ if __name__ == "__main__":
      frame.Show(True)
      app.SetTopWindow(frame)
      app.MainLoop()
-

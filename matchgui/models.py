@@ -4,6 +4,7 @@ from betman import const
 from betman.database import DBMaster
 from betman.matchmarkets.matchconst import EVENTMAP
 import managers
+import numpy as np
 
 class AbstractModel(object):
     """
@@ -282,6 +283,7 @@ class GraphPriceModel(AbstractModel):
     """Holds information for a single graph."""
     
     NPOINTS = 100
+    COMMISSION = cxstrategy._COMMISSION
     
     def __init__(self, bdaqsel, bfsel):
         super(GraphPriceModel, self).__init__()
@@ -300,6 +302,28 @@ class GraphPriceModel(AbstractModel):
         self.bfback = [None]*self.NPOINTS
         self.bflay = [None]*self.NPOINTS
 
+        # store indexes (time points) of any (instant) arbitrage
+        # opportunities.
+        self.arbs = np.array([], dtype='int')
+
+    def IsInstantArb(self, bdaqsel, bfsel):
+        "TODO - this code replicates the code in cxstrategy.py"
+
+        for (s1, s2) in [(bdaqsel, bfsel), (bfsel, bdaqsel)]:
+            olay = s1.best_lay()
+
+            if olay == 1.0:
+                # no lay price is currently offered
+                return False
+
+            # back selection at best current price
+            oback = s2.best_back()
+
+            if (oback > olay / ((1.0 - self.COMMISSION[const.BDAQID])*\
+                                (1.0 - self.COMMISSION[const.BFID]))):
+                return True
+        return False
+
     def Update(self, prices):
 
         # check that we got new prices for this selection this tick.
@@ -307,16 +331,25 @@ class GraphPriceModel(AbstractModel):
             bdaqsel = prices[const.BDAQID][self.bdaqmid][self.bdaqsid]
             bfsel = prices[const.BFID][self.bfmid][self.bfsid]
 
-            self.bdaqback.append(bdaqsel.padback[0][0])
-            self.bdaqlay.append(bdaqsel.padlay[0][0])
-            self.bfback.append(bfsel.padback[0][0])
-            self.bflay.append(bfsel.padlay[0][0])
-
             # get rid of the oldest data
             self.bdaqback.pop(0)
             self.bdaqlay.pop(0)
             self.bfback.pop(0)
             self.bflay.pop(0)
+
+            # replace with new data
+            self.bdaqback.append(bdaqsel.padback[0][0])
+            self.bdaqlay.append(bdaqsel.padlay[0][0])
+            self.bfback.append(bfsel.padback[0][0])
+            self.bflay.append(bfsel.padlay[0][0])
+
+            # shift any existing arb opportunities to the previous
+            # time point.
+            self.arbs -= 1
+            # check if latest data gives arb opportunity (for plotting
+            # line).
+            if self.IsInstantArb(bdaqsel, bfsel):
+                self.arbs = np.append(self.arbs, self.NPOINTS - 1)
 
             # update the views
             self.UpdateViews()
