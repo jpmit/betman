@@ -81,8 +81,9 @@ class CanvasPanel(wx.Panel):
         # vertical red line at all these points. we use the newly
         # rescaled ylims so we know limits for the vertical line.
         ylim = self.axes.get_ylim()
-        self.axes.plot(gmodel.arbs, ylim[0], ylim[1], color='r',
-                       linewidth=self.VLINEWIDTH)
+        if gmodel.arbs:
+            self.axes.vlines(gmodel.arbs, ylim[0], ylim[1], color='r',
+                             linewidth=self.VLINEWIDTH)
         
         # this should help to update without needing to resize the
         # canvas?

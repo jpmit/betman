@@ -99,6 +99,7 @@ class PriceModel(AbstractModel):
         Check if we need to update any views this tick, and update if
         we need to.
         """
+        
         if self.index != None:
             # check that we got new prices for this selection this tick.
             if self.bdaqmid in prices[const.BDAQID]:
@@ -224,8 +225,7 @@ class MatchMarketsModel(AbstractModel):
 
         if refresh:
             # code to set match cache; note this will automatically
-            # save the details to the DB, providing WRITEDB = True in
-            # code/betman/all/const.py.
+            # save the details to the DB.
             self._match_cache[ename] = matchguifunctions.\
                                        match_markets(ename)
 
@@ -343,11 +343,16 @@ class GraphPriceModel(AbstractModel):
             self.bfback.append(bfsel.padback[0][0])
             self.bflay.append(bfsel.padlay[0][0])
 
-            # shift any existing arb opportunities to the previous
-            # time point.
-            self.arbs -= 1
-            # check if latest data gives arb opportunity (for plotting
-            # line).
+            if self.arbs:
+                # shift any existing arb opportunities to the previous
+                # time point and remove at timepoints < 0
+                self.arbs -= 1
+                i = 0
+                while self.arbs[i] < 0:
+                    i += 1
+                self.arbs = self.arbs[i:]
+                
+            # check if latest data gives arb opportunity
             if self.IsInstantArb(bdaqsel, bfsel):
                 self.arbs = np.append(self.arbs, self.NPOINTS - 1)
 

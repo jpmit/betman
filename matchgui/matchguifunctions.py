@@ -2,7 +2,10 @@
 # James Mithen
 # jamesmithen@gmail.com
 
-"""A lot of ugly stuff that goes on behind the scenes..."""
+"""
+A lot of ugly stuff that goes on behind the scenes...
+TODO: sort this out a bit.
+"""
 
 import datetime
 from operator import itemgetter
@@ -29,7 +32,7 @@ BDAQ_EVENTS = []
 BF_EVENTS = []
 
 def _sort_match(item):
-    """Sort matching markets by BDAQ start time"""
+    """Key for sorting matching markets by BDAQ start time"""
     
     return item[0].starttime
 
@@ -147,9 +150,12 @@ def match_markets(bdaqename):
             matchmarks[i][0].totalmatched = sels[0].\
                                             properties['totalmatched']
 
-    # update the database since now have totalmatched for the bdaq markets
-    bdmarks = [itemgetter(0)(i) for i in matchmarks]
+    # write to the DB:
     dbman = database.DBMaster()
+    # (i) write details of the matching markets
+    dbman.WriteMarketMatches(matchmarks)
+    # (ii) update the bdaqmarkets, since now have totalmatched
+    bdmarks = [itemgetter(0)(i) for i in matchmarks]
     dbman.WriteMarkets(bdmarks, datetime.datetime.now())
         
     # sort matching markets by starttime; NB could sort them by the
