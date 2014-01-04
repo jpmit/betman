@@ -4,10 +4,11 @@ import matchguifunctions
 import const
 import graphframe
 import monitorframe
+import managers
 import models
 from betman.strategy import strategy, cxstrategy, mmstrategy
 
-# available strategies
+# available strategies, names and 'constructors'
 STRATEGIES = [('Arb', cxstrategy.CXStrategy),
               ('Make', mmstrategy.MMStrategy)]
 
@@ -31,6 +32,10 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # prices.  The keys of the dictionary are the BDAQ selection
         # names.
         self.btndict = {}
+
+        # dictionary to keep track of buttons associated with each
+        # strategy.
+        self.stratbtndict = {}
 
         # reference to main application, which stores model information.
         self.app = wx.GetApp()
@@ -231,6 +236,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             gobtn = wx.ToggleButton(self, label = 'Go!')
             monbtn = wx.Button(self, label = 'Monitor')
 
+            # add the strategy buttons as a tuple to the stratbtndict
+            self.stratbtndict[dictkey] = (stratsel, freqspin, gobtn, monbtn)
+
             # bind strategy buttons to events
             freqspin.Bind(wx.EVT_SPINCTRL,
                           lambda evt, name=dictkey: self.OnUpdateStrategyFrequency(evt, name))
@@ -238,7 +246,8 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                        lambda evt, name=dictkey: self.OnStrategyStopStartButton(evt, name))
             monbtn.Bind(wx.EVT_BUTTON,
                         lambda evt, name=dictkey: self.OnMonitorButton(evt, name))
-            
+
+            # format layout of strategy stuff
             strat_sizer.Add(wx.StaticText(self, label = 'strategy'), 0, wx.CENTER)
             strat_sizer.Add(stratsel, 0, wx.CENTER)
             strat_sizer.Add(freqspin, 0, wx.CENTER)
@@ -262,6 +271,55 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         for child in self.GetChildren():
             child.Destroy()
 
+    def OnUpdateStrategyFrequency(self, event, key):
+        # only need to handle case where strategy is running
+        if self.app.strat_models[key].HasStrategy():
+            # update the frequency of the currently running strategy
+            setattr(self.app.strat_models[key].strategy,
+                    managers.UTICK, event.GetEventObject.GetValue())
+
+    def OnStrategyStopStartButton(self, event, key):
+        """
+        Add/remove strategy to/from main app strategy group at the
+        desired frequency.
+        """
+
+        ispressed = event.GetEventObject().GetValue()
+
+        if ispressed:
+            # get the strategy selected in the corresponding
+            # ComboBox. GetCurrentSelection returns the index.
+            sindx = self.stratbtndict[key][0].\
+                    GetCurrentSelection()
+
+            # get the update tick frequency from the corresponding
+            # SpinCtrl.
+            utick = self.stratbtndict[key][1].\
+                    GetValue()
+            
+            print 'starting strategy', STRATEGIES[sindx][0], 'for', key
+            print 'update frequency', utick
+
+            # initialise the strategy object with the pair of
+            # selections.
+            bdaqsel, bfsel = self.pmodel.GetSelsByBDAQName(key)
+            newstrat = STRATEGIES[sindx][1](bdaqsel, bfsel)
+
+            # set the update frequency of the strategy
+            setattr(newstrat, managers.UTICK, utick)
+            
+            # add the strategy object to the main app strategy group.
+            self.app.stratgroup.add(newstrat)
+            # and to the model
+            self.app.strat_models[key].InitStrategy(newstrat)
+
+        else:
+            # remove the strategy object from the main app strategy group.
+            self.app.stratgroup.remove(self.app.strat_models[key].strategy)
+
+            # and from the model
+            self.app.strat_models[key].RemoveStrategy()
+
     def OnMonitorButton(self, event, key):
         """
         Open a new monitor frame if we don't already have one open
@@ -277,7 +335,8 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             frame.Bind(wx.EVT_CLOSE, self.OnCloseMonitor)
             frame.Show()
 
-            # TODO: add listener
+            # add listener
+            self.app.strat_models[key].AddListener(frame.panel.OnUpdateStrat)
 
     def OnGraphButton(self, event, key):
         """
@@ -317,8 +376,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         obj = event.GetEventObject()
         # get key from the MonitorFrame
         key = obj.key
-        print obj. key
-        # TODO: remove listener
+        print obj, key
+        # remove listener        
+        self.app.strat_models[key].RemoveListener(obj.panel.OnUpdateStrat)        
         
         # delete key from graphs_open dict
         print "killed monitor window with key", key

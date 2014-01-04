@@ -99,6 +99,9 @@ class MyApp(wx.App):
         # underlying strategies (which is done by
         # self.stratgroup.update_if above).  The models are updated
         # here so that the views seen by the user are kept current.
+        # Note also that the models are themselves responsible for
+        # checking whether new information for them is contained in
+        # new_prices.
         for k in self.strat_models:
             self.strat_models[k].Update(self.pmanager.new_prices)
 

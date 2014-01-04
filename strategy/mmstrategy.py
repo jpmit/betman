@@ -10,4 +10,4 @@ class MMStrategy(strategy.Strategy):
     """Market making strategy"""
     
     def __init__(self, ex1sel = None, ex2sel = None):
-        super(CXStrategy, self).__init__()
+        super(MMStrategy, self).__init__()

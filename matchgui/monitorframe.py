@@ -20,7 +20,14 @@ class MonitorPanel(wx.Panel):
         self.Fit()
 
         # write some initial message
-        self.txtctrl.AppendText('Hello!\nSee updates from the strategy below')
-        
+        self.txtctrl.AppendText('Hello!\nSee updates from the strategy below:')
+
+    def OnUpdateStrat(self, smodel):
+        msg = '\n'.join(smodel.messages)
+        self.txtctrl.ChangeValue(msg)
+
+    
+
+    
                                    
 

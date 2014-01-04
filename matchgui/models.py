@@ -3,7 +3,7 @@ from betman.strategy import strategy, cxstrategy, mmstrategy
 from betman import const
 from betman.database import DBMaster
 from betman.matchmarkets.matchconst import EVENTMAP
-from managers import UPDATED
+import managers
 
 class AbstractModel(object):
     """
@@ -77,6 +77,16 @@ class PriceModel(AbstractModel):
         # indexdict means that the price of a particular bdaq
         # selection name can be easily found.
         self.indexdict = {s.name : i for (i, s) in enumerate(self.bdaqsels)}
+
+    def GetSelsByBDAQName(self, bdaqname):
+        """
+        Return the particular BDAQ and BF selection objects with a
+        certain BDAQ name.
+        """
+
+        indx = self.indexdict[bdaqname]
+
+        return self.bdaqsels[indx], self.bfsels[indx]
 
     def GetSels(self):
         """Return lists bdaqsels, bfsels."""
@@ -230,10 +240,43 @@ class StrategyModel(AbstractModel):
     def __init__(self, bdaqsel, bfsel):
         super(StrategyModel, self).__init__() 
 
+        # may not need this (?)
         self.bdaqselname = bdaqsel.name
 
+        self.strategy = None
+
+        # messages from the strategy
+        self.messages = []
+
+    def InitStrategy(self, strategy):
+        """
+        Add an actual strategy to the model.
+
+        Currently this can be either a cross exchange (arb) strategy,
+        or a market making strategy.
+        """
+
+        self.strategy = strategy
+
+    def RemoveStrategy(self):
+        """Remove existing strategy from the model."""
+
+        self.strategy = None
+
+    def HasStrategy(self):
+        if self.strategy == None:
+            return False
+        return True
+
     def Update(self, prices):
-        pass
+        # check that there is an underlying strategy, and that it was
+        # updated in the last tick
+        if self.strategy is not None:
+            if getattr(self.strategy, managers.UPDATED):
+                # TODO: get a proper message from the strategy...
+                self.messages.append('I updated the strategy!')
+
+                self.UpdateViews()
 
 class GraphPriceModel(AbstractModel):
     """Holds information for a single graph."""
