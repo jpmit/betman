@@ -284,13 +284,21 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         desired frequency.
         """
 
-        ispressed = event.GetEventObject().GetValue()
+        obj = event.GetEventObject()
+        ispressed = obj.GetValue()
 
         if ispressed:
             # get the strategy selected in the corresponding
             # ComboBox. GetCurrentSelection returns the index.
             sindx = self.stratbtndict[key][0].\
                     GetCurrentSelection()
+            print 'selected index', sindx, 'on combobox'
+
+            if sindx == -1:
+                # don't allow selection of the default (empty)
+                # strategy type.
+                obj.SetValue(False)
+                return
 
             # get the update tick frequency from the corresponding
             # SpinCtrl.
