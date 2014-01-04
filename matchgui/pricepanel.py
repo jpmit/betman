@@ -3,6 +3,7 @@ import wx.lib.scrolledpanel as scrolledpanel
 import matchguifunctions
 import const
 import graphframe
+import monitorframe
 import models
 from betman.strategy import strategy, cxstrategy, mmstrategy
 
@@ -228,7 +229,16 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                                    style = wx.CB_READONLY)
             freqspin = wx.SpinCtrl(self, -1, min = 1, max = 100)            
             gobtn = wx.ToggleButton(self, label = 'Go!')
-            monbtn = wx.Button(self, label = 'Monitor')            
+            monbtn = wx.Button(self, label = 'Monitor')
+
+            # bind strategy buttons to events
+            freqspin.Bind(wx.EVT_SPINCTRL,
+                          lambda evt, name=dictkey: self.OnUpdateStrategyFrequency(evt, name))
+            gobtn.Bind(wx.EVT_TOGGLEBUTTON,
+                       lambda evt, name=dictkey: self.OnStrategyStopStartButton(evt, name))
+            monbtn.Bind(wx.EVT_BUTTON,
+                        lambda evt, name=dictkey: self.OnMonitorButton(evt, name))
+            
             strat_sizer.Add(wx.StaticText(self, label = 'strategy'), 0, wx.CENTER)
             strat_sizer.Add(stratsel, 0, wx.CENTER)
             strat_sizer.Add(freqspin, 0, wx.CENTER)
@@ -252,14 +262,37 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         for child in self.GetChildren():
             child.Destroy()
 
+    def OnMonitorButton(self, event, key):
+        """
+        Open a new monitor frame if we don't already have one open
+        for the selection.
+        """
+        
+        if key not in self.app.strats_open:
+            # the value is not important here, only that the key is in
+            # the dictionary.
+            self.app.strats_open[key] = True
+            
+            frame = monitorframe.MonitorFrame(key)
+            frame.Bind(wx.EVT_CLOSE, self.OnCloseMonitor)
+            frame.Show()
+
+            # TODO: add listener
+
     def OnGraphButton(self, event, key):
-        # we only open a new graph frame if we don't already have one
-        # open for the selection.
+        """
+        Open a new graph frame if we don't already have one open
+        for the selection.
+        """
+        
         if key not in self.app.graphs_open:
+            # the value is not important here, only that the key is in
+            # the dictionary.
+            self.app.graphs_open[key] = True
+
             frame = graphframe.GraphFrame(key)
             frame.Bind(wx.EVT_CLOSE, self.OnCloseGraph)
             frame.Show()
-            self.app.graphs_open[key] = True
 
             # add listener so that when the appropriate graph model
             # updates its data, the graph can be redrawn.
@@ -267,9 +300,10 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
     def OnCloseGraph(self, event):
         obj = event.GetEventObject()
-        # remove listener
+        # get key from the GraphFrame
         key = obj.key
         print obj, key
+        # remove listener        
         self.app.graph_models[key].RemoveListener(obj.panel.OnUpdatePrices)
 
         # delete key from graphs_open dict
@@ -278,7 +312,20 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
         # allow the window to actually be closed
         event.Skip()
-        pass
+
+    def OnCloseMonitor(self, event):
+        obj = event.GetEventObject()
+        # get key from the MonitorFrame
+        key = obj.key
+        print obj. key
+        # TODO: remove listener
+        
+        # delete key from graphs_open dict
+        print "killed monitor window with key", key
+        del self.app.strats_open[key]
+
+        # allow the window to actually be closed
+        event.Skip()
 
     def UpdateBtnsForSelection(self, bdaqsel, bdaqbprices,
                                bdaqlprices, bfbprices,
