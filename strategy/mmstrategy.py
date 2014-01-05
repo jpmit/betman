@@ -14,6 +14,9 @@ _COMMISSION = {const.BDAQID: 0.05, const.BFID: 0.05}
 # bets on BF, we can have minimum bet of 0.01 on BF!
 _MINBETS = {const.BDAQID: 0.5, const.BFID: 2.0}
 
+# small number used for fp arithmetic
+_EPS = 0.000001
+
 class MMStrategy(strategy.Strategy):
     """Market making strategy for a single selection."""
     
@@ -45,13 +48,12 @@ class MMStrategy(strategy.Strategy):
         self.brain.set_state(noopp_state.name)
 
     def __str__(self):
-        return '{0} ({1})'.format(sel.name, sel.exid)
+        return '{0} ({1})'.format(self.sel.name, self.sel.exid)
 
     def get_marketids(self):
         return {self.sel.exid: [self.sel.mid]}
 
     def update(self, prices):
-
       
         # important: clear the list of orders to be placed so that we
         # don't place them again.
@@ -71,7 +73,7 @@ class MMStrategy(strategy.Strategy):
         # At the moment, we will say we can make a market if we can
         # make both best back and best lay and be the only person
         # there.
-        if self.sel.make_best_lay() != self.sel.make_best_back():
+        if self.sel.make_best_lay() > self.sel.make_best_back() + _EPS:
             return True
         return False
 

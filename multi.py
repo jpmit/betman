@@ -52,7 +52,7 @@ def make_orders(odict):
     """
 
     q = Queue()
-    orders = {} # the orders
+    orders = {const.BDAQID: {}, const.BFID: {}} # the orders
 
     def _worker():
         """
@@ -69,7 +69,7 @@ def make_orders(odict):
                 ords = {}
             # need to update since we may have more than one thread
             # for the BF bets.
-            orders.update(ords)
+            orders[myid].update(ords)
             q.task_done()
 
     # we start one thread for the BDAQ orders, and one thread for each

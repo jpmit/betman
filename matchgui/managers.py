@@ -9,7 +9,10 @@ orders, and keeps track of the status of orders so that the strategies
 can pull the order status from the manager.
 """
 
-from betman import const, multi, database, betlog
+import datetime
+from betman import const, multi, database, order, betlog
+from betman.api.bf import bfapi
+from betman.api.bdaq import bdaqapi
 from operator import attrgetter
 
 # The following classes can be in an application as follows:
@@ -43,7 +46,7 @@ UPDATED = 'updated_last_tick'
 PRACTICEMODE = False
 # to actually update order info, PRACTICEMODE must be set to False as
 # well.
-UPDATEORDERINFO = False 
+UPDATEORDERINFO = True
 
 class OrderManager(object):
     def __init__(self, stratgroup):
@@ -57,6 +60,20 @@ class OrderManager(object):
         # all orders for both exchanges since starting the
         # application.
         self.orders = {const.BDAQID: {}, const.BFID: {}}
+
+        # call startup routine to bootstap BDAQ order information, and
+        # login to betfair.
+        self.bootstrap()
+
+    def bootstrap(self):
+        # bootstrap BDAQ order information (we don't need to do this
+        # for BF).  We don't need to save these orders (?).
+        ords = bdaqapi.ListBootstrapOrders()
+        while ords:
+            ords = bdaqapi.ListBootstrapOrders()
+
+        # need to login to BF api (we don't need to do this for BF).
+        bfapi.Login()
 
     def get_new_orders(self):
         """Get new order dictionary from the strategy group."""
@@ -85,8 +102,8 @@ class OrderManager(object):
 
             # update the dictionary of orders that we have placed
             # since starting the application.
-            self.orders[const.BDAQID].update(saveorders.get(const.BDAQID), {})
-            self.orders[const.BFID].update(saveorders.get(const.BFID), {})
+            self.orders[const.BDAQID].update(saveorders.get(const.BDAQID, {}))
+            self.orders[const.BFID].update(saveorders.get(const.BFID, {}))
 
             # save the full order information to the DB
             self.save_orders(saveorders)
@@ -125,7 +142,7 @@ class OrderManager(object):
         ords = [o.values() for o in sorders.values()]
         allords = [item for subl in ords for item in subl]
 
-        # time we are writing is going to be a bit off
+        # time we are writing is going to be a bit off time logged by BDAQ
         self.dbman.WriteOrders(allords, datetime.datetime.now())
 
     def update_order_information(self):
@@ -149,6 +166,16 @@ class OrderManager(object):
                 bfors = bfapi.GetBetStatus(bfunmatched)
                 # update order dictionary
                 self.orders[const.BFID].update(bfors)
+
+    def unmatched_orders(self, exid):
+        """Return list of unmatched orders for exchange exid."""
+        
+        unmatched = []
+        for o in self.orders[exid].values():
+            if o.status == order.UNMATCHED:
+                unmatched.append(o)
+        return unmatched
+
 
 class PricingManager(object):
     def __init__(self, stratgroup):
@@ -215,6 +242,12 @@ class PricingManager(object):
             else:
                 setattr(strat, UPDATED, False)
 
+        # remove duplicate mids
+        if const.BDAQID in update_mids:
+            update_mids[const.BDAQID] = list(set(update_mids[const.BDAQID]))
+        if const.BFID in update_mids:
+            update_mids[const.BFID] = list(set(update_mids[const.BFID]))
+            
         print 'updating mids', update_mids
 
         # call BDAQ and BF API

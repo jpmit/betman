@@ -81,7 +81,7 @@ class CanvasPanel(wx.Panel):
         # vertical red line at all these points. we use the newly
         # rescaled ylims so we know limits for the vertical line.
         ylim = self.axes.get_ylim()
-        if gmodel.arbs:
+        if len(gmodel.arbs) > 0:
             self.axes.vlines(gmodel.arbs, ylim[0], ylim[1], color='r',
                              linewidth=self.VLINEWIDTH)
         

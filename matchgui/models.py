@@ -345,12 +345,13 @@ class GraphPriceModel(AbstractModel):
             self.bfback.append(bfsel.padback[0][0])
             self.bflay.append(bfsel.padlay[0][0])
 
-            if self.arbs:
+            narbs = len(self.arbs)
+            if narbs:
                 # shift any existing arb opportunities to the previous
                 # time point and remove at timepoints < 0
                 self.arbs -= 1
                 i = 0
-                while self.arbs[i] < 0:
+                while (i < narbs and self.arbs[i] < 0):
                     i += 1
                 self.arbs = self.arbs[i:]
                 
