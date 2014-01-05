@@ -4,7 +4,7 @@
 
 """Functions for parsing the response that comes from the BF api."""
 
-from betman import const, Market, Event, order
+from betman import const, Market, Event, order, betlog
 from betman.all.betexception import ApiError
 import datetime
 
