@@ -171,6 +171,9 @@ class StateMachine(object):
         self.states = {}
         self.active_state = None
 
+        # store ordered list of visited states
+        self.visited_states = []
+
     def add_state(self, state):
         self.states[state.name] = state
 
@@ -192,7 +195,9 @@ class StateMachine(object):
 
         cname = (self.active_state.name if
                  self.active_state is not None else 'None')
-        #betlog.betlog.debug("changing state from '{0}' to '{1}'".\
-        #                    format(cname, new_state_name))
+
+        # store new state in visited_states list
+        self.visited_states.append(new_state_name)
+
         self.active_state = self.states[new_state_name]
         self.active_state.entry_actions()

@@ -102,7 +102,8 @@ class PriceModel(AbstractModel):
         
         if self.index != None:
             # check that we got new prices for this selection this tick.
-            if self.bdaqmid in prices[const.BDAQID]:
+            if (self.bdaqmid in prices[const.BDAQID] and
+                self.bfmid in prices[const.BFID]):
                 self.bdaqsels = [prices[const.BDAQID][self.bdaqmid][i]
                                  for i in [s.id for s in self.bdaqsels]]
                 self.bfsels = [prices[const.BFID][self.bfmid][i]
@@ -274,8 +275,8 @@ class StrategyModel(AbstractModel):
         # updated in the last tick
         if self.strategy is not None:
             if getattr(self.strategy, managers.UPDATED):
-                # TODO: get a proper message from the strategy...
-                self.messages.append('I updated the strategy!')
+                # set list of messages to list of visited_states
+                self.messages = self.strategy.brain.visited_states
 
                 self.UpdateViews()
 
@@ -327,7 +328,8 @@ class GraphPriceModel(AbstractModel):
     def Update(self, prices):
 
         # check that we got new prices for this selection this tick.
-        if self.bdaqmid in prices[const.BDAQID]:
+        if (self.bdaqmid in prices[const.BDAQID] and
+            self.bfmid in prices[const.BFID]):
             bdaqsel = prices[const.BDAQID][self.bdaqmid][self.bdaqsid]
             bfsel = prices[const.BFID][self.bfmid][self.bfsid]
 

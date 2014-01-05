@@ -24,6 +24,10 @@ class UpdateStrategy(strategy.Strategy):
         # with the pricing model in the GUI.
         self.prices = {const.BDAQID: {}, const.BFID: {}}
 
+        # we never place any orders with this strategy, but we still
+        # need to define toplace dict.
+        self.toplace = {}
+
     def get_marketids(self):
         return {const.BDAQID: self.bdaqmids, const.BFID: self.bfmids}
 

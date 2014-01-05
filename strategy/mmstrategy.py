@@ -4,6 +4,7 @@
 
 """Market making strategy."""
 
+from betman import const, order
 from betman.strategy import strategy
 
 # commission on winnings taken from both exchanges.
@@ -27,6 +28,7 @@ class MMStrategy(strategy.Strategy):
 
         # add states
         noopp_state = MMStateNoOpp(self)
+        opp_state = MMStateOpp(self)        
         both_placed_state = MMStateBothPlaced(self)
         back_matched_state = MMStateBackMatched(self)
         lay_matched_state = MMStateLayMatched(self)
@@ -37,6 +39,7 @@ class MMStrategy(strategy.Strategy):
         self.brain.add_state(both_placed_state)
         self.brain.add_state(back_matched_state)        
         self.brain.add_state(lay_matched_state)
+        self.brain.add_state(both_matched_state)        
 
         # initialise into noopp state
         self.brain.set_state(noopp_state.name)
@@ -57,6 +60,8 @@ class MMStrategy(strategy.Strategy):
         # update selection price
         self.sel = prices[self.sel.exid][self.sel.mid][self.sel.id]
 
+        # TODO: update status of any orders...
+
         # AI
         self.brain.update()
 
@@ -66,7 +71,31 @@ class MMStrategy(strategy.Strategy):
         # At the moment, we will say we can make a market if we can
         # make both best back and best lay and be the only person
         # there.
+        if self.sel.make_best_lay() != self.sel.make_best_back():
+            return True
         return False
+
+    def create_orders(self):
+        """Create both back and lay orders."""
+
+        # 1 pound at the moment
+        bstake, lstake = 1.0, 1.0
+
+        oback = self.sel.make_best_lay()
+        olay = self.sel.make_best_back()
+
+        sel = self.sel
+        
+        self.border = order.Order(sel.exid, sel.id, bstake,
+                                  oback, 1, **{'mid': sel.mid,
+                                               'src': sel.src,
+                                               'wsn': sel.wsn,
+                                               'sname': sel.name})
+        self.lorder = order.Order(sel.exid, sel.id, lstake,
+                                  olay, 2, **{'mid': sel.mid,
+                                              'src': sel.src,
+                                              'wsn': sel.wsn,
+                                              'sname': sel.name})
 
 class MMStateNoOpp(strategy.State):
     """No betting opportunity."""
@@ -93,7 +122,7 @@ class MMStateOpp(strategy.State):
     """An opportunity to make the market."""
 
     def __init__(self, mmstrat):
-        super(MMStateNoOpp, self).__init__('opp')
+        super(MMStateOpp, self).__init__('opp')
         self.mmstrat = mmstrat
 
     def entry_actions(self):
@@ -136,6 +165,3 @@ class MMStateBothMatched(strategy.State):
     def __init__(self, mmstrat):
         super(MMStateBothMatched, self).__init__('bothmatched')
         self.mmstrat = mmstrat
-
-        
-

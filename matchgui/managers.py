@@ -9,7 +9,7 @@ orders, and keeps track of the status of orders so that the strategies
 can pull the order status from the manager.
 """
 
-from betman import const, multi
+from betman import const, multi, database, betlog
 from operator import attrgetter
 
 # The following classes can be in an application as follows:
@@ -39,25 +39,116 @@ from operator import attrgetter
 UTICK = 'update_tick'
 UPDATED = 'updated_last_tick'
 
+# constants used for OrderManager only.
+PRACTICEMODE = False
+# to actually update order info, PRACTICEMODE must be set to False as
+# well.
+UPDATEORDERINFO = False 
+
 class OrderManager(object):
     def __init__(self, stratgroup):
+
+        # interface to database
+        self.dbman = database.DBMaster()
+
+        # group of all existing strategies
         self.stratgroup = stratgroup
-        self.orders_to_place = {const.BDAQID: [], const.BFID: []}
+
+        # all orders for both exchanges since starting the
+        # application.
+        self.orders = {const.BDAQID: {}, const.BFID: {}}
 
     def get_new_orders(self):
-        """Get new orders from the strategy group."""
+        """Get new order dictionary from the strategy group."""
 
         # note we get orders from all the strategies, not just those
         # with UPDATED = True.  But those with UPDATED = False will
         # return a blank order dictionary.
 
-        self.orders_to_place = self.stratgroup.get_orders_to_place()
+        return self.stratgroup.get_orders_to_place()
 
     def make_orders(self):
-        pass
+        """Make any outstanding orders, and update DB."""
+
+        odict = self.get_new_orders()
+
+        if (odict[const.BDAQID]) or (odict[const.BFID]):
+            betlog.betlog.debug('making orders: {0}'.format(odict))
+
+            if PRACTICEMODE:
+                # we don't make any real money bets in practice mode
+                return
+
+            # call multithreaded make orders so that we make order
+            # requests for BDAQ and BF simultaneously.
+            saveorders = multi.make_orders(odict)
+
+            # update the dictionary of orders that we have placed
+            # since starting the application.
+            self.orders[const.BDAQID].update(saveorders.get(const.BDAQID), {})
+            self.orders[const.BFID].update(saveorders.get(const.BFID), {})
+
+            # save the full order information to the DB
+            self.save_orders(saveorders)
+
+            # save the information on matching orders to the DB.  Note
+            # we are assuming here that if the number of orders on
+            # each exchange are the same, then orders are made of
+            # matching orders.
+            if (len(odict.get(const.BDAQID, [])) == len(odict.get(const.BFID, []))):
+                self.save_match_orders(odict, saveorders)
+
+    def save_match_orders(self, odict, saveorders):
+        """Save matching order ids to database table matchorders."""
+
+        # since we got odict from each strategy in turn, they
+        # are already in matching order; we just need to add
+        # the order refs that were returned by the BDAQ and BF
+        # API.
+        matchorders = zip(odict[const.BDAQID], odict[const.BFID])
+        for (o1, o2) in matchorders:
+            # we need to get the order id for o1 and o2 from
+            # saveorders dictionary
+            for o in saveorders[const.BDAQID].values():
+                if o1.sid == o.sid and o1.mid == o.mid:
+                    o1.oref = o.oref
+
+            for o in saveorders[const.BFID].values():
+                if o2.sid == o.sid and o2.mid == o.mid:
+                    o2.oref = o.oref
+
+        # write to DB
+        self.dbman.WriteOrderMatches(matchorders,
+                                     datetime.datetime.now())
+
+    def save_orders(self, sorders):
+        ords = [o.values() for o in sorders.values()]
+        allords = [item for subl in ords for item in subl]
+
+        # time we are writing is going to be a bit off
+        self.dbman.WriteOrders(allords, datetime.datetime.now())
 
     def update_order_information(self):
-        pass
+        if (not PRACTICEMODE) and (UPDATEORDERINFO):
+            # get list of unmatched orders on BDAQ
+            bdaqunmatched = self.unmatched_orders(const.BDAQID)
+
+            # only want to call BDAQ API if we have unmatched bets
+            if bdaqunmatched:
+                # this should automatically keep track of a 'sequence
+                # number', so that we are updating information about all
+                # orders.
+                bdaqors = bdaqapi.ListOrdersChangedSince()
+                self.orders[const.BDAQID].update(bdaqors)
+            
+            # get list of unmatched orders on BF
+            bfunmatched = self.unmatched_orders(const.BFID)
+
+            if bfunmatched:
+                # we pass this function the list of order objects;
+                bfors = bfapi.GetBetStatus(bfunmatched)
+                # update order dictionary
+                self.orders[const.BFID].update(bfors)
 
 class PricingManager(object):
     def __init__(self, stratgroup):
@@ -113,8 +204,10 @@ class PricingManager(object):
                 # mids to update.
                 print 'found a strat... getting mids'
                 mids = strat.get_marketids()
-                update_mids[const.BDAQID] += mids[const.BDAQID]
-                update_mids[const.BFID] += mids[const.BFID]
+
+                # note we may only have BDAQ mids or BF mids
+                update_mids[const.BDAQID] += mids.get(const.BDAQID, [])
+                update_mids[const.BFID] += mids.get(const.BFID, [])
 
                 # set flag on strategy to indicate that we were
                 # updated on the last tick.
@@ -130,7 +223,7 @@ class PricingManager(object):
         # remove any strategies from the strategy list that depend on
         # any of the BDAQ or BF markets in emids.
         for myid in [const.BDAQID, const.BFID]:
-            if emids[myid]:
+            if emids.get(myid):
                 self.stratgroup.remove_marketids(myid, emids[myid])
 
         # merge the new prices dict into self.prices
