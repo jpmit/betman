@@ -1,6 +1,5 @@
 import wx
 import wx.lib.scrolledpanel as scrolledpanel
-import matchguifunctions
 import const
 import graphframe
 import monitorframe
@@ -64,7 +63,6 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         self.bdaqmid, self.bfmid = self.mmodel.GetMids(self.event, self.index)
 
         # configure pricing model
-        self.pmodel.SetEventIndex(self.event, self.index)
         self.pmodel.SetMids(self.bdaqmid, self.bfmid)
         
         # get selection information from BDAQ and BF

@@ -18,14 +18,6 @@ from betman import database, const
 class GuiError(Exception):
     pass
 
-# cache a list of matching markets for each event
-MATCH_CACHE = {}
-
-# matching selections keys are bdaq mid, values are [(bdaq_sid1,
-# bf_sid1), ...] where bdaq_sid1 and bf_sid1 are matching selection
-# ids.  Note the order is the same as displayed on the BDAQ website.
-MATCHING_SELECTIONS_CACHE = {}
-
 # cache the event list
 BDAQ_EVENTS = []
 BF_EVENTS = []
@@ -37,17 +29,6 @@ def _sort_match(item):
     """Key for sorting matching markets by BDAQ start time"""
     
     return item[0].starttime
-
-def market_name(bdaqename, index):
-    """Return market name (of BDAQ rather than BF market."""
-
-    global MATCH_CACHE
-    return MATCH_CACHE[bdaqename][index][0].name
-
-def set_match_cache(cache):
-    global MATCH_CACHE
-
-    MATCH_CACHE = cache
 
 def display_order(bdaqmid):
     """
@@ -64,13 +45,8 @@ def display_order(bdaqmid):
 def market_prices(bdaqmid, bfmid):
     """
     Return bdaqsels, bfsels, lists of selection objects for BDAQ and
-    BF respectively.
+    BF respectively, ordered by bdaq display ordering.
     """
-    
-    global MATCH_CACHE, MATCHING_SELECTIONS_CACHE
-
-    # get bdaq and bf market
-    #bdaqmark, bfmark = MATCH_CACHE[bdaqename][index]
 
     # get prices from api: NB should check here that we actually got
     # selections.  If we didn't, bdaqsels[1] and bfsels[1] will be
@@ -87,47 +63,40 @@ def market_prices(bdaqmid, bfmid):
     _dbman.WriteSelections(bdaqsels.values() + bfsels.values(),
                            datetime.datetime.now())    
     
-    if bdaqmid not in MATCHING_SELECTIONS_CACHE:
 
-        # get lists of selections
-        bdaqsellist = bdaqsels.values()
-        bfsellist = bfsels.values()
-            
-        # get matching selections
-        msels =  marketmatcher.get_match_selections([bdaqsellist],
-                                                    [bfsellist])
+    # get lists of selections
+    bdaqsellist = bdaqsels.values()
+    bfsellist = bfsels.values()
 
-        # create dict with bdaq sid as key, bf sid as value
-        mseldict = {k.id : v.id for (k, v) in msels}
+    # get matching selections
+    msels =  marketmatcher.get_match_selections([bdaqsellist],
+                                                [bfsellist])
 
-        # get the BDAQ display order of selections
-        dorder = display_order(bdaqmid)
+    # create dict with bdaq sid as key, bf sid as value
+    mseldict = {k.id : v.id for (k, v) in msels}
 
-        # add sorting info to the cache
-        mlist = []
-        tnow = datetime.datetime.now()
-        for (i, d) in enumerate(dorder):
-            # note d will not be in mseldict if we failed to match the
-            # selection!
-            if d in mseldict:
-                mlist.append((d, mseldict[d]))
-                bdaqsels[d].dorder = i
-                # update the selection in the database so that we have
-                # the display order stored for next time we start-up.
-                _dbman.WriteSelections([bdaqsels[d]], tnow)
-        
-        # create cache entry
-        MATCHING_SELECTIONS_CACHE[bdaqmid] = mlist
+    # get the BDAQ display order of selections
+    dorder = display_order(bdaqmid)
 
-    # get selection ordering from cache
-    osids = MATCHING_SELECTIONS_CACHE[bdaqmid]    
+    # add sorting info to the cache
+    mlist = []
+    tnow = datetime.datetime.now()
+    for (i, d) in enumerate(dorder):
+        # note d will not be in mseldict if we failed to match the
+        # selection!
+        if d in mseldict:
+            mlist.append((d, mseldict[d]))
+            bdaqsels[d].dorder = i
+            # update the selection in the database so that we have
+            # the display order stored for next time we start-up.
+            _dbman.WriteSelections([bdaqsels[d]], tnow)
 
-    bdaqorder = [bdaqsels[s[0]] for s in osids]
-    bforder = [bfsels[s[1]] for s in osids]
+    bdaqorder = [bdaqsels[s[0]] for s in mlist]
+    bforder = [bfsels[s[1]] for s in mlist]
     return bdaqorder, bforder
 
 def match_markets(bdaqename):
-    global BDAQ_EVENTS, BF_EVENTS, MATCH_CACHE
+    global BDAQ_EVENTS, BF_EVENT
 
     # get corresponding BF event name
     bfename = matchconst.EVENTMAP[bdaqename]
@@ -135,9 +104,6 @@ def match_markets(bdaqename):
     if not BDAQ_EVENTS:
         # get top level events for BF and BDAQ
         BDAQ_EVENTS = bdaqapi.ListTopLevelEvents()
-        # either don't try to login here or (better) modify betfair
-        # library
-        bfapi.Login()
         BF_EVENTS = bfapi.GetActiveEventTypes()
     
     # get markets for the selected event type
@@ -179,7 +145,5 @@ def match_markets(bdaqename):
     # sort matching markets by starttime; NB could sort them by the
     # BDAQ official display order at some point if necessary.
     matchmarks.sort(key=_sort_match)
-
-    MATCH_CACHE[bdaqename] = matchmarks
 
     return matchmarks

@@ -1,5 +1,4 @@
 import wx
-import matchguifunctions
 from pricepanel import PricePanel
 import const
 import models

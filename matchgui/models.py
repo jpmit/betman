@@ -1,3 +1,4 @@
+from operator import itemgetter
 import matchguifunctions
 from betman.strategy import strategy, cxstrategy, mmstrategy
 from betman import const
@@ -57,17 +58,15 @@ class PriceModel(AbstractModel):
         # are stored in the order displayed on the main pricing panel.
         self.bdaqsels = []
         self.bfsels = []
-        self.event = None
-        self.index = None
 
         # we store a reference to a matching selections model, which
         # gives us details on which BF selection matches which BDAQ
         # selection.
         self._selmodel = MatchSelectionsModel()
 
-    def SetEventIndex(self, event, index):
-        self.event = event
-        self.index = index
+        # We set these once the user has clicked on a matching market.
+        self.bdaqmid = None
+        self.bfmid = None
 
     def SetMids(self, bdaqmid, bfmid):
         self.bdaqmid = bdaqmid
@@ -106,7 +105,7 @@ class PriceModel(AbstractModel):
         we need to.
         """
         
-        if self.index != None:
+        if self.bdaqmid != None:
             # check that we got new prices for this selection this tick.
             if (self.bdaqmid in prices[const.BDAQID] and
                 self.bfmid in prices[const.BFID]):
@@ -277,9 +276,6 @@ class MatchMarketsModel(AbstractModel):
         for ename in EVENTMAP:
             self._match_cache[ename] = self._dbman.\
                                        ReturnMarketMatches([ename])
-
-        # set global cache in matchguifunctions to match this one
-        matchguifunctions.set_match_cache(self._match_cache)
 
     def GetMarketName(self, ename, index):
         """
