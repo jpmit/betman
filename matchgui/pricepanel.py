@@ -282,7 +282,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         """Generic function for green/red start/stop button."""
         if pressed:
             but.SetBackgroundColour('red')
-            but.startbut.SetLabel('Stop')
+            but.SetLabel('Stop')
         else:
             but.SetBackgroundColour('green')
             but.SetLabel('Go!')
