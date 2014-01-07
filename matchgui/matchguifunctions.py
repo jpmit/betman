@@ -15,7 +15,6 @@ import betman.matchmarkets.marketmatcher as marketmatcher
 import betman.matchmarkets.matchconst as matchconst
 from betman import database, const
 
-
 class GuiError(Exception):
     pass
 
@@ -30,6 +29,9 @@ MATCHING_SELECTIONS_CACHE = {}
 # cache the event list
 BDAQ_EVENTS = []
 BF_EVENTS = []
+
+# interface for writing the the DB
+_dbman = database.DBMaster()
 
 def _sort_match(item):
     """Key for sorting matching markets by BDAQ start time"""
@@ -48,14 +50,18 @@ def set_match_cache(cache):
     MATCH_CACHE = cache
 
 def display_order(bdaqmid):
+    """
+    Return list of selection id's in the order given by the BDAQ API
+    (which is the display order on the website).
+    """
+    
     minfo = bdaqapi.GetMarketInformation([bdaqmid])
-    print minfo
     order = [None]*len(minfo.Markets.Selections)
     for m in minfo.Markets.Selections:
         order[m._DisplayOrder - 1] = m._Id
     return order
 
-def market_prices(bdaqename, index):
+def market_prices(bdaqmid, bfmid):
     """
     Return bdaqsels, bfsels, lists of selection objects for BDAQ and
     BF respectively.
@@ -64,17 +70,24 @@ def market_prices(bdaqename, index):
     global MATCH_CACHE, MATCHING_SELECTIONS_CACHE
 
     # get bdaq and bf market
-    bdaqmark, bfmark = MATCH_CACHE[bdaqename][index]
+    #bdaqmark, bfmark = MATCH_CACHE[bdaqename][index]
 
     # get prices from api: NB should check here that we actually got
     # selections.  If we didn't, bdaqsels[1] and bfsels[1] will be
     # non-empty (they will contain the single market id only).
     # Returned below is a dictionary of selections with keys that are
     # the sids.
-    bdaqsels = bdaqapi.GetPrices_nApi([bdaqmark.id])[0].values()[0]
-    bfsels = bfapi.GetPrices_nApi([bfmark.id])[0].values()[0]
+    bdaqsels = bdaqapi.GetPrices_nApi([bdaqmid])[0].values()[0]
+    bfsels = bfapi.GetPrices_nApi([bfmid])[0].values()[0]
+
+    # write selections to the DB
+    # TODO: write convenience function somewhere so this is a single
+    # line, and fix and document APIs so we know where we should be
+    # saving this information.
+    _dbman.WriteSelections(bdaqsels.values() + bfsels.values(),
+                           datetime.datetime.now())    
     
-    if bdaqmark.id not in MATCHING_SELECTIONS_CACHE:
+    if bdaqmid not in MATCHING_SELECTIONS_CACHE:
 
         # get lists of selections
         bdaqsellist = bdaqsels.values()
@@ -88,20 +101,26 @@ def market_prices(bdaqename, index):
         mseldict = {k.id : v.id for (k, v) in msels}
 
         # get the BDAQ display order of selections
-        dorder = display_order(bdaqmark.id)
+        dorder = display_order(bdaqmid)
 
         # add sorting info to the cache
         mlist = []
-        for d in dorder:
+        tnow = datetime.datetime.now()
+        for (i, d) in enumerate(dorder):
             # note d will not be in mseldict if we failed to match the
             # selection!
             if d in mseldict:
                 mlist.append((d, mseldict[d]))
+                bdaqsels[d].dorder = i
+                # update the selection in the database so that we have
+                # the display order stored for next time we start-up.
+                _dbman.WriteSelections([bdaqsels[d]], tnow)
+        
         # create cache entry
-        MATCHING_SELECTIONS_CACHE[bdaqmark.id] = mlist
+        MATCHING_SELECTIONS_CACHE[bdaqmid] = mlist
 
     # get selection ordering from cache
-    osids = MATCHING_SELECTIONS_CACHE[bdaqmark.id]    
+    osids = MATCHING_SELECTIONS_CACHE[bdaqmid]    
 
     bdaqorder = [bdaqsels[s[0]] for s in osids]
     bforder = [bfsels[s[1]] for s in osids]
@@ -150,13 +169,12 @@ def match_markets(bdaqename):
             matchmarks[i][0].totalmatched = sels[0].\
                                             properties['totalmatched']
 
-    # write to the DB:
-    dbman = database.DBMaster()
+    # Write market stuff to the DB
     # (i) write details of the matching markets
-    dbman.WriteMarketMatches(matchmarks)
+    _dbman.WriteMarketMatches(matchmarks)
     # (ii) update the bdaqmarkets, since now have totalmatched
     bdmarks = [itemgetter(0)(i) for i in matchmarks]
-    dbman.WriteMarkets(bdmarks, datetime.datetime.now())
+    _dbman.WriteMarkets(bdmarks, datetime.datetime.now())
         
     # sort matching markets by starttime; NB could sort them by the
     # BDAQ official display order at some point if necessary.

@@ -241,6 +241,7 @@ class DBMaster(object):
                                            'exchange_id=? and market_id=? and selection_id=?'\
                                            .format(schema.SELECTIONS),
                                            (const.BFID, ex2mid, ex2sid))
+
             # check our queries worked.  If they didn't, then the
             # database is corrupted, since the selection is listed in the
             # matching selections table but not in the markets table.
@@ -290,13 +291,14 @@ class DBMaster(object):
                 'selection_id, name, b_1, bvol_1, b_2, bvol_2, b_3, '
                 'bvol_3, b_4, bvol_4, b_5, bvol_5, lay_1, lvol_1, '
                 'lay_2, lvol_2, lay_3, lvol_3, lay_4, lvol_4, '
-                'lay_5, lvol_5, src, wsn, last_checked) values '
+                'lay_5, lvol_5, src, wsn, dorder, last_checked) values '
                 '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,'
-                ' ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                ' ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         qupd = ('UPDATE {0} SET b_1=?, bvol_1=?, b_2=?, bvol_2=?, '
                 'b_3=?, bvol_3=?, b_4=?, bvol_4=?, b_5=?, bvol_5=?, '
                 'lay_1=?, lvol_1=?, lay_2=?, lvol_2=?, lay_3=?, lvol_3=?, '
-                'lay_4=?, lvol_4=?, lay_5=?, lvol_5=?, src=?, wsn=?, last_checked=? '
+                'lay_4=?, lvol_4=?, lay_5=?, lvol_5=?, src=?, wsn=?, dorder=?,'
+                'last_checked=? '
                 'WHERE exchange_id=? and market_id=? and selection_id=?'\
                 .format(schema.SELECTIONS))
 
@@ -309,7 +311,7 @@ class DBMaster(object):
                     s.padlay[0][1], s.padlay[1][0], s.padlay[1][1],
                     s.padlay[2][0], s.padlay[2][1], s.padlay[3][0],
                     s.padlay[3][1], s.padlay[4][0], s.padlay[4][1],
-                    s.src, s.wsn, tstamp)
+                    s.src, s.wsn, s.dorder, tstamp)
                    for s in selections]
 
         # write to the current selections table; we have to do this
@@ -456,7 +458,8 @@ class DBMaster(object):
                                 # layprices and volumes
                                 [y for y in util.pairwise(s[14:24])],
                                 s[24], # selection reset count
-                                s[25]) # withdrawal selection number
+                                s[25], # withdrawal selection number
+                                s[26]) # display order 
                       for s in seldata]
         
         return selections

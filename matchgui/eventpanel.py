@@ -44,6 +44,8 @@ class EventPanel(scrolledpanel.ScrolledPanel):
         self.Bind(wx.EVT_BUTTON, self.OnEventClick, ebtn)
 
     def OnEventClick(self, event):
+        """Called when an event button, e.g. 'Rugby Union' is clicked."""
+        
         if self.selected_obj:
             self.selected_obj.SetBackgroundColour(None)
             
@@ -53,11 +55,13 @@ class EventPanel(scrolledpanel.ScrolledPanel):
 
         parent = self.GetTopLevelParent()
 
+        # populate the panel with the BF and BDAQ markets
+        parent.GetMarketPanel().Populate(self.ename)
+
         # show the market panel if it isn't already shown
         parent.ShowMarketPanel()
 
-        # populate the panel with the BF and BDAQ markets
-        parent.GetMarketPanel().Populate(self.ename)
+        parent.GetMarketPanel().Layout()
 
     def GetSelectedEvent(self):
         return self.ename

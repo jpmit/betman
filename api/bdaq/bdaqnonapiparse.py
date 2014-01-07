@@ -58,7 +58,9 @@ def ParseNonApiGetPrices(resp, mids):
         
         # the mkt key contains everything we want
         for sel in mdat['sel']:
-            name = sel['sN'].encode('ascii')
+            # apostraphe appears as '&apos;' and this seems to be the
+            # best place to correct it.            
+            name = sel['sN'].replace('&apos;', '\'')
             sid = sel['sId']
             # each selection also contains a market id.  This should
             # be the same as markmid above!

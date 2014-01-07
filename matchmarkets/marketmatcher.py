@@ -94,10 +94,8 @@ def _matchselection(sel, sellist):
     if selname == 'Draw':
         selname = 'The Draw'
 
-    # Horse Racing: the BDAQ horse racing selections, due to our ASCII
-    # encoding, contain '&apos;' instead of an apostraphe, so remove
-    # this.
-    selname = selname.replace('&apos;','')
+    # Remove any apostrophes from the BDAQ selection name. 
+    selname = selname.replace('\'','')
     
     # some of the BF names have trailing spaces, e.g. 'Sebastian
     # Vettel '.  This is clearly a bit cheeky.  Lets strip any

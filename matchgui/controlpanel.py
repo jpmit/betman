@@ -51,25 +51,25 @@ class ControlPanel(wx.Panel):
         self.SetStartButtonLabelColor(False)
 
         # button for starting market making strategy
-        self.mmbutton = wx.ToggleButton(self, label = 'Make Market')
-        self.mmbutton.Disable()
+#        self.mmbutton = wx.ToggleButton(self, label = 'Make Market')
+#        self.mmbutton.Disable()
 
         # button for starting arbitrage strategy
-        self.arbbutton = wx.ToggleButton(self, label = 'Arbitrage Market')
-        self.arbbutton.Disable()
+#        self.arbbutton = wx.ToggleButton(self, label = 'Arbitrage Market')
+#        self.arbbutton.Disable()
 
         # event binding for the buttons
         self.Bind(wx.EVT_TOGGLEBUTTON, self.OnStartButtonClick,
                   self.startbut)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnMarketMakingButtonClick,
-                  self.mmbutton)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnArbButtonClick,
-                  self.arbbutton)
+#        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnMarketMakingButtonClick,
+#                  self.mmbutton)
+#        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnArbButtonClick,
+#                  self.arbbutton)
         
         h_sizer.Add(self.freqspin)
         h_sizer.Add(self.startbut)
-        h_sizer.Add(self.arbbutton)
-        h_sizer.Add(self.mmbutton)
+#        h_sizer.Add(self.arbbutton)
+#        h_sizer.Add(self.mmbutton)
         sizer.Add(h_sizer)
 
         self.SetSizer(sizer)
@@ -99,19 +99,19 @@ class ControlPanel(wx.Panel):
 
         if pressed:
             # enable mm and arb buttons
-            self.mmbutton.Enable()
-            self.arbbutton.Enable()
+            #self.mmbutton.Enable()
+            #self.arbbutton.Enable()
             # we add an update strategy to the global strategy group,
             self.AddUpdateStrat()
         else:
             self.RemoveUpdateStrat()
-            self.mmbutton.SetValue(False)
-            self.arbbutton.SetValue(False)
+            #self.mmbutton.SetValue(False)
+            #self.arbbutton.SetValue(False)
             # disable mm and arb buttons; this changes their
             # appearance so that they don't look like they can be
             # clicked.
-            self.mmbutton.Disable()
-            self.arbbutton.Disable()
+            #self.mmbutton.Disable()
+            #self.arbbutton.Disable()
 
     def IsStartButtonPressed(self):
         """
@@ -121,25 +121,25 @@ class ControlPanel(wx.Panel):
 
         return self.startbut.GetValue()
 
-    def OnArbButtonClick(self, event):
-        """Called when the arb button is clicked."""
+    ## def OnArbButtonClick(self, event):
+    ##     """Called when the arb button is clicked."""
 
-        if self.arbbutton.GetValue():
-            if self.IsStartButtonPressed():            
-                # the pricing model will now update the arbmodel
-                self.pmodel.AddListener(self.arbmodel.Update)
-        else:
-            self.pmodel.RemoveListener(self.arbmodel.Update)
+    ##     if self.arbbutton.GetValue():
+    ##         if self.IsStartButtonPressed():            
+    ##             # the pricing model will now update the arbmodel
+    ##             self.pmodel.AddListener(self.arbmodel.Update)
+    ##     else:
+    ##         self.pmodel.RemoveListener(self.arbmodel.Update)
 
-    def OnMarketMakingButtonClick(self, event):
-        """Called when the market making button is clicked."""
+    ## def OnMarketMakingButtonClick(self, event):
+    ##     """Called when the market making button is clicked."""
 
-        if self.mmbutton.GetValue():
-            # the pricing model will now update the mm model
-            if self.IsStartButtonPressed():                
-                self.pmodel.AddListener(self.mmmodel.Update)
-        else:
-            self.pmodel.RemoveListener(self.mmmodel.Update)
+    ##     if self.mmbutton.GetValue():
+    ##         # the pricing model will now update the mm model
+    ##         if self.IsStartButtonPressed():                
+    ##             self.pmodel.AddListener(self.mmmodel.Update)
+    ##     else:
+    ##         self.pmodel.RemoveListener(self.mmmodel.Update)
 
     def SetStartButtonLabelColor(self, pressed):
         if pressed:
@@ -168,5 +168,5 @@ class ControlPanel(wx.Panel):
         # clear the arb and mm strategies; this means that when we
         # navigate to a new market, we won't have residual strategies
         # from the old market that try to update.
-        self.mmmodel.Clear()
-        self.arbmodel.Clear()
+        #self.mmmodel.Clear()
+        #self.arbmodel.Clear()

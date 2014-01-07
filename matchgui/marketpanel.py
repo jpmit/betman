@@ -17,6 +17,7 @@ class MarketPanel(wx.Panel):
         # Control stores the list of matching markets
         self.lst = MatchListCtrl(self)
 
+        # model controlling the view (MVC)
         self.mmodel = models.MatchMarketsModel()
         
         # The listener will update the view
@@ -42,7 +43,7 @@ class MarketPanel(wx.Panel):
         sizer.Add(tsz)
         sizer.AddSpacer(20)
         
-        sizer.Add(self.lst, 1, wx.EXPAND)
+        sizer.Add(self.lst, 1, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER)
         self.SetSizer(sizer)
 
         # Event Handlers
@@ -54,7 +55,7 @@ class MarketPanel(wx.Panel):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED,
                   self.OnDClick)
 
-    def SetEvent(self, ename):
+    def _SetEvent(self, ename):
         """
         Use the event name to set the title of the Market Panel.
         """
@@ -65,7 +66,7 @@ class MarketPanel(wx.Panel):
 #        self.tsz.Layout()
 
     def OnRefresh(self, event):
-        self.mmodel.FetchMatches(self.ename, refresh = True)
+        self.mmodel.Update(self.ename, refresh = True)
         
     def Populate(self, ename):
         """
@@ -73,9 +74,9 @@ class MarketPanel(wx.Panel):
         panel (on LHS) is clicked.  We populate panel with matching
         events for the selected event name.
         """
-
+        
         # set event for the panel
-        self.SetEvent(ename)
+        self._SetEvent(ename)
 
         # set event for the MatchListCtrl
         self.lst.SetEvent(ename)
@@ -83,7 +84,7 @@ class MarketPanel(wx.Panel):
         # get matching markets for this event (update the model), note
         # that the model will update the view (the ListCtrl) via its
         # listener function.
-        self.mmodel.FetchMatches(ename)
+        self.mmodel.Update(ename)
         
         #self.Clear()
 
@@ -99,6 +100,11 @@ class MarketPanel(wx.Panel):
         #self.DestroyDialog()
 
         self.Layout()
+        self.lst.Layout()
+#        self.Layout()
+#        self.SetSize(
+        #self.lst.Fit()
+        #self.Fit()
 
     def Pulse(self, event):
         self.dialog.Pulse()

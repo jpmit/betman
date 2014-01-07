@@ -127,6 +127,7 @@ class MyFrame(wx.Frame):
         self._epanel = EventPanel(self)
 
         self._splitter = wx.SplitterWindow(self)
+        #self._splitter.SetSashGravity(1.0)
         self._mpanel = MarketPanel(self._splitter)
         self._ppanel = PricePanel(self._splitter)
         self._cpanel = ControlPanel(self._splitter,
@@ -217,6 +218,13 @@ class MyFrame(wx.Frame):
         self._splitter.Unsplit()
         self._splitter.Layout()
         self.Layout()
+        self._mpanel.Layout()
+
+        # this seems to resize the panel correctly(?) NOPE
+        self._splitter.UpdateSize()
+
+        print "size of splitter: ", self._splitter.GetSize()
+        print "size of marketpanel: ", self._mpanel.GetSize()
 
     def ShowPricePanel(self):
         """

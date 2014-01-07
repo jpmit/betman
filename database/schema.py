@@ -76,6 +76,12 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            # withdrawal selection number (needed for
                            # placing bet on BDAQ, NULL for BF)
                            ' wsn          int,'
+                           # display order of selections (from BDAQ
+                           # API). note this is not returned by
+                           # GetPrices, but by GetMarketInformation,
+                           # so it is likely to be set by updating a
+                           # currently existing selection.
+                           ' dorder       int,'
                            ' last_checked timestamp)'),
               # strategy is the strategy type
               # polarity can be either 1 (back) or 2 (lay)
@@ -133,6 +139,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' lvol_5       real,'
                            ' src          int,'
                            ' wsn          int,'
+                           ' dorder       int,'
                            ' last_checked timestamp)'),
               # HISTORDERS has the same schema as ORDERS
               HISTORDERS:     ('(order_id     int  NOT NULL, '

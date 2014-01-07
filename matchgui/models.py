@@ -60,6 +60,11 @@ class PriceModel(AbstractModel):
         self.event = None
         self.index = None
 
+        # we store a reference to a matching selections model, which
+        # gives us details on which BF selection matches which BDAQ
+        # selection.
+        self._selmodel = MatchSelectionsModel()
+
     def SetEventIndex(self, event, index):
         self.event = event
         self.index = index
@@ -68,12 +73,13 @@ class PriceModel(AbstractModel):
         self.bdaqmid = bdaqmid
         self.bfmid = bfmid
 
-    def InitSels(self):
+    def SetSels(self, refresh = False):
         """Initialize selections in the correct order."""
-        
-        self.bdaqsels, self.bfsels = matchguifunctions.\
-                                     market_prices(self.event,
-                                                   self.index)
+
+        # this may call the BDAQ API
+        self.bdaqsels, self.bfsels = self._selmodel.\
+                                     GetMatchingSels(self.bdaqmid,
+                                                     self.bfmid)
 
         # indexdict means that the price of a particular bdaq
         # selection name can be easily found.
@@ -112,6 +118,8 @@ class PriceModel(AbstractModel):
                 # call the listener functions.
                 self.UpdateViews()
 
+# obselete, use the general StrategyModel below which can do either
+# market making or arbitrage.
 class MarketMakingModel(AbstractModel):
 
     def __init__(self):
@@ -131,6 +139,8 @@ class MarketMakingModel(AbstractModel):
         print 'updating MM model'
         self.UpdateViews()
 
+# obselete, use the general StrategyModel below which can do either
+# market making or arbitrage.
 class ArbitrageModel(AbstractModel):
 
     def __init__(self):
@@ -158,13 +168,74 @@ class ArbitrageModel(AbstractModel):
 
     def Clear(self):
         self.stratgroup.clear()
+
+class MatchSelectionsModel(AbstractModel):
+    """Stores data on matching selections for all the different events."""
     
+    # if usedb is set, we will initialise the matching markets cache
+    # from the sqlite database.
+    USEDB = True
+    
+    def __init__(self):
+        super(MatchSelectionsModel, self).__init__()
+
+        # matching selections keys are bdaqmid, values are
+        # [(bdaq_sels, bf_sels)] where bdaq_sels and bf_sels are lists
+        # of bdaq and bf selections, ordered as displayed on the BDAQ
+        # website.  Instead of dumping everything from the DB into the
+        # cache immediately, we add to the cache 'as needed'.
+        self._match_cache = {}
+
+        # singleton that controls DB access
+        self._dbman = DBMaster()
+
+    def GetMatchingSels(self, bdaqmid, bfmid, refresh = False):
+        """
+        Return lists bdaqsels, bfsels, where bdaqsels[i] is the
+        selection that matches bfsels[i], and the ordering of the
+        selections is that given by the BDAQ display order.
+
+        We call the BDAQ and BF api to get this information if
+        necessary.
+        """
+
+        callapi = False # don't refresh prices using BDAQ/BF API
+                        # unless necessary.
+        if refresh:
+            callapi = True
+        else:
+            if bdaqmid in self._match_cache:
+                bdaqsels, bfsels = self._match_cache[bdaqmid]
+            else:
+                # try filling up the cache from the DB
+                msels = self._dbman.ReturnSelectionMatches([bdaqmid])
+
+                if msels:
+                    bdaqsels, bfsels = [itemgetter(0)(i) for i in msels],\
+                                       [itemgetter(1)(i) for i in msels]
+                    # check that display order is not None
+                    if bdaqsels[0].dorder is None:
+                        callapi = True
+                else:
+                    # didn't find any matching selections in DB
+                    callapi = True
+
+        if callapi:
+            # call BDAQ and BF api to get selections, and store in
+            # local cache.
+            bdaqsels, bfsels = matchguifunctions.\
+                               market_prices(bdaqmid, bfmid)
+
+        # put entries into match cache.
+        self._match_cache[bdaqmid] = (bdaqsels, bfsels)
+
+        return bdaqsels, bfsels
 
 class MatchMarketsModel(AbstractModel):
     """Stores data on matching markets for all the different events."""
     
-    # if usedb is set, we will initialise the match cache from the
-    # sqlite database.
+    # if usedb is set, we will initialise the matching markets cache
+    # from the sqlite database.
     USEDB = True
     
     def __init__(self):
@@ -217,7 +288,7 @@ class MatchMarketsModel(AbstractModel):
         
         return self._match_cache[ename][index][0].name
 
-    def FetchMatches(self, ename, refresh = False):
+    def Update(self, ename, refresh = False):
         """
         Fetch matching markets for a particular event name.  If
         refresh is True, update the matching markets first by using

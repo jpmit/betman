@@ -65,13 +65,16 @@ class Selection(object):
     
     def __init__(self, exid, name, myid, marketid, mback, mlay,
                  lastmatched, lastmatchedprice, lastmatchedamount,
-                 backprices, layprices, src=None, wsn=None, **kwargs):
+                 backprices, layprices, src=None, wsn=None, dorder=None,
+                 **kwargs):
 
         self.exid = exid
 
         # convert name to ascii string and ignore any funky unicode
         # characters.
-        self.name = name.encode('ascii', 'ignore')        
+        self._uname = name
+        self.name = name.encode('utf8')
+
         self.id = myid # selection id
         self.mid = marketid # market id I belong to
         self.matchedback = mback        
@@ -84,6 +87,9 @@ class Selection(object):
         # used for BDAQ only.
         self.src = src
         self.wsn = wsn
+
+        # display order is display order for BDAQ
+        self.dorder = dorder
 
         # list of prices and stakes [(p1,s1), (p2,s2) ...,]
         self.backprices = backprices

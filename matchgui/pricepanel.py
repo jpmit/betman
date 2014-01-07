@@ -68,7 +68,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         self.pmodel.SetMids(self.bdaqmid, self.bfmid)
         
         # get selection information from BDAQ and BF
-        self.pmodel.InitSels()
+        self.pmodel.SetSels()
 
         # draw the panel
         self.DrawLayout()
@@ -111,8 +111,8 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # WARNING: this really should not be here; this code needs to
         # be reorganised
         # using the selections, initialise the strategy models
-        self.GetTopLevelParent().GetControlPanel().mmmodel.InitStrategies(bdaqsels, bfsels)
-        self.GetTopLevelParent().GetControlPanel().arbmodel.InitStrategies(bdaqsels, bfsels)
+        #self.GetTopLevelParent().GetControlPanel().mmmodel.InitStrategies(bdaqsels, bfsels)
+        #self.GetTopLevelParent().GetControlPanel().arbmodel.InitStrategies(bdaqsels, bfsels)
 
         # content_sizer holds prices on left, crossing panel on right
         content_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -247,6 +247,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                        lambda evt, name=dictkey: self.OnStrategyStopStartButton(evt, name))
             monbtn.Bind(wx.EVT_BUTTON,
                         lambda evt, name=dictkey: self.OnMonitorButton(evt, name))
+            self.SetButtonAppearance(gobtn, False)
 
             # format layout of strategy stuff
             strat_sizer.Add(wx.StaticText(self, label = 'strategy'), 0, wx.CENTER)
@@ -279,6 +280,15 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             setattr(self.app.strat_models[key].strategy,
                     managers.UTICK, event.GetEventObject.GetValue())
 
+    def SetButtonAppearance(self, but, pressed):
+        """Generic function for green/red start/stop button."""
+        if pressed:
+            but.SetBackgroundColour('red')
+            but.startbut.SetLabel('Stop')
+        else:
+            but.SetBackgroundColour('green')
+            but.SetLabel('Go!')
+
     def OnStrategyStopStartButton(self, event, key):
         """
         Add/remove strategy to/from main app strategy group at the
@@ -287,6 +297,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
         obj = event.GetEventObject()
         ispressed = obj.GetValue()
+        self.SetButtonAppearance(obj, ispressed)
 
         if ispressed:
             # get the strategy selected in the corresponding
