@@ -68,8 +68,10 @@ def ParseNonApiGetPrices(resp, mids):
 
             if (mid != markmid):
                 print sel
-                raise ApiError, 'Selection does not have correct mid {0}'.\
-                      format(markmid)
+                print type(mid), type(markmid)
+                raise ApiError, ('Selection has mid {0} '
+                                 'not correct mid {1}'.\
+                                 format(mid, markmid))
 
             if 'fSO' in sel:
                 # if there are multiple back prices available,
