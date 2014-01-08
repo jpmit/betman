@@ -88,7 +88,7 @@ class CanvasPanel(wx.Panel):
         if self.axes.collections:
             self.axes.collections[0].remove()
             # I *think* this is needed to free memory.
-            del axes.collections[:]
+            del self.axes.collections[:]
         
         # plot the new arb points (the model is responsibly for moving
         # the co-ords with time). we use the newly rescaled ylims so

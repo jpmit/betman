@@ -65,7 +65,11 @@ def ParseNonApiGetPrices(resp, mids):
             # each selection also contains a market id.  This should
             # be the same as markmid above!
             mid = sel['mId']
-            assert (mid == markmid)
+
+            if (mid != markmid):
+                print sel
+                raise ApiError, 'Selection does not have correct mid {0}'.\
+                      format(markmid)
 
             if 'fSO' in sel:
                 # if there are multiple back prices available,
