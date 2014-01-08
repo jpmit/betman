@@ -32,13 +32,22 @@ class Strategy(object):
 
         return {const.BDAQID: [], const.BFID: []}
 
-    def update(self, prices):
+    def update_prices(self, prices):
         """
         Update prices of any selections using the prices dict passed
-        as argument, then do the thinking and generate orders to
-        create or cancel on the exchanges.
+        as argument, then do the thinking and (maybe) generate new
+        orders to create or cancel on the exchanges.
         """
         
+        pass
+
+    def update_orders(self, orders):
+        """
+        Update order information of any placed orders using the orders
+        dict passed as argument, then do the thinking and (maybe)
+        generate new orders to create or cancel on the exchanges.
+        """
+
         pass
 
 class StrategyGroup(object):
@@ -65,20 +74,29 @@ class StrategyGroup(object):
     def clear(self):
         self.strategies = []
 
-    def update(self, prices):
+    def update_prices(self, prices):
         """Update all strategies in the group."""
 
         for strat in self.strategies:
-            strat.update(prices)
+            strat.update_prices(prices)
 
-    def update_if(self, prices, attr):
+    def update_orders(self, orders):
+        """Update all strategies in the group."""
+
+        for strat in self.strategies:
+            strat.update_orders(orders)
+
+    def update_prices_if(self, prices, attr = '__dict__'):
         """
         Update all strategies in group if attr of strategy is True.
+
+        The default attribute will simply mean that all strategies are
+        updated.
         """
 
         for strat in self.strategies:
             if getattr(strat, attr):
-                strat.update(prices)
+                strat.update_prices(prices)
 
     def get_orders(self):
         """
@@ -105,7 +123,7 @@ class StrategyGroup(object):
         for strat in self.strategies:
             # get order dictionary for each strat
             pldict = strat.toplace
-            for k in pldict:
+            for k in pldict: # k is BDAQID or BFID
                 toplace[k] = toplace[k] + pldict[k]
         
         return toplace

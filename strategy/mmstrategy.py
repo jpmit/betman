@@ -53,16 +53,75 @@ class MMStrategy(strategy.Strategy):
     def get_marketids(self):
         return {self.sel.exid: [self.sel.mid]}
 
-    def update(self, prices):
+    def find_order_in_dict(self, order, orders):
+
+        exid = order.exid
+        sid = order.sid
+        pol = order.polarity
+        for o in orders[exid].values():
+            if ((o.exid == exid) and (o.sid == sid)
+                and (o.polarity == pol)):
+                return o
+        # no order found
+        return None
+
+    def update_orders(self, orders):
+        """
+        Update order information for any outstanding orders for this strategy.
+
+        orders - dictionary of orders from BDAQ and BF API.
+        """
+        
+        # TODO - fix how strategies update the order status in the
+        # application to make all this cleaner.
+
+        if hasattr(self, 'border'):
+            if hasattr(self.border, 'oref'):
+                # we already know the order reference, just see if the
+                # order has changed.
+                if self.border.oref in orders[self.border.exid]:
+                    self.border = orders[self.border.exid][self.border.oref]
+            else: # we need to figure out which order in the orders
+                  # dictionary is ours! (we should only have to do
+                  # this once, on the tick after which the order was
+                  # placed).
+                  border = self.find_order_in_dict(self.border, orders)
+                  if border:
+                      print 'found order with id', border.oref
+                      self.border = border
+                  else:
+                      print 'warning: could not find border in dictionary!'
+
+        if hasattr(self, 'lorder'):
+            if hasattr(self.lorder, 'oref'):
+                # we already know the order reference, just see if the
+                # order has changed.
+                if self.lorder.oref in orders[self.lorder.exid]:
+                    self.lorder = orders[self.lorder.exid][self.lorder.oref]
+            else: # we need to figure out which order in the orders
+                  # dictionary is ours! (we should only have to do
+                  # this once, on the tick after which the order was
+                  # placed).
+                  lorder = self.find_order_in_dict(self.lorder, orders)
+                  if lorder:
+                      print 'found order with id', lorder.oref
+                      self.lorder = lorder
+                  else:
+                      print 'warning: could not find lorder in dictionary!'
+
+    def update_prices(self, prices):
+        """
+        Update pricing information for any selections involved in this strategy.
+
+        prices - dictionary of prices from BDAQ and BF API.
+        """
       
         # important: clear the list of orders to be placed so that we
-        # don't place them again.
+        # don't place them again (this is last update before we make orders).
         self.toplace = {const.BDAQID: [], const.BFID: []}
 
         # update selection price
         self.sel = prices[self.sel.exid][self.sel.mid][self.sel.id]
-
-        # TODO: update status of any orders...
 
         # AI
         self.brain.update()
@@ -76,6 +135,12 @@ class MMStrategy(strategy.Strategy):
         if self.sel.make_best_lay() > self.sel.make_best_back() + _EPS:
             return True
         return False
+
+    def back_bet_matched(self):
+        return self.border.status == order.MATCHED
+
+    def lay_bet_matched(self):
+        return self.lorder.status == order.MATCHED
 
     def create_orders(self):
         """Create both back and lay orders."""
@@ -140,30 +205,57 @@ class MMStateOpp(strategy.State):
 
     def check_conditions(self):
         # check if there is an opportunity to make the market.
-        if self.mmstrat.can_make():
-            return 'opp'
         
         # if no opportunities, don't change state
         return None
 
-# TODO: all of the states below!
 class MMStateBothPlaced(strategy.State):
     def __init__(self, mmstrat):
         super(MMStateBothPlaced, self).__init__('bothplaced')
         self.mmstrat = mmstrat
 
-# we won't reach any of these states (yet)
+    def entry_actions(self):
+        pass
+
+    def check_conditions(self):
+        # check if back or lay bet or both matched, and change state
+        # accordingly.
+
+        bm = self.mmstrat.back_bet_matched() # back bet matched
+        lm = self.mmstrat.lay_bet_matched()
+
+        if bm:
+            if lm:
+                return 'bothmatched'
+            else:
+                return 'backmatched'
+        if lm:
+            return 'laymatched'
+
 class MMStateBackMatched(strategy.State):
     def __init__(self, mmstrat):
         super(MMStateBackMatched, self).__init__('backmatched')
         self.mmstrat = mmstrat
+
+    def check_conditions(self):
+        if self.mmstrat.lay_bet_matched():
+            return 'bothmatched'
 
 class MMStateLayMatched(strategy.State):
     def __init__(self, mmstrat):
         super(MMStateLayMatched, self).__init__('laymatched')
         self.mmstrat = mmstrat
 
+    def check_conditions(self):
+        if self.mmstrat.back_bet_matched():
+            return 'bothmatched'
+
 class MMStateBothMatched(strategy.State):
     def __init__(self, mmstrat):
         super(MMStateBothMatched, self).__init__('bothmatched')
         self.mmstrat = mmstrat
+
+    def entry_actions(self):
+        # change state immediately back to noop state, ready to sense
+        # another opportunity.
+        self.mmstrat.brain.set_state('noopp')

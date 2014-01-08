@@ -74,16 +74,20 @@ class MyApp(wx.App):
         update the relevant models.
         """
 
-        # update any outstanding orders.
+        # update any outstanding orders (every tick).
         self.omanager.update_order_information()
+
+        # we give the strategy group potential new order information
+        # every tick.
+        self.stratgroup.update_orders(self.omanager.orders)
 
         # get prices for any strategies in the strategy group that
         # want new prices this tick.
         self.pmanager.update_prices()
 
         # update strategies which got new prices this tick.
-        self.stratgroup.update_if(self.pmanager.prices,
-                                  managers.UPDATED)
+        self.stratgroup.update_prices_if(self.pmanager.prices,
+                                         managers.UPDATED)
 
         # make any new orders and save
         self.omanager.make_orders()
@@ -221,7 +225,7 @@ class MyFrame(wx.Frame):
         self._mpanel.Layout()
 
         # this seems to resize the panel correctly(?) NOPE
-        self._splitter.UpdateSize()
+        #self._splitter.UpdateSize()
 
         print "size of splitter: ", self._splitter.GetSize()
         print "size of marketpanel: ", self._mpanel.GetSize()

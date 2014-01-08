@@ -87,6 +87,7 @@ class OrderManager(object):
     def make_orders(self):
         """Make any outstanding orders, and update DB."""
 
+        # new orders from all of the strategies
         odict = self.get_new_orders()
 
         if (odict[const.BDAQID]) or (odict[const.BFID]):

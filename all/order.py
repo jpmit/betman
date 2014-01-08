@@ -54,12 +54,12 @@ class Order(object):
 
         for kw in kwargs:
             # notable kwargs (and therefore possible instance attributes) are:
-            # not set at instantiation:
+            # not set at instantiation above:
             # oref           - reference number from API
             # matchedstake   - amount of order matched
             # unmatchedstake - amount of order unmatched
             # sname          - name of the selection that order is for
-            # set at instantiation:
+            # set at instantiation above (but sometimes overridden here):
             # status         - one of the numbers above e.g. O_MATCHED
             # cancelrunning  - default is True
             # cancelreset    - default is True

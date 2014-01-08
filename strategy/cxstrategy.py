@@ -282,7 +282,22 @@ class CXStrategy(strategy.Strategy):
             return True
         return False
 
-    def update(self, prices):
+    def update_orders(self, orders):
+
+        if hasattr(self, 'border'):
+            if self.border.oref in orders:
+                self.border = orders[self.border.oref]
+        if hasattr(self, 'lorder'):
+            if self.lorder.oref in orders:
+                self.lorder = orders[self.lorder.oref]
+
+        # AI
+        self.brain.update()
+
+        # if we added any orders to self.toplace, pass them through filter
+        self.filter_bets()
+
+    def update_prices(self, prices):
         """Called everytime we have new prices for the markets."""
         
         # important: clear the list of orders to be placed so that we
@@ -292,21 +307,6 @@ class CXStrategy(strategy.Strategy):
         # update prices of selections from dictionary
         self.sel1 = prices[self.sel1.exid][self.sel1.mid][self.sel1.id]
         self.sel2 = prices[self.sel2.exid][self.sel2.mid][self.sel2.id]
-        
-        # update status of any orders from DB (only orders that have
-        # actually been placed.
-        if hasattr(self, 'border') and self.border.status != order.NOTPLACED:
-            self.border = self.dbman.ReturnOrders(('SELECT * FROM orders '
-                                                  'where exchange_id = ? and '
-                                                  'order_id = ?'),
-                                                  self.border.exid,
-                                                  self.border.oref)
-        if hasattr(self, 'lorder') and self.lorder.status != order.NOTPLACED:
-            self.lorder = self.dbman.ReturnOrders(('SELECT * FROM orders '
-                                                  'where exchange_id = ? and '
-                                                  'order_id = ?'),
-                                                  self.lorder.exid,
-                                                  self.lorder.oref)
         
         # AI
         self.brain.update()
