@@ -63,6 +63,9 @@ class CanvasPanel(wx.Panel):
                                           color=_normalise_color(const.LPINK),
                                           linewidth=self.LINEWIDTH)
 
+        # vertical lines are arb times
+        self.arbs = []
+
     def OnUpdatePrices(self, gmodel):
         print "I'm redrawing the panel!!!"
 
@@ -77,9 +80,19 @@ class CanvasPanel(wx.Panel):
         # auto scale the axes
         self.axes.autoscale_view()
 
-        # check if there are any arbitrage opportunities and draw
-        # vertical red line at all these points. we use the newly
-        # rescaled ylims so we know limits for the vertical line.
+        # draw vertical (red) arbitrage lines (this could probably be
+        # made more efficient).  The lines are drawn as a
+        # LineCollection, which is accessible via self.axes.collections[0].
+
+        # remove previous vertical line collection of arb points
+        if self.axes.collections:
+            self.axes.collections[0].remove()
+            # I *think* this is needed to free memory.
+            del axes.collections[:]
+        
+        # plot the new arb points (the model is responsibly for moving
+        # the co-ords with time). we use the newly rescaled ylims so
+        # we know limits for the vertical line.
         ylim = self.axes.get_ylim()
         if len(gmodel.arbs) > 0:
             self.axes.vlines(gmodel.arbs, ylim[0], ylim[1], color='r',

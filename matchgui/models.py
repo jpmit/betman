@@ -389,6 +389,7 @@ class GraphPriceModel(AbstractModel):
 
             if (oback > olay / ((1.0 - self.COMMISSION[const.BDAQID])*\
                                 (1.0 - self.COMMISSION[const.BFID]))):
+                #print 'arb!', self.bdaqselname, oback, olay
                 return True
         return False
 
@@ -411,7 +412,7 @@ class GraphPriceModel(AbstractModel):
             self.bdaqlay.append(bdaqsel.padlay[0][0])
             self.bfback.append(bfsel.padback[0][0])
             self.bflay.append(bfsel.padlay[0][0])
-
+            
             narbs = len(self.arbs)
             if narbs:
                 # shift any existing arb opportunities to the previous
@@ -424,6 +425,7 @@ class GraphPriceModel(AbstractModel):
                 
             # check if latest data gives arb opportunity
             if self.IsInstantArb(bdaqsel, bfsel):
+                # add final point to arb list
                 self.arbs = np.append(self.arbs, self.NPOINTS - 1)
 
             # update the views
