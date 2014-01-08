@@ -1,6 +1,6 @@
 from operator import itemgetter
 import matchguifunctions
-from betman.strategy import strategy, cxstrategy, mmstrategy
+from betman.strategy import strategy, cxstrategy, mmstrategy, position
 from betman import const
 from betman.database import DBMaster
 from betman.matchmarkets.matchconst import EVENTMAP
@@ -312,10 +312,17 @@ class StrategyModel(AbstractModel):
         # may not need this (?)
         self.bdaqselname = bdaqsel.name
 
+        # the strategy model holds a strategy object, and a position
+        # tracker, both of which are set to None if no strategy is
+        # running.
         self.strategy = None
+        self.postracker = None
 
         # messages from the strategy
-        self.messages = []
+        self.visited_states = []
+
+        # length of self.visited_states
+        self._nvisited = 0
 
     def InitStrategy(self, strategy):
         """
@@ -326,11 +333,13 @@ class StrategyModel(AbstractModel):
         """
 
         self.strategy = strategy
+        self.postracker = position.PositionTracker(self.strategy)
 
     def RemoveStrategy(self):
         """Remove existing strategy from the model."""
 
         self.strategy = None
+        self.postracker = None
 
     def HasStrategy(self):
         if self.strategy == None:
@@ -338,12 +347,25 @@ class StrategyModel(AbstractModel):
         return True
 
     def Update(self, prices):
+        # we provide
+        # new_states - 
         # check that there is an underlying strategy, and that it was
         # updated in the last tick
         if self.strategy is not None:
+            self.new_states = [] # reset
             if getattr(self.strategy, managers.UPDATED):
-                # set list of messages to list of visited_states
-                self.messages = self.strategy.brain.visited_states
+                # note we have to do it this way since the strategy
+                # could have visited multiple states in a single
+                # update.
+                nvisited = len(self.strategy.brain.visited_states)
+                if nvisited != self._nvisited:
+                    self.visited_states = self.strategy.brain.visited_states
+                    # the 'new_states' is accessed by the view
+                    self.new_states = self.visited_states[self._nvisited:]
+                    self._nvisited = nvisited
+                    
+                    
+                    
 
                 self.UpdateViews()
 

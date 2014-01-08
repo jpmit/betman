@@ -14,6 +14,12 @@ class Strategy(object):
 
         # orders to place
         self.toplace = {const.BDAQID: [], const.BFID: []}
+
+        # list of all orders successfully placed (nb, these may or may
+        # not have been matched) by the strategy.  These should be
+        # ordered by time placed (with the oldest order being the
+        # first in the list).
+        self.allorders = []
         
     def get_marketids(self):
         """

@@ -29,6 +29,10 @@ class MMStrategy(strategy.Strategy):
 
         self.sel = sel
 
+        self.init_state_machine()
+
+    def init_state_machine(self):
+
         # add states
         noopp_state = MMStateNoOpp(self)
         opp_state = MMStateOpp(self)        
@@ -89,6 +93,9 @@ class MMStrategy(strategy.Strategy):
                   if border:
                       print 'found order with id', border.oref
                       self.border = border
+                      # add the order to the list of successfully
+                      # placed orders
+                      self.allorders.append(border)
                   else:
                       print 'warning: could not find border in dictionary!'
 
@@ -103,6 +110,9 @@ class MMStrategy(strategy.Strategy):
                   # this once, on the tick after which the order was
                   # placed).
                   lorder = self.find_order_in_dict(self.lorder, orders)
+                  # add the order to the list of successfully
+                  # placed orders
+                  self.allorders.append(lorder)
                   if lorder:
                       print 'found order with id', lorder.oref
                       self.lorder = lorder

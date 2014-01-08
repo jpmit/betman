@@ -363,7 +363,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             frame.Show()
 
             # add listener
-            self.app.strat_models[key].AddListener(frame.panel.OnUpdateStrat)
+            self.app.strat_models[key].AddListener(frame.OnUpdateStrat)
 
     def OnGraphButton(self, event, key):
         """
@@ -405,7 +405,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         key = obj.key
         print obj, key
         # remove listener        
-        self.app.strat_models[key].RemoveListener(obj.panel.OnUpdateStrat)        
+        self.app.strat_models[key].RemoveListener(obj.OnUpdateStrat)        
         
         # delete key from graphs_open dict
         print "killed monitor window with key", key

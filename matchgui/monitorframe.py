@@ -1,15 +1,112 @@
 import wx
+import const
 
 class MonitorFrame(wx.Frame):
     def __init__(self, key):
-        wx.Frame.__init__(self, None, title=key)
+        wx.Frame.__init__(self, None,
+                          title='Strategy monitor for {0}'\
+                          .format(key))
 
         # store key, this is used so that we can track when the frame
         # is killed
         self.key = key
-        self.panel = MonitorPanel(self)
+        #self.panel = MonitorPanel(self)
 
-class MonitorPanel(wx.Panel):
+        panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.summary_panel = SummaryPanel(self)
+        self.state_panel = StatePanel(self)
+        self.bets_panel = BetsPanel(self)
+
+        panel_sizer.Add(self.summary_panel, 1, wx.EXPAND | wx.RIGHT, 5)
+        panel_sizer.Add(self.state_panel, 1, wx.EXPAND | wx.ALL, 5)
+        panel_sizer.Add(self.bets_panel, 1, wx.EXPAND | wx.LEFT, 5)
+
+        self.SetSizer(panel_sizer)
+
+    def OnUpdateStrat(self, smodel):
+        """Update the view using the StrategyModel smodel."""
+
+        # propagate the update to each of the panels
+        self.summary_panel.Update(smodel)
+        self.state_panel.Update(smodel)
+        self.bets_panel.Update(smodel)
+
+class SummaryPanel(wx.Panel):
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        pos_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        posif_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.position = 0.0
+        self.unmatched_bets = []
+        self.position_if = 0.0
+
+        self.position_text = wx.StaticText(self)
+        pos_sizer.Add(wx.StaticText(self, label = 'position:  '))
+        pos_sizer.Add(self.position_text)
+
+        self.posif_text = wx.StaticText(self)
+        posif_sizer.Add(wx.StaticText(self, label = 'position if:  '))
+        posif_sizer.Add(self.posif_text)
+
+        main_sizer.AddSpacer(20)
+        main_sizer.Add(pos_sizer)
+        main_sizer.Add(posif_sizer)
+        main_sizer.Add(wx.StaticText(self, label = 'unmatched bets:  '))        
+
+        # draw text
+        self.DrawPositionIfText()
+        self.DrawPositionText()
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+    def DrawPositionText(self):
+        if self.position == 0.0:
+            col = const.BLACK
+        elif self.position > 0.0:
+            col = const.GREEN
+        else:
+            col = const.RED
+
+        self.position_text.SetLabel('{:.2f}'.format(self.position))
+        self.position_text.SetForegroundColour(col)
+
+    def DrawPositionIfText(self):
+        if self.position_if == 0.0:
+            col = const.BLACK
+        elif self.position_if > 0.0:
+            col = const.GREEN
+        else:
+            col = const.RED
+
+        self.posif_text.SetLabel('{:.2f}'.format(self.position_if))
+        self.posif_text.SetForegroundColour(col)        
+        
+    def Update(self, smodel):
+
+        pos, posif = smodel.postracker.get_positions()
+
+        # check if position, position_if, and unmatched_bets have
+        # changed, and update the panel to reflect this if so.
+
+        if pos != self.position:
+            self.position = pos
+            self.DrawPositionText()
+        if posif != self.position_if:
+            self.position_if = posif
+            self.DrawPositionIfText()
+
+class BetsPanel(wx.Panel):
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        
+    def Update(self, smodel):
+        pass
+
+class StatePanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
 
@@ -20,14 +117,21 @@ class MonitorPanel(wx.Panel):
         self.Fit()
 
         # write some initial message
-        self.txtctrl.AppendText('Hello!\nSee updates from the strategy below:')
+        self.txtctrl.AppendText('States visited:\n')
 
-    def OnUpdateStrat(self, smodel):
-        msg = '\n'.join(smodel.messages)
-        self.txtctrl.ChangeValue(msg)
+        # do we have some state information written on the frame.
+        self._somestates = False
 
-    
+    def Update(self, smodel):
 
-    
-                                   
-
+        # add information on visited states to txtctrl
+        if not self._somestates:
+            # first time this has been called, get all the visited
+            # states and write to the txtcontrol.
+            statelist = smodel.visited_states
+            self._somestates = True
+        else:
+            # get new states since last call, and append to the txtcontrol.
+            statelist = smodel.new_states
+        if statelist:
+            self.txtctrl.AppendText('\n'.join(statelist) + '\n')
