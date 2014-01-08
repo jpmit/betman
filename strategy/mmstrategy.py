@@ -110,12 +110,12 @@ class MMStrategy(strategy.Strategy):
                   # this once, on the tick after which the order was
                   # placed).
                   lorder = self.find_order_in_dict(self.lorder, orders)
-                  # add the order to the list of successfully
-                  # placed orders
-                  self.allorders.append(lorder)
                   if lorder:
                       print 'found order with id', lorder.oref
                       self.lorder = lorder
+                      # add the order to the list of successfully
+                      # placed orders
+                      self.allorders.append(lorder)
                   else:
                       print 'warning: could not find lorder in dictionary!'
 

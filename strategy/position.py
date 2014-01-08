@@ -50,5 +50,7 @@ class PositionTracker(object):
                 unmatched.append(o)
 
         return unmatched
-
                 
+    def get_all_bets(self):
+        return self.strategy.allorders
+

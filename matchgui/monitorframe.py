@@ -1,5 +1,7 @@
 import wx
 import const
+from betman import const as bconst
+from betman import order
 
 class MonitorFrame(wx.Frame):
     def __init__(self, key):
@@ -54,13 +56,33 @@ class SummaryPanel(wx.Panel):
         main_sizer.AddSpacer(20)
         main_sizer.Add(pos_sizer)
         main_sizer.Add(posif_sizer)
-        main_sizer.Add(wx.StaticText(self, label = 'unmatched bets:  '))        
+        main_sizer.AddSpacer(40)
+        main_sizer.Add(wx.StaticText(self, label = 'unmatched bets:  '))
+        self.bets_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.bets_sizer)
 
         # draw text
         self.DrawPositionIfText()
         self.DrawPositionText()
 
         self.SetSizer(main_sizer)
+        self.Layout()
+
+    def DrawUnmatchedBets(self):
+        self.bets_sizer.Clear()
+
+        for o in self.unmatched_bets:
+            bsz = wx.BoxSizer(wx.HORIZONTAL)
+            bsz.Add(wx.StaticText(self, label = 'BDAQ' if o.exid == bconst.BDAQID else 'BF'))
+            bsz.AddSpacer(20)
+            bsz.Add(wx.StaticText(self, label = 'back' if o.polarity == order.BACK else 'lay'))
+            bsz.AddSpacer(20)
+            bsz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.price)))
+            bsz.AddSpacer(20)
+            bsz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.matchedstake)))
+            bsz.AddSpacer(20)            
+            bsz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.unmatchedstake)))
+            self.bets_sizer.Add(bsz)
         self.Layout()
 
     def DrawPositionText(self):
@@ -99,12 +121,49 @@ class SummaryPanel(wx.Panel):
             self.position_if = posif
             self.DrawPositionIfText()
 
+        unmatched = smodel.postracker.get_unmatched_bets()
+
+        if unmatched != self.unmatched_bets:
+            self.unmatched_bets = unmatched
+            self.DrawUnmatchedBets()
+
 class BetsPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
+
+        self.all_bets = []
+
+        self.bets_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.bets_sizer)
+        self.Layout()
+
+    def DrawBets(self):
+        """Draw info for all bets made thus far."""
+        
+        self.bets_sizer.Clear()
+
+        for o in self.all_bets:
+            bsz = wx.BoxSizer(wx.HORIZONTAL)
+            bsz.Add(wx.StaticText(self, label = 'BDAQ' if o.exid == bconst.BDAQID else 'BF'))
+            bsz.AddSpacer(20)
+            bsz.Add(wx.StaticText(self, label = 'back' if o.polarity == order.BACK else 'lay'))
+            bsz.AddSpacer(20)
+            bsz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.price)))
+            bsz.AddSpacer(20)
+            bsz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.matchedstake)))
+            bsz.AddSpacer(20)            
+            bsz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.unmatchedstake)))
+            self.bets_sizer.Add(bsz)
+        self.Layout()
         
     def Update(self, smodel):
-        pass
+
+        all_bets = smodel.postracker.get_all_bets()
+
+        # todo: this comparison is inefficient
+        if self.all_bets != all_bets:
+            self.all_bets = all_bets
+            self.DrawBets()
 
 class StatePanel(wx.Panel):
     def __init__(self, parent):
