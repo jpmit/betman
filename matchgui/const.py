@@ -1,5 +1,11 @@
+# app name
 NAME = "Match GUI"
+
+# number back and lay prices to display
 NPRICES = 3
+
+# name of config file
+CFGFILE = 'myconfig.pkl'
 
 # colours for the buttons and graphs
 LBLUE   = (14,  218, 249) # BF back
