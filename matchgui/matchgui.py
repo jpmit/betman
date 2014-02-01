@@ -5,19 +5,25 @@ import models
 from betman.strategy import strategy
 from mainframe import MyFrame
 import os
+import sys
 import pickle
 
 class GlobalConfig(object):
     """Global app config
 
     The main app loads this at startup.  Note we only read and save
-    the global config file at startup and shutdown respectively.
+    the global config file at startup and shutdown respectively.  We
+    are using Python's pickle module to store the config file at the
+    moment, though the wx.Config functionality may be worth another
+    look at some point (or, given the simple nature of the
+    configuration data, a plain text file may be better than
+    pickling).
     """
     
     # allowed options that are True/False (drawn as checkboxes).  Each
     # tuple stores shortname, full text, default value.
 
-    # note BFLogin not currently implemented
+    # note BFLogin option not currently implemented
     BINARIES = [('BFLogin', 'Login to BF at startup', True),
                 ('EngineStart', 'Start engine at startup', False)]
 
@@ -101,7 +107,23 @@ class MyApp(wx.App):
         self.SetTopWindow(self.frame)
         self.frame.Show()
 
+        # automations (automatic programs for adding and removing
+        # strategies)
+        sys.path.append(os.path.join(os.path.dirname(__file__), 
+                                     'automation'))
+        self.automations = []
+
         return True
+
+    def AddAutomation(self, afile):
+        """Add automation object from file name."""
+        
+        print 'adding automation from {0}'.format(afile)
+
+        # add to current automations: note the automation class must
+        # be called 'MyAutomation'.
+        aut = __import__(os.path.split(afile)[-1].split('.')[0])
+        self.automations.append(aut.MyAutomation())
 
     def GetConfig(self):
         # use pickle module to store config for now
@@ -157,17 +179,22 @@ class MyApp(wx.App):
             self.StartTimer()
 
     def OnTick(self, event):
-        """
-        Main loop: update any order information, update prices,
-        update strategies, place bets, then use the new prices to
-        update the relevant models.
-        """
+        """Main loop of the engine."""
 
-        # update any outstanding orders (every tick).
+        # handle any 'automations' we have.  All this does is adds or
+        # removes strategies.
+        if self.automations:
+            for a in self.automations:
+                print a # debug
+                # note this can modify the strategy group
+                a.update(self.stratgroup)
+
+        # update the status of any outstanding (unmatched) orders by
+        # polling BF and BDAQ.
         self.omanager.update_order_information()
 
-        # we give the strategy group potential new order information
-        # every tick.
+        # feed the current order dictionary just updated to the
+        # strategies.
         self.stratgroup.update_orders(self.omanager.orders)
 
         # get prices for any strategies in the strategy group that

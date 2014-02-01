@@ -10,7 +10,10 @@ from controlpanel import ControlPanel
 from imgpanel import SplashPanel
 
 class MyFrame(wx.Frame):
-    """Main window."""
+    """Main window.
+
+    This holds the menus, and manages the panels that are used.
+    """
     
     def __init__(self, parent, id = wx.ID_ANY, title="",
                  pos = wx.DefaultPosition, size = wx.DefaultSize,
@@ -19,6 +22,9 @@ class MyFrame(wx.Frame):
 
         super(MyFrame, self).__init__(parent, id, title,
                                       pos, size, style, name)
+
+        # reference to main app
+        self.app = wx.GetApp()
 
         # two panel layout: the left panel is always the EventPanel.
         # The right panel starts off as a MarketPanel (which is
@@ -60,6 +66,12 @@ class MyFrame(wx.Frame):
     def CreateMenus(self):
         menubar = wx.MenuBar()
 
+        # file menu
+        filemenu = wx.Menu()
+        filemenu.Append(wx.ID_FILE, "Load Automation")
+        filemenu.Append(wx.ID_EXIT, "Exit")
+        menubar.Append(filemenu, "File")
+        
         # edit menu
         editmenu = wx.Menu()
         editmenu.Append(wx.ID_PREFERENCES, "Settings")
@@ -73,8 +85,28 @@ class MyFrame(wx.Frame):
         self.SetMenuBar(menubar)
 
         # bind events to menu clicks so that we show correct frames
+        self.Bind(wx.EVT_MENU, self.OnLoadAutomation, id = wx.ID_FILE)
+        self.Bind(wx.EVT_MENU, self.OnClose, id = wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.OnSettings, id = wx.ID_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.OnAbout, id = wx.ID_ABOUT)
+
+    def OnLoadAutomation(self, event):
+        """Load an automation file."""
+
+        dialog = wx.FileDialog(self, "Open automation", "automation/", "",
+                               "Py files (*.py)|*.py", 
+                               wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+
+        if dialog.ShowModal() == wx.ID_CANCEL:
+            return
+
+        # we only want to save the name of the file here, and the fact
+        # that there is now an automation registered.
+        afile = dialog.GetPath()
+
+        # add the automation to the app: this will mean that the
+        # automation gets called every tick.
+        self.app.AddAutomation(afile)
 
     def OnSettings(self, event):
         """Show the settings frame."""
@@ -101,7 +133,7 @@ class MyFrame(wx.Frame):
         else:
             # save configuration file which may have been changed in
             # settings.
-            wx.GetApp().gconfig.SaveCurrentConfigToFile()
+            self.app.gconfig.SaveCurrentConfigToFile()
             event.Skip()
 
     def ShowSplashPanel(self):
