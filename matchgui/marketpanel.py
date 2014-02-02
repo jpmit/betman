@@ -62,7 +62,6 @@ class MarketPanel(wx.Panel):
         self.ename = ename
         self.ttext.SetLabel('List of matching markets for event: {0}'\
                             .format(self.ename))
-#        self.tsz.Layout()
 
     def OnRefresh(self, event):
         self.mmodel.Update(self.ename, refresh = True)
@@ -84,26 +83,9 @@ class MarketPanel(wx.Panel):
         # that the model will update the view (the ListCtrl) via its
         # listener function.
         self.mmodel.Update(ename)
-        
-        #self.Clear()
-
-        # __init__ of MatchListCtrl will get the events
-        # show progress box
-        #self.dialog = wx.ProgressDialog(const.NAME,
-        #                                "Loading markets for {0}".format(ename),
-        #                                parent = self, style = wx.PD_APP_MODAL | wx.PD_SMOOTH)
-        #self.dialog.Pulse()
-        #self.timer = wx.Timer()
-        #self.Bind(wx.EVT_TIMER, self.Pulse, self.timer)
-        #self.timer.Start(100)
-        #self.DestroyDialog()
 
         self.Layout()
         self.lst.Layout()
-#        self.Layout()
-#        self.SetSize(
-        #self.lst.Fit()
-        #self.Fit()
 
     def Pulse(self, event):
         self.dialog.Pulse()

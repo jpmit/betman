@@ -16,17 +16,22 @@ class GlobalConfig(object):
     are using Python's pickle module to store the config file at the
     moment, though the wx.Config functionality may be worth another
     look at some point (or, given the simple nature of the
-    configuration data, a plain text file may be better than
-    pickling).
+    configuration data, a plain text file with rows key=value may be
+    better than pickling).
     """
     
     # allowed options that are True/False (drawn as checkboxes).  Each
     # tuple stores shortname, full text, default value.
 
-    # note BFLogin option not currently implemented
+    # BFLogin - option not yet implemented
+    # EngineStart - start the timer (ticks) from startup
+    # ManyMarkets - controls whether we kill strategies for a
+    # particular market after navigating away from that market.
+    # (currently set to False, and not yet implemented)
+
     BINARIES = [('BFLogin', 'Login to BF at startup', True),
                 ('EngineStart', 'Start engine at startup', False),
-                ('ManyMarkets', 'Keep trading on markets', False)]
+                ('ManyMarkets', 'Keep trading on markets', True)]
 
     def __init__(self, cfg):
         # name of cfg file

@@ -249,7 +249,8 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             self.SetButtonAppearance(gobtn, False)
 
             # format layout of strategy stuff
-            strat_sizer.Add(wx.StaticText(self, label = 'strategy'), 0, wx.CENTER)
+            strat_sizer.Add(wx.StaticText(self, label = 'strategy'), 
+                            0, wx.CENTER)
             strat_sizer.Add(stratsel, 0, wx.CENTER)
             strat_sizer.Add(freqspin, 0, wx.CENTER)
             strat_sizer.Add(gobtn, 0, wx.CENTER)
@@ -277,10 +278,11 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         if self.app.strat_models[key].HasStrategy():
             # update the frequency of the currently running strategy
             setattr(self.app.strat_models[key].strategy,
-                    managers.UTICK, event.GetEventObject.GetValue())
+                    managers.UTICK, event.GetEventObject().GetValue())
 
     def SetButtonAppearance(self, but, pressed):
         """Generic function for green/red start/stop button."""
+
         if pressed:
             but.SetBackgroundColour('red')
             but.SetLabel('Stop')

@@ -2,7 +2,7 @@ import wx
 import const
 import os
 import wx.lib.scrolledpanel as scrolledpanel
-from settingsframe import SettingsFrame
+from menuframes import SettingsFrame, CurrentStrategiesFrame
 from eventpanel import EventPanel
 from marketpanel import MarketPanel
 from pricepanel import PricePanel
@@ -77,6 +77,11 @@ class MyFrame(wx.Frame):
         editmenu.Append(wx.ID_PREFERENCES, "Settings")
         menubar.Append(editmenu, "Edit")
 
+        # view menu
+        viewmenu = wx.Menu()
+        curr = viewmenu.Append(wx.ID_ANY, "Current Strategies")
+        menubar.Append(viewmenu, "View")
+
         # help menu
         helpmenu = wx.Menu()
         helpmenu.Append(wx.ID_ABOUT, "About")
@@ -87,6 +92,7 @@ class MyFrame(wx.Frame):
         # bind events to menu clicks so that we show correct frames
         self.Bind(wx.EVT_MENU, self.OnLoadAutomation, id = wx.ID_FILE)
         self.Bind(wx.EVT_MENU, self.OnClose, id = wx.ID_EXIT)
+        self.Bind(wx.EVT_MENU, self.OnCurrentStrategies, curr)
         self.Bind(wx.EVT_MENU, self.OnSettings, id = wx.ID_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.OnAbout, id = wx.ID_ABOUT)
 
@@ -135,6 +141,12 @@ class MyFrame(wx.Frame):
             # settings.
             self.app.gconfig.SaveCurrentConfigToFile()
             event.Skip()
+
+    def OnCurrentStrategies(self, event):
+        """Show frame with currently running strategies."""
+
+        frame = CurrentStrategiesFrame(self)
+        frame.Show()
 
     def ShowSplashPanel(self):
         """
