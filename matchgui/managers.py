@@ -113,11 +113,30 @@ class OrderManager(object):
             # we are assuming here that if the number of orders on
             # each exchange are the same, then orders are made of
             # matching orders.
-            if (len(odict.get(const.BDAQID, [])) == len(odict.get(const.BFID, []))):
-                self.save_match_orders(odict, saveorders)
+            # TODO: work out how to sensibly do this for
+            # cross-exchange strategies only, as this could get tricky
+            # when placing many orders.
+
+            #if (len(odict.get(const.BDAQID, [])) == len(odict.get(const.BFID, []))):
+            #    self.save_match_orders(odict, saveorders)
 
     def save_match_orders(self, odict, saveorders):
-        """Save matching order ids to database table matchorders."""
+        """Save matching order ids to database table matchorders
+        
+        odict - dictionary of orders just placed, directly from
+                strategies (no order ids)
+        
+        saveorders - dictionary of all orders just placed (including
+                     order ids)
+
+        Here, we go through saveorders to find the orders that match
+        those in odict, in order to fill in the order ids.  We then
+        save the 'matching' orders to the DB.
+
+        This routine is really for the 'crossexchange' arbitrage
+        strategy, since an order on BDAQ (back/lay) is paired with
+        ('matched') an order of BF of opposite polarity (lay/back).
+        """
 
         # since we got odict from each strategy in turn, they
         # are already in matching order; we just need to add
@@ -125,6 +144,7 @@ class OrderManager(object):
         # API.
         matchorders = zip(odict[const.BDAQID], odict[const.BFID])
         for (o1, o2) in matchorders:
+            
             # we need to get the order id for o1 and o2 from
             # saveorders dictionary
             for o in saveorders[const.BDAQID].values():

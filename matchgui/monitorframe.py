@@ -12,7 +12,6 @@ class MonitorFrame(wx.Frame):
         # store key, this is used so that we can track when the frame
         # is killed
         self.key = key
-        #self.panel = MonitorPanel(self)
 
         panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.summary_panel = SummaryPanel(self)

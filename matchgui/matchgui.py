@@ -25,7 +25,8 @@ class GlobalConfig(object):
 
     # note BFLogin option not currently implemented
     BINARIES = [('BFLogin', 'Login to BF at startup', True),
-                ('EngineStart', 'Start engine at startup', False)]
+                ('EngineStart', 'Start engine at startup', False),
+                ('ManyMarkets', 'Keep trading on markets', False)]
 
     def __init__(self, cfg):
         # name of cfg file

@@ -44,7 +44,7 @@ class EventPanel(scrolledpanel.ScrolledPanel):
         self.Bind(wx.EVT_BUTTON, self.OnEventClick, ebtn)
 
     def OnEventClick(self, event):
-        """Called when an event button, e.g. 'Rugby Union' is clicked."""
+        """Called when an event button, e.g. 'Rugby Union', is clicked."""
         
         if self.selected_obj:
             self.selected_obj.SetBackgroundColour(None)

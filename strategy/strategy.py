@@ -29,14 +29,18 @@ class Strategy(object):
 
         return {const.BDAQID: [], const.BFID: []}
 
-    def get_orders(self):
-        """
-        Return a list of orders involved with a strategy.  These
-        should be returned as a dict with keys const.BDAQID and
-        const.BFID.
+    def get_orders_to_place(self):
+        """Return a dictionary of orders to be placed.
+
+        Dictionary should have keys const.BDAQID and const.BFID.
         """
 
-        return {const.BDAQID: [], const.BFID: []}
+        return self.toplace
+
+    def get_allorders(self):
+        """Return list of all successfully placed orders."""
+
+        return self.allorders
 
     def update_prices(self, prices):
         """
@@ -104,21 +108,6 @@ class StrategyGroup(object):
             if getattr(strat, attr):
                 strat.update_prices(prices)
 
-    def get_orders(self):
-        """
-        Order ids for all strategies in the group used for checking
-        order status.  This shouldn't return order ids which we
-        already know are matched.
-        """
-        
-        oids = {const.BDAQID: [], const.BFID: []}
-        for strat in self.strategies:
-            # get mid dictionary for strat
-            odict = strat.get_orders()
-            for k in odict:
-                oids[k] = oids[k] + odict[k]
-        return oids
-
     def get_orders_to_place(self):
         """
         Return dictionary with keys that are the exchange ids, and
@@ -128,7 +117,7 @@ class StrategyGroup(object):
         toplace = {const.BDAQID: [], const.BFID: []}
         for strat in self.strategies:
             # get order dictionary for each strat
-            pldict = strat.toplace
+            pldict = strat.get_orders_to_place()
             for k in pldict: # k is BDAQID or BFID
                 toplace[k] = toplace[k] + pldict[k]
         
@@ -225,3 +214,9 @@ class StateMachine(object):
 
         self.active_state = self.states[new_state_name]
         self.active_state.entry_actions()
+
+    def get_num_visited_states(self):
+        return len(self.visited_states)
+
+    def get_visited_states(self):
+        return self.visited_states

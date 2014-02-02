@@ -18,7 +18,10 @@ _MINBETS = {const.BDAQID: 0.5, const.BFID: 2.0}
 _EPS = 0.000001
 
 class MMStrategy(strategy.Strategy):
-    """Market making strategy for a single selection."""
+    """Market making strategy for a single selection.  
+
+    This is for a single exchange only, i.e. either BDAQ or BF.
+    """
     
     def __init__(self, sel = None):
         """
@@ -68,6 +71,9 @@ class MMStrategy(strategy.Strategy):
                 return o
         # no order found
         return None
+
+    def get_orders_to_place(self):
+        return self.toplace
 
     def update_orders(self, orders):
         """

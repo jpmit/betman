@@ -20,7 +20,7 @@ class PositionTracker(object):
         placed (oldest first).
         """
 
-        return self.strategy.allorders
+        return self.strategy.get_allorders()
 
     def get_positions(self):
         """
@@ -32,7 +32,7 @@ class PositionTracker(object):
 
         pos = 0.0
         posif = 0.0
-        for o in self.strategy.allorders:
+        for o in self.strategy.get_allorders():
             p = o.stake * o.price
             if o.polarity == order.LAY:
                 p = -p
@@ -45,12 +45,11 @@ class PositionTracker(object):
     def get_unmatched_bets(self):
 
         unmatched = []
-        for o in self.strategy.allorders:
+        for o in self.strategy.get_allorders():
             if o.status == order.UNMATCHED:
                 unmatched.append(o)
 
         return unmatched
                 
     def get_all_bets(self):
-        return self.strategy.allorders
-
+        return self.strategy.get_allorders()

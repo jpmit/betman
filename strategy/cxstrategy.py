@@ -80,29 +80,36 @@ class CXStrategy(strategy.Strategy):
         
         return {const.BDAQID: [self.sel1.mid],
                 const.BFID: [self.sel2.mid]}
-
-    def get_orders(self):
-        """
-        Return dictionary of all order objects involved in
-        strategy.  This is needed so that we can check the status of
-        the orders (we only in fact really need this for the BF
-        orders).
-        """
+    
+    def get_orders_to_place(self):
+        """Return dictionary of orders to place."""
         
-        odict = {const.BDAQID: [], const.BFID: []}
-        # note: we only care about checking the order status if we
-        # don't know for sure whether or not it is matched. We also
-        # only care about the order if it has been placed, in fact we
-        # need it to have been placed in order to update its status.
-        if hasattr(self, 'border'):
-            if ((self.border.status != order.MATCHED) and
-                (self.border.status != order.NOTPLACED)):
-                odict[self.border.exid].append(self.border)
-        if hasattr(self, 'lorder'):
-            if ((self.lorder.status != order.MATCHED) and
-                (self.lorder.status != order.NOTPLACED)):
-                odict[self.lorder.exid].append(self.lorder)
-        return odict
+        # has keys const.BDAQID, const.BFID, and values that are lists
+        # of order objects.
+        return self.toplace
+
+    #def get_orders(self):
+    #    """
+    #    Return dictionary of all order objects involved in
+    #    strategy.  This is needed so that we can check the status of
+    #    the orders (we only in fact really need this for the BF
+    #    orders).
+    #    """
+    #    
+    #    odict = {const.BDAQID: [], const.BFID: []}
+    #    # note: we only care about checking the order status if we
+    #    # don't know for sure whether or not it is matched. We also
+    #    # only care about the order if it has been placed, in fact we
+    #    # need it to have been placed in order to update its status.
+    #    if hasattr(self, 'border'):
+    #        if ((self.border.status != order.MATCHED) and
+    #            (self.border.status != order.NOTPLACED)):
+    #            odict[self.border.exid].append(self.border)
+    #    if hasattr(self, 'lorder'):
+    #        if ((self.lorder.status != order.MATCHED) and
+    #            (self.lorder.status != order.NOTPLACED)):
+    #            odict[self.lorder.exid].append(self.lorder)
+    #    return odict
         
     def check_instant_opportunity(self):
         """

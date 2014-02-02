@@ -5,12 +5,13 @@ import graphframe
 import monitorframe
 import managers
 import models
-from betman.strategy import strategy, cxstrategy, mmstrategy
+from betman.strategy import strategy, cxstrategy, mmstrategy, bothmmstrategy
 
 # available strategies, names and 'constructors'
 STRATEGIES = [('Arb', cxstrategy.CXStrategy),
               ('Make BDAQ', mmstrategy.MMStrategy),
-              ('Make BF', mmstrategy.MMStrategy)]
+              ('Make BF', mmstrategy.MMStrategy),
+              ('Make Both', bothmmstrategy.BothMMStrategy)]
 
 class PricePanel(scrolledpanel.ScrolledPanel):
     """
@@ -324,12 +325,18 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
             bdaqsel, bfsel = self.pmodel.GetSelsByBDAQName(key)
 
-            # slightly hackish (?)
+            # slightly hacky
             if 'BDAQ' in sname:
+                # market make BDAQ only
                 newstrat = STRATEGIES[sindx][1](bdaqsel)
             elif 'BF' in sname:
+                # market make BF only
                 newstrat = STRATEGIES[sindx][1](bfsel)
+            elif 'Both' in sname:
+                # market make BDAQ and BF
+                newstrat = STRATEGIES[sindx][1](bdaqsel, bfsel)
             else:
+                # cross exchange strategy
                 newstrat = STRATEGIES[sindx][1](bdaqsel, bfsel)
 
             # set the update frequency of the strategy

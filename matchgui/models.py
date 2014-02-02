@@ -357,15 +357,13 @@ class StrategyModel(AbstractModel):
                 # note we have to do it this way since the strategy
                 # could have visited multiple states in a single
                 # update.
-                nvisited = len(self.strategy.brain.visited_states)
+                nvisited = self.strategy.brain.get_num_visited_states()
                 if nvisited != self._nvisited:
-                    self.visited_states = self.strategy.brain.visited_states
+                    self.visited_states = self.strategy.\
+                                          brain.get_visited_states()
                     # the 'new_states' is accessed by the view
                     self.new_states = self.visited_states[self._nvisited:]
                     self._nvisited = nvisited
-                    
-                    
-                    
 
                 self.UpdateViews()
 
