@@ -108,6 +108,7 @@ class StrategyGroup(object):
             if getattr(strat, attr):
                 strat.update_prices(prices)
 
+    # not currently used (instead we are using get_orders_to_place_if)
     def get_orders_to_place(self):
         """
         Return dictionary with keys that are the exchange ids, and
@@ -120,6 +121,24 @@ class StrategyGroup(object):
             pldict = strat.get_orders_to_place()
             for k in pldict: # k is BDAQID or BFID
                 toplace[k] = toplace[k] + pldict[k]
+        
+        return toplace
+
+    def get_orders_to_place_if(self, attr = '__dict__'):
+        """
+        Return dictionary with keys that are the exchange ids, and
+        items that are lists of order objects that we want to place.
+
+        We only consider strategies for which attr is True.
+        """
+        
+        toplace = {const.BDAQID: [], const.BFID: []}
+        for strat in self.strategies:
+            if getattr(strat, attr):
+                # get order dictionary for each strat
+                pldict = strat.get_orders_to_place()
+                for k in pldict: # k is BDAQID or BFID
+                    toplace[k] = toplace[k] + pldict[k]
         
         return toplace
 

@@ -38,7 +38,7 @@ class MMStrategy(strategy.Strategy):
 
         # add states
         noopp_state = MMStateNoOpp(self)
-        opp_state = MMStateOpp(self)        
+        opp_state = MMStateOpp(self)
         both_placed_state = MMStateBothPlaced(self)
         back_matched_state = MMStateBackMatched(self)
         lay_matched_state = MMStateLayMatched(self)
@@ -47,7 +47,7 @@ class MMStrategy(strategy.Strategy):
         self.brain.add_state(noopp_state)
         self.brain.add_state(opp_state)
         self.brain.add_state(both_placed_state)
-        self.brain.add_state(back_matched_state)        
+        self.brain.add_state(back_matched_state)   
         self.brain.add_state(lay_matched_state)
         self.brain.add_state(both_matched_state)        
 
@@ -161,8 +161,16 @@ class MMStrategy(strategy.Strategy):
     def create_orders(self):
         """Create both back and lay orders."""
 
-        # 1 pound at the moment
-        bstake, lstake = 1.0, 1.0
+        # minimum stake at the moment
+        exid = self.sel.exid
+
+        if exid == const.BDAQID:
+            # although minimum is 0.5, there are some difficulties
+            # getting this to show up when calling prices from nonAPI
+            # method
+            bstake = lstake = 1
+        else:
+            bstake = lstake = _MINBETS[self.sel.exid]
 
         oback = self.sel.make_best_lay()
         olay = self.sel.make_best_back()

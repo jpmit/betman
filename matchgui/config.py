@@ -1,4 +1,5 @@
 import os
+import pickle
 
 class GlobalConfig(object):
     """Global app config

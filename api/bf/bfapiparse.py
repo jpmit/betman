@@ -81,7 +81,16 @@ def ParsegetMUBets(res, odict):
     return allorders
 
 def ParseplaceBets(res, olist):
+    # debug
+    print olist
+    print res
 
+    # _check_errors only checks errors in the header and the footer,
+    # we can have other errors that are returned in resultCode of each
+    # (PlaceBetsResult) e.g resultCode = "INVALID_SIZE", and this even
+    # if the main errorcode is "OK".  This is a 'known issue' in the
+    # BF API, as detailed by the documentation
+    # BetfairSportsExchangeAPIReferenceGuidev6.pdf, p114.
     _check_errors(res)
     
     # check that we have one result for each order executed
@@ -90,13 +99,25 @@ def ParseplaceBets(res, olist):
     allorders = {}
     # go through all results in turn and add to allorders list
     for betres, o in zip(res.betResults.PlaceBetsResult, olist):
-        # order id
+
+        # first check that the bet was ok, there can be many possible
+        # errors here, e.g. INVALID_SIZE: see
+        # BetfairSportsExchangeAPIReferenceGuidev6.pdf, p119 for the
+        # full list.
+        if betres.resultCode != "OK":
+            # we don't want to raise an exception here since the other
+            # orders could have gone through ok, so print a warning
+            # and skip to next order order id.
+            betlog.betlog.debug('Warning: order {0} returned result {1}'\
+                                .format(o, betres.resultCode))
+
         oref = betres.betId
         # check if we were matched
         matched = betres.sizeMatched
         if matched == o.stake:
             status = order.MATCHED
         else:
+            # TODO: should we also have a part matched type? Probably.
             status = order.UNMATCHED
 
         odict = {'mid': o.mid, 'oref': oref, 'status': status,

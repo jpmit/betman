@@ -78,11 +78,14 @@ class OrderManager(object):
     def get_new_orders(self):
         """Get new order dictionary from the strategy group."""
 
-        # note we get orders from all the strategies, not just those
-        # with UPDATED = True.  But those with UPDATED = False will
-        # return a blank order dictionary.
+        # note we only get orders from the strategies with UPDATED =
+        # True, i.e. only those which got new pricing information this
+        # tick.  Among other reasons, this is because some strategies
+        # (e.g. MMStrategy) need to be fed new prices in order to
+        # clear the order dictionary, so if we didn't use _if, we
+        # could potentially place these orders many times.
 
-        return self.stratgroup.get_orders_to_place()
+        return self.stratgroup.get_orders_to_place_if(UPDATED)
 
     def make_orders(self):
         """Make any outstanding orders, and update DB."""
@@ -211,7 +214,7 @@ class PricingManager(object):
         self.new_prices = {const.BDAQID: {}, const.BFID: {}}
 
         # counter to store how many times we have ticked
-        self.ticks = 0
+        self.ticks = 0L
 
     def get_strategy_with_mid(bdaqmid):
         """

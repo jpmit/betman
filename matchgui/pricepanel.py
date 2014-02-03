@@ -99,19 +99,16 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         name_sz = wx.BoxSizer(wx.HORIZONTAL)
 
-        # get market name
-        name_sz.Add(wx.StaticText(self, label = self.name))
+        # write market name at top, along with mids
+        mtext = '{0}\nMIDS: BDAQ {1} BF {2}'.format(self.name, 
+                                                    self.bdaqmid,
+                                                    self.bfmid)
+        name_sz.Add(wx.StaticText(self, label=mtext))
         main_sizer.Add(name_sz)
         main_sizer.AddSpacer(50)
 
         # get market selection prices for both BDAQ and BF
         bdaqsels, bfsels = self.pmodel.GetSels()
-
-        # WARNING: this really should not be here; this code needs to
-        # be reorganised
-        # using the selections, initialise the strategy models
-        #self.GetTopLevelParent().GetControlPanel().mmmodel.InitStrategies(bdaqsels, bfsels)
-        #self.GetTopLevelParent().GetControlPanel().arbmodel.InitStrategies(bdaqsels, bfsels)
 
         # content_sizer holds prices on left, crossing panel on right
         content_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -132,7 +129,10 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             # struggling to center this text! (it always appears in
             # the top left).
             name_sizer = wx.BoxSizer(wx.VERTICAL)
-            selname = wx.StaticText(self, label = bdaqsel.name,
+            
+            # put selection name, [bdaqselid], [bfselid]
+            nametxt = '\n'.join([bdaqsel.name, str(bdaqsel.id), str(bfsel.id)])
+            selname = wx.StaticText(self, label = nametxt,
                                     size = (PricePanel.BSIZE[0]*2,
                                             PricePanel.BSIZE[1]*2),
                                     style = wx.ALIGN_CENTER)
@@ -426,6 +426,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
     def UpdateBtnsForSelection(self, bdaqsel, bdaqbprices,
                                bdaqlprices, bfbprices,
                                bflprices):
+#        print bdaqsel
+#        print bdaqbprices, bdaqlprices
+#        print bfbprices, bflprices
         for (i, prices) in enumerate([bdaqbprices, bdaqlprices,
                                       bfbprices, bflprices]):
             for (j, btn) in enumerate(self.btndict[bdaqsel.name][i]):
