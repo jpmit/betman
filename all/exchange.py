@@ -118,17 +118,21 @@ class Selection(object):
         """Return best back price, or 1.0 if no price."""
         
         if self.padback[0][0] is None:
-            return exchangedata.MINODDS
-        return max(exchangedata.MINODDS,
-                   self.padback[0][0])
+            # best back is 1000
+            return exchangedata.MAXODDS
+        return self.padback[0][0]
+#        return max(exchangedata.MINODDS,
+#                   self.padback[0][0])
 
     def best_lay(self):
         """Return best lay price, or 1000.0 if no price."""
         
         if self.padlay[0][0] is None:
+            # best lay is 1.01
             return exchangedata.MINODDS
-        return min(exchangedata.MAXODDS,
-                   self.padlay[0][0])
+        return self.padlay[0][0]
+#        return min(exchangedata.MAXODDS,
+#                   self.padlay[0][0])
 
     def make_best_lay(self):
         """
