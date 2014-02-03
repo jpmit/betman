@@ -44,6 +44,22 @@ def update_prices(middict):
 
     return prices, emids
 
+def _get_bf_orderlist(olist):
+    
+    odict = {}
+    for o in olist:
+        mid = o.mid
+        if mid in odict:
+            odict[mid].append(o)
+        else:
+            # start a new list for this mid
+            odict[mid] = [o]
+    
+    # return a list of lists, where each sub-list is a list of orders
+    # for a particular market id.  Note that this doesn't
+    # (necessarily) preserve ordering, which is totally ok here.
+    return odict.values()
+
 def make_orders(odict):
     """
     Make orders.  Here oddict is a dictionary with keys
@@ -72,13 +88,17 @@ def make_orders(odict):
             orders[myid].update(ords)
             q.task_done()
 
-    # we start one thread for the BDAQ orders, and one thread for each
-    # of the BF orders.  Note that this is not quite optimum, since in
-    # principle a single BF call can place multiple bets on a single
-    # market.  So if some of the BF orders are for the same market, we
-    # are missing a trick...
+    # we start one thread for the BDAQ orders, since we can place on multiple markets with a single API call
     bdaq_threads = 1 if odict[const.BDAQID] else 0
-    bf_threads = len(odict[const.BFID])
+
+    # for BF, we need one API call for each separate market id.  So
+    # first get a list of lists,
+    # [[mid1_o1,mid1_o2,...],[mid2_o1,mid2_o2,...],...] Each list will
+    # be given a single thread, and a BF API call.
+    bf_betlist = _get_bf_orderlist(odict[const.BFID])
+
+    # get list of lists, orders on each market.
+    bf_threads = len(bf_betlist)
     
     for i in range(bdaq_threads + bf_threads):
         t = Thread(target = _worker)
@@ -90,7 +110,7 @@ def make_orders(odict):
         q.put((bdaqapi.PlaceOrdersNoReceipt, odict[const.BDAQID],
                const.BDAQID))
     for i in range(bf_threads):
-        q.put((bfapi.PlaceBets, odict[const.BFID], const.BFID))
+        q.put((bfapi.PlaceBets, bf_betlist[i], const.BFID))
         
     # block and wait for finish
     q.join()
