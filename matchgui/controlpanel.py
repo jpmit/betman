@@ -27,11 +27,6 @@ class ControlPanel(wx.Panel):
         # the arbitrage strategy, again updated by the pricing model.
         self.pmodel = self.app.pmodel
 
-        # may want to remove these once we have individual strats for
-        # each selection pair.
-        self.mmmodel = models.MarketMakingModel()
-        self.arbmodel = models.ArbitrageModel()
-
         # when the model is updated, we draw the prices and stakes
         # onto the main panel.
         self.pmodel.AddListener(ppanel.OnUpdatePrices)

@@ -426,9 +426,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
     def UpdateBtnsForSelection(self, bdaqsel, bdaqbprices,
                                bdaqlprices, bfbprices,
                                bflprices):
-#        print bdaqsel
-#        print bdaqbprices, bdaqlprices
-#        print bfbprices, bflprices
+
         for (i, prices) in enumerate([bdaqbprices, bdaqlprices,
                                       bfbprices, bflprices]):
             for (j, btn) in enumerate(self.btndict[bdaqsel.name][i]):

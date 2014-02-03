@@ -117,63 +117,21 @@ class PriceModel(AbstractModel):
                 # call the listener functions.
                 self.UpdateViews()
 
-# obselete, use the general StrategyModel below which can do either
-# market making or arbitrage.
-class MarketMakingModel(AbstractModel):
-
-    def __init__(self):
-        super(MarketMakingModel, self).__init__()
-
-        # the arbitrage model owns a group of strategies.  each
-        # individual strategy involves a pair of selections.
-        self.stratgroup = strategy.StrategyGroup()
-
-    def Clear(self):
-        self.stratgroup.clear()
-
-    def InitStrategies(self, bdaqsels, bfsels):
-        pass
-        
-    def Update(self, pmodel):
-        print 'updating MM model'
-        self.UpdateViews()
-
-# obselete, use the general StrategyModel below which can do either
-# market making or arbitrage.
-class ArbitrageModel(AbstractModel):
-
-    def __init__(self):
-        super(ArbitrageModel, self).__init__()
-
-        # the arbitrage model owns a group of strategies.  each
-        # individual strategy involves a pair of selections.
-        self.stratgroup = strategy.StrategyGroup()
-
-    def InitStrategies(self, bdaqsels, bfsels):
-        for (bdsel, bfsel) in zip(bdaqsels, bfsels):
-            self.stratgroup.add(cxstrategy.CXStrategy(bdsel, bfsel))
-
-    def Update(self, pmodel):
-        print 'updating Arb model'
-
-        # we need to update the strategy group with a prices
-        # dictionary.
-        self.stratgroup.update(pmodel.PricesDict())
-        # probably call the functionality to make bets somewhere
-        # here...
-
-        # progagate the updates
-        self.UpdateViews()
-
-    def Clear(self):
-        self.stratgroup.clear()
-
 class MatchSelectionsModel(AbstractModel):
     """Stores data on matching selections for all the different events."""
     
     # if usedb is set, we will initialise the matching markets cache
     # from the sqlite database.
     USEDB = True
+
+    # singleton design pattern
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(MatchSelectionsModel, cls).\
+                            __new__(cls, *args, **kwargs)
+
+        return cls._instance
     
     def __init__(self):
         super(MatchSelectionsModel, self).__init__()
@@ -236,6 +194,15 @@ class MatchMarketsModel(AbstractModel):
     # if usedb is set, we will initialise the matching markets cache
     # from the sqlite database.
     USEDB = True
+
+    # singleton design pattern
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(MatchMarketsModel, cls).\
+                            __new__(cls, *args, **kwargs)
+
+        return cls._instance
     
     def __init__(self):
         super(MatchMarketsModel, self).__init__()
@@ -400,12 +367,16 @@ class GraphPriceModel(AbstractModel):
         for (s1, s2) in [(bdaqsel, bfsel), (bfsel, bdaqsel)]:
             olay = s1.best_lay()
 
-            if olay == 1.0:
+            if olay == exchange.MINODDS:
                 # no lay price is currently offered
                 return False
 
             # back selection at best current price
             oback = s2.best_back()
+
+            if oback == exchange.MAXODDS:
+                # no back price is currently offered
+                return False
 
             if (oback > olay / ((1.0 - self.COMMISSION[const.BDAQID])*\
                                 (1.0 - self.COMMISSION[const.BFID]))):

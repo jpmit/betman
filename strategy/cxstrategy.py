@@ -122,12 +122,15 @@ class CXStrategy(strategy.Strategy):
         for s1,s2 in [(self.sel1,self.sel2), (self.sel2,self.sel1)]:
             # lay selection at best current price
             olay = s1.best_lay()
-            if olay == 1.0:
+            if olay == exchangedata.MINODDS:
                 # no lay price is currently offered
                 return False
 
             # back selection at best current price
             oback = s2.best_back()
+
+            if oback == exchange.MAXODDS:
+                return False
 
             if self._backlay(oback, olay):
                 # TODO: the odds are good enough, we just need to check if

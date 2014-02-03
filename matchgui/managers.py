@@ -249,11 +249,9 @@ class PricingManager(object):
         # figure out which strategies in the stratgroup need new
         # prices this tick, and add their mids to update_mids.
         for strat in self.stratgroup:
-            print getattr(strat, UTICK), self.ticks
             if (self.ticks % getattr(strat, UTICK) == 0):
                 # add the mids used by the strategy to the list of
                 # mids to update.
-                print 'found a strat... getting mids'
                 mids = strat.get_marketids()
 
                 # note we may only have BDAQ mids or BF mids

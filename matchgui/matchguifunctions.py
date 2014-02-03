@@ -96,7 +96,7 @@ def market_prices(bdaqmid, bfmid):
     return bdaqorder, bforder
 
 def match_markets(bdaqename):
-    global BDAQ_EVENTS, BF_EVENT
+    global BDAQ_EVENTS, BF_EVENTS
 
     # get corresponding BF event name
     bfename = matchconst.EVENTMAP[bdaqename]
