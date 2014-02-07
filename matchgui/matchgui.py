@@ -11,7 +11,9 @@ import sys
 class MyApp(wx.App):
     """Main app instance."""
     
+    # this needs to be MixedCase since it is called by wx
     def OnInit(self):
+        """Setup app configuration and start engine."""
 
         # set up global configuration object from input file
         self.gconfig = self.GetConfig()
@@ -74,8 +76,9 @@ class MyApp(wx.App):
         Setup the models that may need to be updated every tick (this
         is a subset of all the models used in the application.
         """
-
+        
         self.pmodel = models.PriceModel()
+        self.mmodel = models.MatchMarketsModel()
         self.strat_models = {}
         self.graph_models = {}
 

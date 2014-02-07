@@ -44,36 +44,31 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # the pricing model controls the view (the price grid).
         self.pmodel = self.app.pmodel
 
-    def SetEventIndex(self, event, index):
-        """
-        Set event and index.  This method is sort of like a second
-        initialization method, since setting the event index means
-        knowing which market and hence the selections etc.
-        """
+    def InitMids(self, mname, bdaqmid, bfmid):
+        """Set market name, bdaqmid and bfmid.  This method is sort of like a
+        second initialization method,since setting these means knowing
+        which market and hence the selections etc.
 
-        self.event = event
-        self.index = index
+        """
+        
+        self.name = mname
+        self.bdaqmid = bdaqmid
+        self.bfmid = bfmid
 
         # remove any previous event from the panel if necessary
         self.Clear()
-
-        # match markets model is needed so we can draw name of event
-        # etc. in the price panel.
-        self.mmodel = self.GetTopLevelParent().GetMarketPanel().mmodel
-        self.name = self.mmodel.GetMarketName(self.event, self.index)
-        self.bdaqmid, self.bfmid = self.mmodel.GetMids(self.event, self.index)
 
         # configure pricing model
         self.pmodel.SetMids(self.bdaqmid, self.bfmid)
         
         # get selection information from BDAQ and BF
         self.pmodel.SetSels()
-
-        # draw the panel
-        self.DrawLayout()
         
         # setup information for graphs and strategies
         self.SetupGraphsAndStrategies()
+
+        # draw the panel
+        self.DrawLayout()
 
     def SetupGraphsAndStrategies(self):
         """
@@ -82,16 +77,38 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         """
         
         for (bdaqsel, bfsel) in zip(self.pmodel.bdaqsels, self.pmodel.bfsels):
-            # create a model for each selection
-            self.app.graph_models[bdaqsel.name] = models.\
-                                                  GraphPriceModel(bdaqsel,
-                                                                  bfsel)
-            self.app.strat_models[bdaqsel.name] = models.\
-                                                  StrategyModel(bdaqsel,
-                                                                bfsel)
+            # see if current models exist for this selection,
+            # otherwise create new models.
 
-    def GetEventIndex(self):
-        return self.event, self.index
+            if bdaqsel.name not in self.app.graph_models:
+                self.app.graph_models[bdaqsel.name] = models.\
+                                                      GraphPriceModel(bdaqsel,
+                                                                      bfsel)
+                self.app.strat_models[bdaqsel.name] = models.\
+                                                      StrategyModel(bdaqsel,
+                                                                    bfsel)
+
+    def SetupStratForSelection(self, selname, combobox, freqspin, gobtn):
+        mod = self.app.strat_models[selname]
+
+        if not mod.HasStrategy():
+            self.SetButtonAppearance(gobtn, False)
+            # no existing strategy for this selection, so no need to
+            # change combobox value etc.
+            return
+        
+        strat = mod.strategy
+        
+        # set spinctrl to strategy frequency
+        freq = getattr(strat, managers.UTICK)
+        freqspin.SetValue(freq)
+
+        # set gobtn to pressed state
+        self.SetButtonAppearance(gobtn, True)
+
+        # set combobox to show correct strategy name
+        sname = mod.GetStringSelection()
+        combobox.SetStringSelection(sname)
 
     def DrawLayout(self):
         # todo: simplify this
@@ -236,6 +253,11 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             gobtn = wx.ToggleButton(self, label = 'Go!')
             monbtn = wx.Button(self, label = 'Monitor')
 
+            # setup state of strategy stuff (e.g. whether 'Go' is
+            # pressed, and whether the combobox shows something, based
+            # on the strategy model).
+            self.SetupStratForSelection(bdaqsel.name, stratsel, freqspin, gobtn)
+
             # add the strategy buttons as a tuple to the stratbtndict
             self.stratbtndict[dictkey] = (stratsel, freqspin, gobtn, monbtn)
 
@@ -246,11 +268,11 @@ class PricePanel(scrolledpanel.ScrolledPanel):
                        lambda evt, name=dictkey: self.OnStrategyStopStartButton(evt, name))
             monbtn.Bind(wx.EVT_BUTTON,
                         lambda evt, name=dictkey: self.OnMonitorButton(evt, name))
-            self.SetButtonAppearance(gobtn, False)
 
             # format layout of strategy stuff
             strat_sizer.Add(wx.StaticText(self, label = 'strategy'), 
                             0, wx.CENTER)
+            # add the ComboBox
             strat_sizer.Add(stratsel, 0, wx.CENTER)
             strat_sizer.Add(freqspin, 0, wx.CENTER)
             strat_sizer.Add(gobtn, 0, wx.CENTER)
@@ -275,10 +297,9 @@ class PricePanel(scrolledpanel.ScrolledPanel):
 
     def OnUpdateStrategyFrequency(self, event, key):
         # only need to handle case where strategy is running
-        if self.app.strat_models[key].HasStrategy():
-            # update the frequency of the currently running strategy
-            setattr(self.app.strat_models[key].strategy,
-                    managers.UTICK, event.GetEventObject().GetValue())
+        smodel = self.app.strat_models[key]
+
+        smodel.UpdateFrequency(event.GetEventObject().GetValue())
 
     def SetButtonAppearance(self, but, pressed):
         """Generic function for green/red start/stop button."""
@@ -347,7 +368,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             # add the strategy object to the main app strategy group.
             self.app.stratgroup.add(newstrat)
             # and to the model
-            self.app.strat_models[key].InitStrategy(newstrat)
+            self.app.strat_models[key].InitStrategy(sname, newstrat)
 
         else:
             # remove the strategy object from the main app strategy group.

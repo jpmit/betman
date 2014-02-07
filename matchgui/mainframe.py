@@ -2,7 +2,7 @@ import wx
 import const
 import os
 import wx.lib.scrolledpanel as scrolledpanel
-from menuframes import SettingsFrame, CurrentStrategiesFrame
+import menuframes
 from eventpanel import EventPanel
 from marketpanel import MarketPanel
 from pricepanel import PricePanel
@@ -79,7 +79,8 @@ class MyFrame(wx.Frame):
 
         # view menu
         viewmenu = wx.Menu()
-        curr = viewmenu.Append(wx.ID_ANY, "Current Strategies")
+        currstrat = viewmenu.Append(wx.ID_ANY, "Current Strategies")
+        currauto = viewmenu.Append(wx.ID_ANY, "Current Automations")
         menubar.Append(viewmenu, "View")
 
         # help menu
@@ -92,7 +93,8 @@ class MyFrame(wx.Frame):
         # bind events to menu clicks so that we show correct frames
         self.Bind(wx.EVT_MENU, self.OnLoadAutomation, id = wx.ID_FILE)
         self.Bind(wx.EVT_MENU, self.OnClose, id = wx.ID_EXIT)
-        self.Bind(wx.EVT_MENU, self.OnCurrentStrategies, curr)
+        self.Bind(wx.EVT_MENU, self.OnCurrentStrategies, currstrat)
+        self.Bind(wx.EVT_MENU, self.OnCurrentAutomations, currauto)
         self.Bind(wx.EVT_MENU, self.OnSettings, id = wx.ID_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.OnAbout, id = wx.ID_ABOUT)
 
@@ -117,7 +119,7 @@ class MyFrame(wx.Frame):
     def OnSettings(self, event):
         """Show the settings frame."""
 
-        frame = SettingsFrame(self)
+        frame = menuframes.SettingsFrame(self)
         frame.Show()
 
     def OnAbout(self, event):
@@ -145,8 +147,22 @@ class MyFrame(wx.Frame):
     def OnCurrentStrategies(self, event):
         """Show frame with currently running strategies."""
 
-        frame = CurrentStrategiesFrame(self)
-        frame.Show()
+        if self.app.stratgroup.strategies:
+            frame = menuframes.CurrentStrategiesFrame(self)
+            frame.Show()
+        else:
+            wx.MessageBox("No strategies currently running.", 
+                          style=wx.CENTER|wx.OK, parent = self)
+
+    def OnCurrentAutomations(self, event):
+        """Show frame with currently running automations."""
+
+        if self.app.automations:
+            frame = menuframes.CurrentAutomationsFrame(self)
+            frame.Show()
+        else:
+            wx.MessageBox("No automations currently running.", 
+                          style=wx.CENTER|wx.OK, parent = self)
 
     def ShowSplashPanel(self):
         """
@@ -190,6 +206,10 @@ class MyFrame(wx.Frame):
 
         print "size of splitter: ", self._splitter.GetSize()
         print "size of marketpanel: ", self._mpanel.GetSize()
+
+    def GoToPricePanel(self, name, bdaqmid, bfmid):
+        self.ShowPricePanel()
+        self._ppanel.InitMids(name, bdaqmid, bfmid)
 
     def ShowPricePanel(self):
         """

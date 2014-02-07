@@ -16,8 +16,8 @@ class MarketPanel(wx.Panel):
         # Control stores the list of matching markets
         self.lst = MatchListCtrl(self)
 
-        # model controlling the view (MVC)
-        self.mmodel = models.MatchMarketsModel()
+        # model from market data
+        self.mmodel = wx.GetApp().mmodel
         
         # The listener will update the view
         self.mmodel.AddListener(self.lst.OnGetMatchEvents)
@@ -120,20 +120,16 @@ class MarketPanel(wx.Panel):
     def OnDClick(self, event):
         """Change panel to the PricePanel that shows prices etc."""
 
-        selected_row = event.GetIndex()
-        selected_event = self.GetTopLevelParent().\
-                         GetEventPanel().\
+        index_sel = event.GetIndex()
+        event_sel = self.GetTopLevelParent().GetEventPanel().\
                          GetSelectedEvent()
-        # market name
-        name = self.lst.GetItem(selected_row, 0).GetText()
 
-        # set right panel
-        parent = self.GetTopLevelParent()
-        parent.ShowPricePanel()
+        # map the event and row to BDAQ and BF market ids and market name.
+        bdaqmid, bfmid = self.mmodel.GetMids(event_sel, index_sel)
+        name = self.mmodel.GetMarketName(event_sel, index_sel)
 
-        # pass the price panel details of the event name and market
-        parent.GetPricePanel().SetEventIndex(selected_event,
-                                             selected_row)
+        # go to the price panel.
+        self.GetTopLevelParent().GoToPricePanel(name, bdaqmid, bfmid)
 
     def Clear(self):
         for child in self.GetChildren():

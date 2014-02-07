@@ -1,7 +1,7 @@
 from operator import itemgetter
 import matchguifunctions
 from betman.strategy import strategy, cxstrategy, mmstrategy, position
-from betman import const
+from betman import const, exchangedata
 from betman.database import DBMaster
 from betman.matchmarkets.matchconst import EVENTMAP
 import managers
@@ -209,8 +209,18 @@ class MatchMarketsModel(AbstractModel):
 
         # key to match_cache is event name, value is list of tuples
         # (m1, m2) where m1 and m2 are the matching markets (m1 is the
-        # BDAQ market, m2 is the BF market.
+        # BDAQ market, m2 is the BF market.  The ordering of the
+        # tuples is the same as the ordering that appears in the GUI.
         self._match_cache = {}
+
+        # we also store a dict that maps BDAQ mids to BF mids
+        self._midmap_cache = {}
+
+        # and a dict that maps BDAQ mids to their market objects
+        self._BDAQ_cache = {}
+
+        # and a dict that maps BF mids to their market objects
+        self._BF_cache = {}
 
         # singleton that controls DB access
         self._dbman = DBMaster()
@@ -234,6 +244,13 @@ class MatchMarketsModel(AbstractModel):
         
         return bdaqmid, bfmid
 
+    def GetBFMidFromBDAQMid(self, bdaqmid):
+        print sorted(self._midmap_cache.keys())
+        return self._midmap_cache[bdaqmid]
+
+    def GetNameFromBDAQMid(self, bdaqmid):
+        return self._BDAQ_cache[bdaqmid].name
+
     def InitMatchCacheFromDB(self):
         """
         Initialise the matching markets cache from the SQLite
@@ -241,8 +258,24 @@ class MatchMarketsModel(AbstractModel):
         """
 
         for ename in EVENTMAP:
-            self._match_cache[ename] = self._dbman.\
-                                       ReturnMarketMatches([ename])
+            mmarks = self._dbman.ReturnMarketMatches([ename])
+            self.SetCaches(ename, mmarks)
+
+    def SetCaches(self, ename, mmarks):
+        # ordered list of matching markets for event ename
+        self._match_cache[ename] = mmarks
+
+        for m1, m2 in mmarks:
+            m1id = m1.id
+            m2id = m2.id
+            # map bdaq mid to bf mid
+            self._midmap_cache[m1id] = m2id
+
+            # map bdaq mid to market object
+            self._BDAQ_cache[m1id] = m1
+
+            # map bf mid to market object
+            self._BF_cache[m2id] = m2
 
     def GetMarketName(self, ename, index):
         """
@@ -251,7 +284,7 @@ class MatchMarketsModel(AbstractModel):
         
         return self._match_cache[ename][index][0].name
 
-    def Update(self, ename, refresh = False):
+    def Update(self, ename, refresh=False):
         """
         Fetch matching markets for a particular event name.  If
         refresh is True, update the matching markets first by using
@@ -261,14 +294,19 @@ class MatchMarketsModel(AbstractModel):
         if refresh:
             # code to set match cache; note this will automatically
             # save the details to the DB.
-            self._match_cache[ename] = matchguifunctions.\
-                                       match_markets(ename)
+            mmarks = matchguifunctions.match_markets(ename)
+            self.SetCaches(ename, mmarks)
 
         # update should call the function that updates the view
         self.UpdateViews()
 
     def GetMatches(self, ename):
         return self._match_cache[ename]
+
+    def GetBFMid(self, bdaqmid):
+        """Return the BF mid that mataches bdaqmid."""
+
+        return self._midmap_cache[bdaqmid]
 
 class StrategyModel(AbstractModel):
     """Holds information for a single strategy."""
@@ -291,13 +329,23 @@ class StrategyModel(AbstractModel):
         # length of self.visited_states
         self._nvisited = 0
 
-    def InitStrategy(self, strategy):
+        # string name of strategy in the GUI (see pricepanel.py),
+        # e.g. 'Make BDAQ'
+        self._string = None
+
+    def GetStringSelection(self):
+        """Get name of strategy as seen in GUI."""
+
+        return self._string
+
+    def InitStrategy(self, sname, strategy):
         """
         Add an actual strategy to the model.
 
         Currently this can be either a cross exchange (arb) strategy,
         or a market making strategy.
         """
+        self._string = sname
 
         self.strategy = strategy
         self.postracker = position.PositionTracker(self.strategy)
@@ -312,6 +360,12 @@ class StrategyModel(AbstractModel):
         if self.strategy == None:
             return False
         return True
+
+    def UpdateFrequency(self, newfreq):
+        """Update the strategy frequency."""
+
+        if self.strategy:
+            setattr(self.strategy, managers.UTICK, newfreq)
 
     def Update(self, prices):
         # we provide
@@ -367,14 +421,14 @@ class GraphPriceModel(AbstractModel):
         for (s1, s2) in [(bdaqsel, bfsel), (bfsel, bdaqsel)]:
             olay = s1.best_lay()
 
-            if olay == exchange.MINODDS:
+            if olay == exchangedata.MINODDS:
                 # no lay price is currently offered
                 return False
 
             # back selection at best current price
             oback = s2.best_back()
 
-            if oback == exchange.MAXODDS:
+            if oback == exchangedata.MAXODDS:
                 # no back price is currently offered
                 return False
 

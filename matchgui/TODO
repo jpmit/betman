@@ -1,0 +1,6 @@
+# list of easy things TODO when I need a break or to waste an hour or two
+
+- don't allow menu frames to be opened multiple times
+- put in practice mode option in global config
+- improve matching markets engine
+- flush strategy info through to monitor panel immediately (don't wait for next update)

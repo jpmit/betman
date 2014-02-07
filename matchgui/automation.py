@@ -1,5 +1,10 @@
 class Automation(object):
 
+    def __init__(self, name):
+        """Should be called by sub class."""
+
+        self._name = name
+
     def update(self, stratgroup):
         """Add or remove strategies from strat, which is the global strategy
         group.
@@ -12,3 +17,6 @@ class Automation(object):
         """
         
         pass
+
+    def get_name(self):
+        return self._name

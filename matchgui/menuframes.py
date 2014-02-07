@@ -3,6 +3,35 @@ from betman import const
 
 """Frames that are created by clicking things on the menu bar."""
 
+class CurrentAutomationsFrame(wx.Frame):
+    """Frame to view currently running 'automations'."""
+
+    PAD = 5
+
+    def __init__(self, parent):
+        wx.Frame.__init__(self, parent, size=(300, 200), 
+                          title='Automations')
+        
+        # need the app instance since it stores the stratgroup
+        self.app = wx.GetApp()
+
+        self.Draw()
+
+    def Draw(self):
+        panel = wx.Panel(self)
+
+        main_sz = wx.BoxSizer(wx.VERTICAL)
+        main_sz.AddSpacer(self.PAD)
+        for aut in self.app.automations:
+            main_sz.Add(wx.StaticText(self, label="{0}".format(aut.get_name())), 0, 
+                        wx.ALL, 15)
+            main_sz.AddSpacer(self.PAD)
+
+            # main sizer for frame
+            panel.SetSizer(main_sz)
+            panel.Layout()
+            self.Layout()
+
 class CurrentStrategiesFrame(wx.Frame):
     """Frame for user to view currently running strategies."""
     
@@ -62,7 +91,15 @@ class CurrentStrategiesFrame(wx.Frame):
             # to modify some of the models in models.py to make this
             # work.)
             h_sz = wx.BoxSizer(wx.HORIZONTAL)
-            h_sz.Add(wx.StaticText(self, label="{0}".format(mid), size=self.SIZE))
+
+            # make market id a hyperlink, that will show the market in
+            # the main window when clicked.
+            lab="{0}".format(mid)
+            midtxt = wx.HyperlinkCtrl(self, id=wx.ID_ANY, label=lab, url=lab,
+                                      size=self.SIZE)
+            midtxt.Bind(wx.EVT_HYPERLINK, self.OnMidClick)
+
+            h_sz.Add(midtxt)
             h_sz.AddSpacer(self.PAD)
             h_sz.Add(wx.StaticText(self, label="{0}".format(sid), size=self.SIZE))
             h_sz.AddSpacer(self.PAD)
@@ -74,6 +111,22 @@ class CurrentStrategiesFrame(wx.Frame):
         # main sizer for frame
         panel.SetSizer(main_sz)
         self.Layout()
+    
+    def OnMidClick(self, event):
+        """Show the market clicked on in the panel."""
+
+        # note bdaqmid is a string so we need to convert to int here
+        bdaqmid = int(event.GetEventObject().GetURL())
+
+        # get corresponding bfmid and name from mmmodel
+        app = wx.GetApp()
+        mmodel = app.mmodel
+
+        bfmid = mmodel.GetBFMidFromBDAQMid(bdaqmid)
+        bdaqname = mmodel.GetNameFromBDAQMid(bdaqmid)
+
+        # show the price panel for the market selected
+        app.frame.GoToPricePanel(bdaqname, bdaqmid, bfmid)
 
 class SettingsFrame(wx.Frame):
     """Frame for user to configure global application settings."""
@@ -104,4 +157,3 @@ class SettingsFrame(wx.Frame):
 
         # set the relevant option in global configuration object to checked value
         self.gconfig.SetOptionByTxt(txt, checked)
-

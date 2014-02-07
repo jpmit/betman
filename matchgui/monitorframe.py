@@ -7,7 +7,7 @@ class MonitorFrame(wx.Frame):
     def __init__(self, key):
         wx.Frame.__init__(self, None,
                           title='Strategy monitor for {0}'\
-                          .format(key))
+                          .format(key), size=(800, 400))
 
         # store key, this is used so that we can track when the frame
         # is killed

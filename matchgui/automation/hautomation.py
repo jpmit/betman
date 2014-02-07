@@ -27,7 +27,7 @@ class MyAutomation(Automation):
     UFREQ = 2   # update frequency in ticks of strategies added
 
     def __init__(self):
-        super(MyAutomation, self).__init__()
+        super(MyAutomation, self).__init__('Horse MM Automation')
         
         # we access data on markets and selections through the 'models'
         self.mmarkmodel = models.MatchMarketsModel()
@@ -66,7 +66,6 @@ class MyAutomation(Automation):
                 hmatches.append(hmatch)
 
         # list of tuples (m1, m2) where m1 is BDAQ market and m2 is BF
-#        print hmatches
         return hmatches
 
     def update(self, stratgroup):
