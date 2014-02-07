@@ -4,9 +4,12 @@
 - allow changing timebase in global config
 - flush strategy info through to monitor panel immediately (don't wait for next update)
 - make everything prettier
+- make sure we are saving prices to the DB
 
 # other
 
+- save complete state (strategies, automations etc.) when exit, and load this when startup
+- fix how the models are managed, especially those that should be singletons
 - improve matching markets engine
 - Make automations configurable
 - global position monitoring (probably in models.py)

@@ -3,6 +3,7 @@ from automation import Automation
 import datetime
 from betman.strategy.bothmmstrategy import BothMMStrategy
 import managers
+import wx
 
 # note class must be named MyAutomation for GUI loader
 class MyAutomation(Automation):
@@ -19,10 +20,10 @@ class MyAutomation(Automation):
                 # market marking.
     ENDT = 2    # time in minutes before race start to finish market
                 # making.
-    MAXLAY = 5  # only make markets on selections with lay price <
+    MAXLAY = 8  # only make markets on selections with lay price <
                 # this number at the time which they are added (STARTT
                 # mins before the race start).
-    MAXBACK = 5 # same but for back, this means we won't make markets
+    MAXBACK = 8 # same but for back, this means we won't make markets
                 # when there are no backers yet.
 
     UFREQ = 2   # update frequency in ticks of strategies added
@@ -31,7 +32,7 @@ class MyAutomation(Automation):
         super(MyAutomation, self).__init__('Horse MM Automation')
         
         # we access data on markets and selections through the 'models'
-        self.mmarkmodel = models.MatchMarketsModel()
+        self.mmarkmodel = wx.GetApp().mmodel
         self.mselmodel = models.MatchSelectionsModel()
 
         # store time deltas for figuring out when strategies start/end

@@ -15,24 +15,51 @@ class CurrentAutomationsFrame(wx.Frame):
         # need the app instance since it stores the stratgroup
         self.app = wx.GetApp()
 
+
         self.Draw()
 
     def Draw(self):
-        panel = wx.Panel(self)
 
+        panel = wx.Panel(self)
         main_sz = wx.BoxSizer(wx.VERTICAL)
+
         main_sz.AddSpacer(self.PAD)
         for aut in self.app.automations:
-            main_sz.Add(wx.StaticText(self, label="{0}".format(aut.get_name())), 0, 
-                        wx.ALL, 15)
+            h_sz = wx.BoxSizer(wx.HORIZONTAL)
+            # add the name and a button to remove
+            h_sz.Add(wx.StaticText(self, label="{0}".format(aut.get_name())), 0, 
+                     wx.ALL, 15)
+            rembut = wx.Button(self, label='remove')
+            h_sz.Add(rembut)
+            rembut.Bind(wx.EVT_BUTTON, 
+                        lambda evt, a=aut: self.OnRemoveAutomation(evt, a))
+
+            main_sz.Add(h_sz)
             main_sz.AddSpacer(self.PAD)
 
-            # main sizer for frame
-            panel.SetSizer(main_sz)
-            panel.Layout()
-            self.Layout()
+        # main sizer for frame
+        panel.SetSizer(main_sz)
+        panel.Layout()
+        self.Layout()
+    
+    def OnRemoveAutomation(self, event, automation):
+        """Remove automation from the app.
+
+        Note we do not remove any currently running strategies.  So
+        removing the automation simply means that it won't add any
+        strategies in the future.  If we want to cancel any existing
+        strategies, we need to do this manually through the GUI.
+
+        """
+
+        self.app.RemoveAutomation(automation)
+        for child in self.GetChildren():
+            child.Destroy()
+
+        self.Draw()
 
 class CurrentStrategiesFrame(wx.Frame):
+
     """Frame for user to view currently running strategies."""
     
     # 'column' width and height
@@ -161,5 +188,6 @@ class SettingsFrame(wx.Frame):
         txt = sender.GetLabel()
         checked = sender.GetValue()
 
-        # set the relevant option in global configuration object to checked value
+        # set the relevant option in global configuration object to
+        # checked value.
         self.gconfig.SetOptionByTxt(txt, checked)
