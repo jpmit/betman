@@ -10,22 +10,38 @@ from betman import betlog
 
 # conversion from BF course name to BDAQ course name.  BF course names
 # on left, BDAQ course names on right.
-COURSES = {'Ayr'   : 'Ayr',    
+COURSES = {
+           # Aqueduct is a US course
+           'Aque'  : 'Aqueduct',
+           'Aint'  : 'Aintree',
+           'Ayr'   : 'Ayr',
            'Bang'  : 'Bangor',
            'Bath'  : 'Bath',
            'Catt'  : 'Catterick',
+           # Charlestown is a US course
+           'CharlT': 'Charles Town', 
            'Chelt' : 'Cheltenham',
            'Chest' : 'Chester',
            'Cork'  : 'Cork',
            'Curr'  : 'Curragh',
            # Deauville is a French course
            'Deau'  : 'Deauville',
+           # Delta Downs is a US course
+           'DeltaD': 'Delta Downs',
            'Donc'  : 'Doncaster',
            'DownR' : 'Down Royal',
+           # Dundalk is in Ireland
+           'Dund'  : 'Dundalk',
+           # Greyville is in RSA
+           'Grey'  : 'Greyville',
+           # Gulf is a US course
+           'Gulf'  : 'Gulfstream Park',
            'Kelso' : 'Kelso',           
            'Kemp'  : 'Kempton',
            # Kenilworth is in RSA
            'Kenil' : 'Kenilworth',
+           # Leopardstown is in Ireland
+           'Leop'  : 'Leopardstown',
            'Ling'  : 'Lingfield',
            'List'  : 'Listowel',
            'Naas'  : 'Naas',
@@ -33,15 +49,26 @@ COURSES = {'Ayr'   : 'Ayr',
            'Newc'  : 'Newcastle',
            'Newm'  : 'Newmarket',           
            'Sand'  : 'Sandown',
+           # Sunland Park is US
+           'SunP'  : 'Sunland Park',
+           # Tampa Bay Downs is US
+           'Tampa' : 'Tampa Bay Downs',
+           # Turfway Park is US
+           'Turf'  : 'Turfway Park',
+           # Turf Paradise is US
+           'TPara' : 'Turf Paradise',
            'Winc'  : 'Wincanton',
            'Wolv'  : 'Wolverhampton'}
-
 
 def match_horse(bdaqmarkets, bfmarkets):
     """
     Return list of tuples (m1,m2) where m1 and m2 are the matching
     markets.
     """
+
+    # dicts with bdaq and bf courses as keys (values not needed)
+    bf_courses = {i:None for i in COURSES.keys()}
+    bdaq_courses = {i:None for i in COURSES.values()}
 
     # we will only match 'win' markets, and not 'place markets'
     bdaqwinmarkets = [m for m in bdaqmarkets if
@@ -50,7 +77,31 @@ def match_horse(bdaqmarkets, bfmarkets):
     for m in bdaqwinmarkets:
         names = m.name.split('|')
         stime = m.starttime
+        # extract course from BDAQ name
+
+        # first, assume the race is named like so:
+        # |Horse Racing|UK Racing|Wolverhampton (7th February 2014)|19:00 Wolverhampton|Win Market
+        # getting the course is easy, we simply get all the text following the time.
         course = names[-2][6:]
+
+        if course not in bdaq_courses:
+            # ok, assume races names like so:
+            # |Horse Racing|US Racing|Turfway Park (7th February 2014)|01:11 Turfway Park Race 5|Place Market
+            # in which case we need to remove the 'Race 5' part
+            mat = re.search('Race \d+', course)
+            if mat:
+                course = course[:mat.start() - 1]
+            if course not in bdaq_courses:
+                # finally, perhaps the race named like so:
+                # |Horse Racing|Ante Post|Cheltenham (12th March 2014)|Neptune Novices Hurdle|Win Market
+                # in which case we need to look at a level deeper
+                # i.e. names[-3], and remove everything after the bracket (and the space before).
+                course = names[-3]
+                mat = re.search('\(', course)
+                if mat:
+                    course = course[:mat.start() - 1]
+
+        # assign course to the market object
         m.course = course
         # add to list for comparison with BF
         bdaqmarks.append(m)
@@ -62,12 +113,13 @@ def match_horse(bdaqmarkets, bfmarkets):
             allcourses[c] = None
 
     betlog.betlog.debug('Found BDAQ horse races for courses: {0}'\
-                        .format(' '.join([c for c in allcourses])))
+                        .format('\n'.join([c for c in allcourses])))
 
     # get all the BF races happening at one of these courses
     bfmarks = []
     for m in bfmarkets:
         names = m.name.split('|')
+        
         # get course name
         cname = names[-2].split()[0]
 
