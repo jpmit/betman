@@ -315,6 +315,8 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         """
         Add/remove strategy to/from main app strategy group at the
         desired frequency.
+
+        key - set automatically by the Bind call to the BDAQ sel name
         """
 
         obj = event.GetEventObject()
@@ -365,17 +367,10 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             # set the update frequency of the strategy
             setattr(newstrat, managers.UTICK, utick)
             
-            # add the strategy object to the main app strategy group.
-            self.app.stratgroup.add(newstrat)
-            # and to the model
-            self.app.strat_models[key].InitStrategy(sname, newstrat)
-
+            # add the strategy object to the main app strategy group
+            self.app.AddStrategy(sname, key, newstrat)
         else:
-            # remove the strategy object from the main app strategy group.
-            self.app.stratgroup.remove(self.app.strat_models[key].strategy)
-
-            # and from the model
-            self.app.strat_models[key].RemoveStrategy()
+            self.app.RemoveStrategyByKey(key)
 
     def OnMonitorButton(self, event, key):
         """

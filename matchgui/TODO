@@ -1,6 +1,13 @@
 # list of easy things TODO when I need a break or to waste an hour or two
 
 - don't allow menu frames to be opened multiple times
-- put in practice mode option in global config
-- improve matching markets engine
+- allow changing timebase in global config
 - flush strategy info through to monitor panel immediately (don't wait for next update)
+- make everything prettier
+
+# other
+
+- improve matching markets engine
+- Make automations configurable
+- global position monitoring (probably in models.py)
+- viewer/backtester, either in current GUI or as separate GUI app

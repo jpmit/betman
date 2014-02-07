@@ -6,7 +6,7 @@ import managers
 
 # note class must be named MyAutomation for GUI loader
 class MyAutomation(Automation):
-    """Automation for horse racing (hence 'H' prefix).
+    """Automation for horse racing.
 
     This will do market making on both BF and BDAQ, for ALL horse
     races during the pre-race period, from STARTTmins to ENDTmins
@@ -15,13 +15,14 @@ class MyAutomation(Automation):
 
     """
 
-    STARTT = 20 #20
-    ENDT = 2 # make this less than STARTT or else
-
-    MAXLAY = 8  # only make markets on selections with lay price <
+    STARTT = 22 # time in minutes before race start that we will begin
+                # market marking.
+    ENDT = 2    # time in minutes before race start to finish market
+                # making.
+    MAXLAY = 5  # only make markets on selections with lay price <
                 # this number at the time which they are added (STARTT
                 # mins before the race start).
-    MAXBACK = 8 # same but for back, this means we won't make markets
+    MAXBACK = 5 # same but for back, this means we won't make markets
                 # when there are no backers yet.
 
     UFREQ = 2   # update frequency in ticks of strategies added
@@ -68,7 +69,7 @@ class MyAutomation(Automation):
         # list of tuples (m1, m2) where m1 is BDAQ market and m2 is BF
         return hmatches
 
-    def update(self, stratgroup):
+    def update(self, app):
         """Add/remove strategies from the stratgroup.
 
         We add strategy when the time first passes starttime - STARTT.
@@ -91,7 +92,7 @@ class MyAutomation(Automation):
         for i, (s, m) in enumerate(list(self._strategies)):
             if (curtime + self.endtdelta > m.starttime):
                 # remove from global strategy group
-                stratgroup.remove(s)
+                app.RemoveStrategyByObject(s)
                 self._strategies.pop(i)
 
         # add strategies with < STARTT mins to go until start time.
@@ -100,18 +101,17 @@ class MyAutomation(Automation):
             if (curtime + self.starttdelta > hmatch[0].starttime):
                 # add the strategies for this market pair
                 print 'adding strategies for', hmatch
-                self.add_strategies(stratgroup, hmatch)
+                self.add_strategy(app, hmatch)
                 # remove from remaining matches list
                 self.hmatches.pop(i)
     
-    def add_strategies(self, stratgroup, hmatch):
+    def add_strategy(self, app, hmatch):
         """Add the strategies we want for hmatch = (m1, m2).
 
         (m1, m2) are the matching markets.  This routine adds
         strategies for a single pair of matching markets only.
 
         """
-        
 
         # warning, this could fail if we are adding many strategies at
         # once (calling this function multiple times in close
@@ -134,7 +134,7 @@ class MyAutomation(Automation):
                 # set update frequency 
                 setattr(strat, managers.UTICK, self.UFREQ)
                 # add to global strat group
-                stratgroup.add(strat)
+                app.AddStrategy('Make Both', s1.name, strat)
                 # add to internal bookkeeping, note second element of
                 # tuple is the bdaq market, not the selection (since
                 # the market has the starttime property).

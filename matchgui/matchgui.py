@@ -16,7 +16,7 @@ class MyApp(wx.App):
         """Setup app configuration and start engine."""
 
         # set up global configuration object from input file
-        self.gconfig = self.GetConfig()
+        self.gconfig = self.ReadConfigFromFile()
 
         # setup the engine
         self.SetupManagers()
@@ -52,9 +52,50 @@ class MyApp(wx.App):
         aut = __import__(os.path.split(afile)[-1].split('.')[0])
         self.automations.append(aut.MyAutomation())
 
-    def GetConfig(self):
+    def AddStrategy(self, sname, key, strat):
+        """Add strategy to the main engine and the required models.
+        
+        sname - strategy name e.g. 'BDAQ Make'
+        key   - key for accessing the strategy, at the moment this is the
+                bdaq selection name.
+        strat - the actual strategy instance (already initialised)
+        """
+        
+        # this will ensure the strategy is executed
+        self.stratgroup.add(strat)
+        # this will ensure the GUI monitor frame is updated
+        self.strat_models[key].InitStrategy(sname, strat)
+        # this will ensure the GUI graph frame is updated
+
+    def RemoveStrategyByKey(self, key):
+        """Remove the strategy from the engine and the required models.
+        
+        key   - key for accessing the strategy, at the moment this is the
+                bdaq selection name.
+        """
+
+        self.stratgroup.remove(self.strat_models[key].strategy)
+        self.strat_models[key].RemoveStrategy()        
+
+    def RemoveStrategyByObject(self, strat):
+        """Remove the strategy from the engine and the required models.
+        
+        strat  - the actual strategy object
+        """
+
+        self.stratgroup.remove(strat)
+
+        # a bit inefficient
+        for k,v in self.strat_models.items():
+            if (strat == v):
+                v.RemoveStrategy()
+
+    def ReadConfigFromFile(self):
         # use pickle module to store config for now
         return GlobalConfig(const.CFGFILE)
+
+    def GetConfig(self):
+        return self.gconfig
 
     def SetupManagers(self):
         """
@@ -113,8 +154,9 @@ class MyApp(wx.App):
         # removes strategies.
         if self.automations:
             for a in self.automations:
-                # note this can modify the strategy group
-                a.update(self.stratgroup)
+                # note we are passing reference to the app, since this
+                # needs to modify the strategy group
+                a.update(self)
 
         # update the status of any outstanding (unmatched) orders by
         # polling BF and BDAQ.

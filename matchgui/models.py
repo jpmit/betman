@@ -146,6 +146,10 @@ class MatchSelectionsModel(AbstractModel):
         # singleton that controls DB access
         self._dbman = DBMaster()
 
+#    def GetBDAQSelFromBFSel(self, bfmid, bfsid):
+#        for bfsel, bfsel in self._match_cache
+        
+
     def GetMatchingSels(self, bdaqmid, bfmid, refresh = False):
         """
         Return lists bdaqsels, bfsels, where bdaqsels[i] is the
@@ -245,7 +249,6 @@ class MatchMarketsModel(AbstractModel):
         return bdaqmid, bfmid
 
     def GetBFMidFromBDAQMid(self, bdaqmid):
-        print sorted(self._midmap_cache.keys())
         return self._midmap_cache[bdaqmid]
 
     def GetNameFromBDAQMid(self, bdaqmid):

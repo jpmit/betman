@@ -14,6 +14,7 @@ from betman import const, multi, database, order, betlog
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from operator import attrgetter
+import wx
 
 # The following classes can be in an application as follows:
 
@@ -65,6 +66,10 @@ class OrderManager(object):
         # login to betfair.
         self.bootstrap()
 
+        # get app config - we may be in 'practice mode', in which case
+        # we don't want to place any bets.
+        self.gconf = wx.GetApp().GetConfig()
+
     def bootstrap(self):
         # bootstrap BDAQ order information (we don't need to do this
         # for BF).  We don't need to save these orders (?).
@@ -95,9 +100,12 @@ class OrderManager(object):
 
         if (odict[const.BDAQID]) or (odict[const.BFID]):
             betlog.betlog.debug('making orders: {0}'.format(odict))
-
-            if PRACTICEMODE:
+            
+            # we could instead do 'monkey patching' here so we don't
+            # need to check this every tick...
+            if self.gconf.PracticeMode:
                 # we don't make any real money bets in practice mode
+                print 'bets not made since in practice mode'
                 return
 
             # call multithreaded make orders so that we make order

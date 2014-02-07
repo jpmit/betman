@@ -47,6 +47,9 @@ class CurrentStrategiesFrame(wx.Frame):
         # need the app instance since it stores the stratgroup
         self.app = wx.GetApp()
 
+        # matching markets model
+        self.mmodel = self.app.mmodel
+
         self.Draw()
 
     def Draw(self):
@@ -80,6 +83,13 @@ class CurrentStrategiesFrame(wx.Frame):
             else:
                 # shouldn't get here, but just in case
                 continue
+            
+            # TODO: if sel is BF selection, get the corresponding BDAQ selection
+            #if (sel.exid == const.BFID):
+                # get the BDAQ mid corresponding to the BF mid
+            #    bfmid = self.mmodel.GetBFMidFromBDAQMid(bdaqmid)
+                
+                
 
             selname = sel.name
             sid = sel.id
@@ -118,12 +128,8 @@ class CurrentStrategiesFrame(wx.Frame):
         # note bdaqmid is a string so we need to convert to int here
         bdaqmid = int(event.GetEventObject().GetURL())
 
-        # get corresponding bfmid and name from mmmodel
-        app = wx.GetApp()
-        mmodel = app.mmodel
-
-        bfmid = mmodel.GetBFMidFromBDAQMid(bdaqmid)
-        bdaqname = mmodel.GetNameFromBDAQMid(bdaqmid)
+        bfmid = self.mmodel.GetBFMidFromBDAQMid(bdaqmid)
+        bdaqname = self.mmodel.GetNameFromBDAQMid(bdaqmid)
 
         # show the price panel for the market selected
         app.frame.GoToPricePanel(bdaqname, bdaqmid, bfmid)
