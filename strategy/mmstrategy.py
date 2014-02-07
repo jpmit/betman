@@ -164,16 +164,29 @@ class MMStrategy(strategy.Strategy):
         # minimum stake at the moment
         exid = self.sel.exid
 
+        # back and lay odds
+        oback = self.sel.make_best_lay()
+        olay = self.sel.make_best_back()
+
         if exid == const.BDAQID:
             # although minimum is 0.5, there are some difficulties
             # getting this to show up when calling prices from nonAPI
-            # method
-            bstake = lstake = 1
+            # method, so lets go for 1
+            bstake = 1
         else:
-            bstake = lstake = _MINBETS[self.sel.exid]
+            # this will be 2, the minimum bet on BF
+            bstake = _MINBETS[self.sel.exid]
 
-        oback = self.sel.make_best_lay()
-        olay = self.sel.make_best_back()
+        # we set the lay stake so that we are 'neutral' on whether the
+        # selection pays out or not.  This means laying a slightly
+        # larger stake than the back stake - how much larger depends
+        # on the difference in the odds.  Note we are rounding (to
+        # nearest penny) here, meaning we will typically win very
+        # slightly more or less if the selection comes through versus
+        # if it doesn't (see my notes).  This isn't the only sensible
+        # staking strategy, we can stake any value between bstake and
+        # this current lstake.
+        lstake = round(bstake * (1.0 + oback) / (1.0 + olay), 2)
 
         sel = self.sel
         
