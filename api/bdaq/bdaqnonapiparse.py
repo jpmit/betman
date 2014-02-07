@@ -67,11 +67,17 @@ def ParseNonApiGetPrices(resp, mids):
             mid = sel['mId']
 
             if (mid != markmid):
-                print sel
-                print type(mid), type(markmid)
-                raise ApiError, ('Selection has mid {0} '
-                                 'not correct mid {1}'.\
-                                 format(mid, markmid))
+                # for some reason, sometimes mid is a unicode object
+                # instead of an int, so let us try converting mid to
+                # an int
+                betlog.betlog.debug('BDAQ : converting mid to int')
+                mid = int(mid)
+                if (mid != markmid):
+                    print sel
+                    print type(mid), type(markmid)
+                    raise ApiError, ('Selection has mid {0} '
+                                     'not correct mid {1}'.\
+                                     format(mid, markmid))
 
             if 'fSO' in sel:
                 # if there are multiple back prices available,
