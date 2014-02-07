@@ -82,8 +82,6 @@ def ParsegetMUBets(res, odict):
 
 def ParseplaceBets(res, olist):
     # debug
-    print olist
-    print res
 
     # _check_errors only checks errors in the header and the footer,
     # we can have other errors that are returned in resultCode of each
@@ -94,7 +92,11 @@ def ParseplaceBets(res, olist):
     _check_errors(res)
     
     # check that we have one result for each order executed
-    assert len(res.betResults.PlaceBetsResult) == len(olist)
+    if len(res.betResults.PlaceBetsResult) != len(olist):
+        print olist
+        print res
+        raise ApiError, ('did not receive the correct number'
+                         'of results from PlaceBets')
 
     allorders = {}
     # go through all results in turn and add to allorders list
