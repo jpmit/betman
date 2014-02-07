@@ -52,20 +52,33 @@ class MyApp(wx.App):
         aut = __import__(os.path.split(afile)[-1].split('.')[0])
         self.automations.append(aut.MyAutomation())
 
-    def AddStrategy(self, sname, key, strat):
+    def AddStrategy(self, sname, key, strat, bdaqsel=None, bfsel=None):
         """Add strategy to the main engine and the required models.
         
-        sname - strategy name e.g. 'BDAQ Make'
-        key   - key for accessing the strategy, at the moment this is the
-                bdaq selection name.
-        strat - the actual strategy instance (already initialised)
+        sname   - strategy name e.g. 'BDAQ Make'
+        key     - key for accessing the strategy, at the moment this is the
+                  bdaq selection name.
+        strat   - the actual strategy instance (already initialised)
+        bdaqsel - betdaq selection object
+        bfsel   - bf selection object
+
+        We need to pass bdaqsel and bfsel when adding strategies via
+        an automation, since then we won't already have the strat
+        model created.  If we added the strategy via the GUI, this
+        won't be a problem, since we created the strat model already
+        (see pricepanel.py, function SetupGraphsAndStrategies).
+
         """
         
         # this will ensure the strategy is executed
         self.stratgroup.add(strat)
-        # this will ensure the GUI monitor frame is updated
+
+        if bdaqsel and bfsel:
+            self.strat_models[key] = models.StrategyModel(bdaqsel, 
+                                                          bfsel)
+
+        # initialise the strategy model
         self.strat_models[key].InitStrategy(sname, strat)
-        # this will ensure the GUI graph frame is updated
 
     def RemoveStrategyByKey(self, key):
         """Remove the strategy from the engine and the required models.

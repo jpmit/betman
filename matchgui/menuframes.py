@@ -132,7 +132,7 @@ class CurrentStrategiesFrame(wx.Frame):
         bdaqname = self.mmodel.GetNameFromBDAQMid(bdaqmid)
 
         # show the price panel for the market selected
-        app.frame.GoToPricePanel(bdaqname, bdaqmid, bfmid)
+        self.app.frame.GoToPricePanel(bdaqname, bdaqmid, bfmid)
 
 class SettingsFrame(wx.Frame):
     """Frame for user to configure global application settings."""

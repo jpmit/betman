@@ -277,8 +277,9 @@ class PricingManager(object):
             update_mids[const.BDAQID] = list(set(update_mids[const.BDAQID]))
         if const.BFID in update_mids:
             update_mids[const.BFID] = list(set(update_mids[const.BFID]))
-            
-        print 'updating mids', update_mids
+
+        if update_mids[const.BDAQID] or update_mids[const.BFID]:
+            print 'updating mids', update_mids
 
         # call BDAQ and BF API
         self.new_prices, emids = multi.update_prices(update_mids)

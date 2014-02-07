@@ -76,17 +76,21 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         once, immediately after we set the event and index.
         """
         
+        gmodels = self.app.graph_models
+        smodels = self.app.strat_models
         for (bdaqsel, bfsel) in zip(self.pmodel.bdaqsels, self.pmodel.bfsels):
             # see if current models exist for this selection,
-            # otherwise create new models.
+            # otherwise create new models.  Note this means we won't
+            # wipe out the old ones, important for when we navigate
+            # away from a market and then return.
 
-            if bdaqsel.name not in self.app.graph_models:
-                self.app.graph_models[bdaqsel.name] = models.\
-                                                      GraphPriceModel(bdaqsel,
-                                                                      bfsel)
-                self.app.strat_models[bdaqsel.name] = models.\
-                                                      StrategyModel(bdaqsel,
-                                                                    bfsel)
+            if bdaqsel.name not in gmodels:
+                gmodels[bdaqsel.name] = models.\
+                                        GraphPriceModel(bdaqsel, bfsel)
+
+            if bdaqsel.name not in smodels:
+                smodels[bdaqsel.name] = models.\
+                                        StrategyModel(bdaqsel, bfsel)
 
     def SetupStratForSelection(self, selname, combobox, freqspin, gobtn):
         mod = self.app.strat_models[selname]
@@ -104,6 +108,7 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         freqspin.SetValue(freq)
 
         # set gobtn to pressed state
+        gobtn.SetValue(True)
         self.SetButtonAppearance(gobtn, True)
 
         # set combobox to show correct strategy name
@@ -368,8 +373,10 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             setattr(newstrat, managers.UTICK, utick)
             
             # add the strategy object to the main app strategy group
+            print 'adding strategy', key
             self.app.AddStrategy(sname, key, newstrat)
         else:
+            print 'removing strategy', key
             self.app.RemoveStrategyByKey(key)
 
     def OnMonitorButton(self, event, key):

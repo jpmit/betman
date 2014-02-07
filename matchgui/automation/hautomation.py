@@ -15,7 +15,7 @@ class MyAutomation(Automation):
 
     """
 
-    STARTT = 22 # time in minutes before race start that we will begin
+    STARTT = 32 # time in minutes before race start that we will begin
                 # market marking.
     ENDT = 2    # time in minutes before race start to finish market
                 # making.
@@ -134,7 +134,7 @@ class MyAutomation(Automation):
                 # set update frequency 
                 setattr(strat, managers.UTICK, self.UFREQ)
                 # add to global strat group
-                app.AddStrategy('Make Both', s1.name, strat)
+                app.AddStrategy('Make Both', s1.name, strat, s1, s2)
                 # add to internal bookkeeping, note second element of
                 # tuple is the bdaq market, not the selection (since
                 # the market has the starttime property).
