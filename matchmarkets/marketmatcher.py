@@ -14,6 +14,7 @@ import matchformula1
 import matchrugbyunion
 import matchsoccer
 import matchhorse
+import re
 
 # functions for matching two markets from the same event. The event
 # key used here is the BDAQ one.
@@ -94,11 +95,11 @@ def _matchselection(sel, sellist):
     if selname == 'Draw':
         selname = 'The Draw'
 
-    # Remove any apostrophes from the BDAQ selection name. 
+    # Remove any apostrophes from the BDAQ selection name.
     selname = selname.replace('\'','')
     
     # some of the BF names have trailing spaces, e.g. 'Sebastian
-    # Vettel '.  This is clearly a bit cheeky.  Lets strip any
+    # Vettel'.  This is clearly a bit cheeky.  Lets strip any
     # whitespace at start and end of name, and for both exchanges just
     # in case.
     selname = selname.strip().lower()
@@ -106,6 +107,18 @@ def _matchselection(sel, sellist):
     for s in sellist:
         if s.name.strip().lower() == selname:
             return s
+
+    # if we haven't matched here, try removing numbers with dot from
+    # the BF selection name.  This is for matching horse racing
+    # selections on US markets which look like '7. mazzy'
+    for s in sellist:
+        mat = re.match('\d+', s.name)
+        if mat:
+            sn = s.name[mat.end() + 2:]
+        if sn.strip().lower() == selname:
+            return s
+
+    # we tried everything, so give up
     return None
 
 def get_match_selections(m1sels, m2sels):

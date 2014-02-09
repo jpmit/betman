@@ -62,7 +62,6 @@ def market_prices(bdaqmid, bfmid):
     # saving this information.
     _dbman.WriteSelections(bdaqsels.values() + bfsels.values(),
                            datetime.datetime.now())    
-    
 
     # get lists of selections
     bdaqsellist = bdaqsels.values()
