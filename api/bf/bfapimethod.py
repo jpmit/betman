@@ -135,6 +135,9 @@ class ApiplaceBets(ApiMethod):
         _add_header(self)
         self.req.bets.PlaceBets = self.make_bet_list(orderlist)
         betlog.betlog.info('calling BF Api placeBets')
+        print 'request follows:'
+        # warning: this seems to not work when multithreaded
+        print self.req
         response = self.client.service.placeBets(self.req)
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
         return allorders

@@ -5,11 +5,13 @@
 - flush strategy info through to monitor panel immediately (don't wait for next update)
 - make everything prettier
 - make sure we are saving prices to the DB
+- make viewing current strategies scrollable vertically
 
 # other
 
 - save complete state (strategies, automations etc.) when exit, and load this when startup
 - fix how the models are managed, especially those that should be singletons
+- add filters for strategies so that bets are only placed if each bet is below risk limits
 - improve matching markets engine
 - Make automations configurable
 - global position monitoring (probably in models.py)

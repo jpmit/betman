@@ -221,9 +221,6 @@ class PricingManager(object):
         # the last tick.
         self.new_prices = {const.BDAQID: {}, const.BFID: {}}
 
-        # counter to store how many times we have ticked
-        self.ticks = 0L
-
     def get_strategy_with_mid(bdaqmid):
         """
         Return strategy with given bdaqmid.  If multiple strategies
@@ -244,10 +241,8 @@ class PricingManager(object):
             return strats[0]
         return None
     
-    def update_prices(self):
+    def update_prices(self, ticks):
         """Update the pricing dictionary."""
-
-        self.ticks += 1
 
         # dictionary of mids (market ids) to update
         update_mids = {const.BDAQID: [], const.BFID: []}
@@ -257,7 +252,7 @@ class PricingManager(object):
         # figure out which strategies in the stratgroup need new
         # prices this tick, and add their mids to update_mids.
         for strat in self.stratgroup:
-            if (self.ticks % getattr(strat, UTICK) == 0):
+            if (ticks % getattr(strat, UTICK) == 0):
                 # add the mids used by the strategy to the list of
                 # mids to update.
                 mids = strat.get_marketids()

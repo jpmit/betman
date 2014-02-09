@@ -81,7 +81,6 @@ def ParsegetMUBets(res, odict):
     return allorders
 
 def ParseplaceBets(res, olist):
-    # debug
 
     # _check_errors only checks errors in the header and the footer,
     # we can have other errors that are returned in resultCode of each
@@ -90,11 +89,13 @@ def ParseplaceBets(res, olist):
     # BF API, as detailed by the documentation
     # BetfairSportsExchangeAPIReferenceGuidev6.pdf, p114.
     _check_errors(res)
+
+    print 'parse place bets:'
+    print olist
+    print res
     
     # check that we have one result for each order executed
     if len(res.betResults.PlaceBetsResult) != len(olist):
-        print olist
-        print res
         raise ApiError, ('did not receive the correct number'
                          'of results from PlaceBets')
 

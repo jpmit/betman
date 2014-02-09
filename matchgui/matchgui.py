@@ -40,6 +40,9 @@ class MyApp(wx.App):
                                      'automation'))
         self.automations = []
 
+        # counter to store how many times we have ticked
+        self.ticks = 0L
+
         return True
 
     def AddAutomation(self, afile):
@@ -168,12 +171,16 @@ class MyApp(wx.App):
     def OnTick(self, event):
         """Main loop of the engine."""
 
+        self.ticks += 1
+
         # handle any 'automations' we have.  All this does is adds or
-        # removes strategies.
-        if self.automations:
+        # removes strategies.  We only do this every 60 ticks (60
+        # seconds if timebase is set to be 1 second).
+        if (self.ticks % 1) == 0:
             for a in self.automations:
-                # note we are passing reference to the app, since this
-                # needs to modify the strategy group
+            # note we are passing a the automation a reference to the
+            # app, which it needs in order to add/remove strategies to
+            # the strategy group.
                 a.update(self)
 
         # update the status of any outstanding (unmatched) orders by
@@ -186,7 +193,7 @@ class MyApp(wx.App):
 
         # get prices for any strategies in the strategy group that
         # want new prices this tick by polling BF and BDAQ.
-        self.pmanager.update_prices()
+        self.pmanager.update_prices(self.ticks)
 
         # update strategies which got new prices this tick.  As well
         # as feeding the strategy the new prices, we do the thinking
@@ -219,7 +226,7 @@ class MyApp(wx.App):
         for k in self.graph_models:
             self.graph_models[k].Update(self.pmanager.new_prices)
 
-        print 'TICKS', self.pmanager.ticks
+        print 'TICKS', self.ticks
 
 if __name__ == "__main__":
     app = MyApp(False)

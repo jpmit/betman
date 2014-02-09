@@ -47,7 +47,8 @@ COURSES = {
            'Naas'  : 'Naas',
            'Newb'  : 'Newbury',
            'Newc'  : 'Newcastle',
-           'Newm'  : 'Newmarket',           
+           'Newm'  : 'Newmarket', 
+           'Plump' : 'Plumpton',
            'Sand'  : 'Sandown',
            # Sunland Park is US
            'SunP'  : 'Sunland Park',

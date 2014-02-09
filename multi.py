@@ -78,17 +78,20 @@ def make_orders(odict):
         """
         
         while True:
-            func, mids, myid = q.get()
+            func, olist, myid = q.get()
             try:
-                ords = func(mids)
+                ords = func(olist)
             except betexception.ApiError:
+                print 'api error when placing following bets for id {0}:'.format(myid)
+                print olist
                 ords = {}
             # need to update since we may have more than one thread
             # for the BF bets.
             orders[myid].update(ords)
             q.task_done()
 
-    # we start one thread for the BDAQ orders, since we can place on multiple markets with a single API call
+    # we start one thread for the BDAQ orders, since we can place on
+    # multiple markets with a single API call
     bdaq_threads = 1 if odict[const.BDAQID] else 0
 
     # for BF, we need one API call for each separate market id.  So
@@ -99,6 +102,11 @@ def make_orders(odict):
 
     # get list of lists, orders on each market.
     bf_threads = len(bf_betlist)
+    
+    # debug
+    print 'number of bf_threads', bf_threads
+    for olist in bf_betlist:
+        print olist
     
     for i in range(bdaq_threads + bf_threads):
         t = Thread(target = _worker)
