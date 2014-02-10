@@ -17,7 +17,7 @@ class MyAutomation(Automation):
 
     """
 
-    STARTT = 15 # time in minutes before race start that we will begin
+    STARTT = 16 # time in minutes before race start that we will begin
                 # market marking.
     ENDT = 1    # time in minutes before race start to finish market
                 # making.
