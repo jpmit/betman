@@ -7,7 +7,7 @@
 from betman import const, betexception
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
-from threading import Thread
+from threading import Thread, active_count
 from Queue import Queue
 
 def update_prices(middict):
@@ -24,12 +24,12 @@ def update_prices(middict):
     emids = {}  # the market ids we didn't get prices for
 
     def _worker():
-        while True:
-            func, mids, myid = q.get()
-            prices[myid], emids[myid] = func(mids)
-            q.task_done()
+        func, mids, myid = q.get()
+        prices[myid], emids[myid] = func(mids)
+        q.task_done()
 
     # start the thread
+    # debug
     for i in range(2):
         t = Thread(target = _worker)
         t.setDaemon(True)
@@ -76,19 +76,18 @@ def make_orders(odict):
         update_prices above.  Also note that we are catching API
         errors...
         """
-        
-        while True:
-            func, olist, myid = q.get()
-            try:
-                ords = func(olist)
-            except betexception.ApiError:
-                print 'api error when placing following bets for id {0}:'.format(myid)
-                print olist
-                ords = {}
-            # need to update since we may have more than one thread
-            # for the BF bets.
-            orders[myid].update(ords)
-            q.task_done()
+
+        func, olist, myid = q.get()
+        try:
+            ords = func(olist)
+        except betexception.ApiError:
+            print 'api error when placing following bets for id {0}:'.format(myid)
+            print olist
+            ords = {}
+        # need to update since we may have more than one thread
+        # for the BF bets.
+        orders[myid].update(ords)
+        q.task_done()
 
     # we start one thread for the BDAQ orders, since we can place on
     # multiple markets with a single API call
