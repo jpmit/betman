@@ -28,8 +28,7 @@ def update_prices(middict):
         prices[myid], emids[myid] = func(mids)
         q.task_done()
 
-    # start the thread
-    # debug
+    # start the threads
     for i in range(2):
         t = Thread(target = _worker)
         t.setDaemon(True)
