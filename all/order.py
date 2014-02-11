@@ -65,6 +65,7 @@ class Order(object):
             # cancelreset    - default is True
             # src            - selection reset count
             # wsn            - withdrawal sequence number
+            # persistence    - same as cancelrunning but for BF
 
             setattr(self, kw, kwargs[kw])
 

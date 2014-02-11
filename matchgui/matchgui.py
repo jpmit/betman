@@ -48,12 +48,13 @@ class MyApp(wx.App):
         # add to current automations: note the automation class must
         # be called 'MyAutomation'.
         aut = __import__(os.path.split(afile)[-1].split('.')[0])
-        self.automations.append(aut.MyAutomation())
+
+        self.engine.add_automation(aut.MyAutomation())
 
     def RemoveAutomation(self, automation):
         """Remove the automation from the app."""
 
-        self.automations.remove(automation)
+        self.engine.remove_automation(automation)
 
     def AddStrategy(self, sname, key, strat, bdaqsel=None, bfsel=None):
         """Add strategy to the main engine and the required models.

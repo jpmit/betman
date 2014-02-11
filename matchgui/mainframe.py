@@ -157,7 +157,7 @@ class MyFrame(wx.Frame):
     def OnCurrentAutomations(self, event):
         """Show frame with currently running automations."""
 
-        if self.app.automations:
+        if self.app.engine.have_automations():
             frame = menuframes.CurrentAutomationsFrame(self)
             frame.Show()
         else:

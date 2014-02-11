@@ -331,12 +331,12 @@ class StrategyModel(AbstractModel):
         return self._string
 
     def InitStrategy(self, sname, strategy):
-        """
-        Add an actual strategy to the model.
+        """Add an actual strategy to the model.
 
         Currently this can be either a cross exchange (arb) strategy,
         or a market making strategy.
         """
+
         self._string = sname
 
         self.strategy = strategy

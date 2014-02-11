@@ -68,6 +68,17 @@ class Engine(object):
             return True
         return False
 
+    def have_automations(self):
+        """Do we have at least one currently executing automation?
+
+        If so, return True, otherwise return False.
+
+        """
+
+        if self.automations:
+            return True
+        return False
+
     def tick(self):
         """Main loop called every tick."""
 

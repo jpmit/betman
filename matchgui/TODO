@@ -5,13 +5,17 @@
 - make everything prettier
 - make sure we are saving prices to the DB
 - make viewing current strategies scrollable vertically
+- make RHS of strategy monitor scrollable
 
 # other
 
+- get BF betting on multiple MIDS working
 - save complete state (strategies, automations etc.) when exit, and load this when startup
-- fix how the models are managed, especially those that should be singletons
 - add filters for strategies so that bets are only placed if each bet is below risk limits
 - improve matching markets engine
 - Make automations configurable
 - global position monitoring (probably in models.py)
 - viewer/backtester, either in current GUI or as separate GUI app
+- add market volume to engine and/or GUI
+- sort out how and when info is written to the DB
+- GUI frame to select which markets we want when putting in hautomation

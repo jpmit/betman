@@ -19,7 +19,7 @@ class MyAutomation(Automation):
 
     STARTT  = 16 # time in minutes before race start that we will
                  # begin market marking.
-    ENDT    = 1  # time in minutes before race start to finish market
+    ENDT    = 2  # time in minutes before race start to finish market
                  # making.
     MAXLAY  = 8  # only make markets on selections with lay price <
                  # this number at the time which they are added
@@ -37,8 +37,8 @@ class MyAutomation(Automation):
         super(MyAutomation, self).__init__('Horse MM Automation')
         
         # we access data on markets and selections through the 'models'
-        self.mmarkmodel = wx.GetApp().mmodel
-        self.mselmodel = models.MatchSelectionsModel()
+        self.mmarkmodel = models.MatchMarketsModel.Instance()
+        self.mselmodel = models.MatchSelectionsModel.Instance()
 
         # store time deltas for figuring out when strategies start/end
         self.starttdelta = datetime.timedelta(minutes=self.STARTT)
@@ -55,6 +55,14 @@ class MyAutomation(Automation):
         # self.strategies is list of tuples (strategy_object,
         # bdaqmark).
         self._strategies = []
+
+        # slightly hacky for now: see if we are running the GUI and
+        # store a reference to it.  This is so that when we add or
+        # remove strategies we can also do this for the actual app.
+        try:
+            self.app = wx.GetApp()
+        except:
+            self.app = None
 
     def get_all_markets(self):
 
@@ -96,8 +104,8 @@ class MyAutomation(Automation):
         strats_finished = []
         for i, (s, m) in enumerate(self._strategies):
             if (curtime + self.endtdelta > m.starttime):
-                # remove from global strategy group
-                app.RemoveStrategyByObject(s)
+                # remove strategy from app/engine
+                self.remove_strategy(engine, s)
                 # remove from internal 
                 strats_finished.append(i)
         strats_finished.reverse()
@@ -110,12 +118,22 @@ class MyAutomation(Automation):
             if (curtime + self.starttdelta > hmatch[0].starttime):
                 # add the strategies for this market pair
                 print 'adding strategies for', hmatch
-                self.add_strategy(app, hmatch)
+                self.add_strategy(engine, hmatch)
                 # remove from remaining matches list
                 strats_seen.append(i)
         strats_seen.reverse()
         for i in strats_seen:
             self.hmatches.pop(i)
+
+    def remove_strategy(self, engine, s):
+        """Remove strategy s."""
+
+        if self.app:
+            # GUI is running
+            self.app.RemoveStrategyByObject(s)
+        else:
+            # remove directly from engine
+            engine.remove_strategy(s)
     
     def add_strategy(self, engine, hmatch):
         """Add the strategies we want for hmatch = (m1, m2).
@@ -139,7 +157,7 @@ class MyAutomation(Automation):
         # 120, as this is too risky.
         for (s1, s2) in zip(bdaqsels, bfsels):
             # only add strategies for which are within our limits on
-            # both BF and BDAQ.
+            # both BDAQ (and maybe also BF).
             if ((s1.best_lay() < self.MAXLAY) and (s1.best_back() < self.MAXBACK)):
                 #and (s2.best_lay() < self.MAXLAY) and (s2.best_back() < self.MAXBACK)):
                 # debug
@@ -148,8 +166,12 @@ class MyAutomation(Automation):
                 strat = MMStrategy(s1)#BothMMStrategy(s1, s2)
                 # set update frequency 
                 setattr(strat, managers.UTICK, self.UFREQ)
-                # add to global strat group
-                app.AddStrategy('Make Both', s1.name, strat, s1, s2)
+                
+                if self.app:
+                    self.app.AddStrategy('Make Both', s1.name, strat, s1, s2)
+                else:
+                    engine.add_strategy(strat)
+
                 # add to internal bookkeeping, note second element of
                 # tuple is the bdaq market, not the selection (since
                 # the market has the starttime property).

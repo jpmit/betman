@@ -1,5 +1,6 @@
 import wx
 from betman import const
+import models
 
 """Frames that are created by clicking things on the menu bar."""
 
@@ -23,7 +24,7 @@ class CurrentAutomationsFrame(wx.Frame):
         main_sz = wx.BoxSizer(wx.VERTICAL)
 
         main_sz.AddSpacer(self.PAD)
-        for aut in self.app.automations:
+        for aut in self.app.engine.automations:
             h_sz = wx.BoxSizer(wx.HORIZONTAL)
             # add the name and a button to remove
             h_sz.Add(wx.StaticText(self, label="{0}".format(aut.get_name())), 0, 
@@ -74,7 +75,7 @@ class CurrentStrategiesFrame(wx.Frame):
         self.app = wx.GetApp()
 
         # matching markets model
-        self.mmodel = self.app.mmodel
+        self.mmodel = models.MatchMarketsModel.Instance()
 
         self.Draw()
 
