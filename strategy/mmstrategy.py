@@ -190,16 +190,25 @@ class MMStrategy(strategy.Strategy):
 
         sel = self.sel
         
+        # note we put cancelrunning = False here
         self.border = order.Order(sel.exid, sel.id, bstake,
                                   oback, 1, **{'mid': sel.mid,
                                                'src': sel.src,
                                                'wsn': sel.wsn,
-                                               'sname': sel.name})
+                                               'sname': sel.name,
+                                               # note we set both
+                                               # cancel running (for
+                                               # BDAQ) and persistence
+                                               # (for BF)
+                                               'cancelrunning' : False,
+                                               'persistence' : 'IP'})
         self.lorder = order.Order(sel.exid, sel.id, lstake,
                                   olay, 2, **{'mid': sel.mid,
                                               'src': sel.src,
                                               'wsn': sel.wsn,
-                                              'sname': sel.name})
+                                              'sname': sel.name,
+                                              'cancelrunning' : False,
+                                              'persistence' : 'IP'})
 
 class MMStateNoOpp(strategy.State):
     """No betting opportunity."""
