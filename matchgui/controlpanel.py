@@ -65,11 +65,14 @@ class ControlPanel(wx.Panel):
         # set update tick frequency to match selection
         updatetick = self.freqspin.GetValue()
         setattr(self.ustrat, managers.UTICK, updatetick)
-        wx.GetApp().stratgroup.add(self.ustrat)
+
+        # note we bypass AddStrategy here and add directly into the
+        # engine.
+        self.app.engine.add_strategy(self.ustrat)
         self.pmodel.ustrat = self.ustrat
 
     def RemoveUpdateStrat(self):
-        wx.GetApp().stratgroup.remove(self.ustrat)
+        self.app.engine.remove_strategy(self.ustrat)
         self.pmodel.ustrat = None
 
     def OnStartButtonClick(self, event):

@@ -2,16 +2,16 @@ import wx
 import const
 import managers
 import models
-from betman.strategy import strategy
 from mainframe import MyFrame
 from config import GlobalConfig
 import os
 import sys
+import engine
 
 class MyApp(wx.App):
     """Main app instance."""
     
-    # this needs to be MixedCase since it is called by wx
+    # this needs to be MixedCase since it is a wx method.
     def OnInit(self):
         """Setup app configuration and start engine."""
 
@@ -19,14 +19,13 @@ class MyApp(wx.App):
         self.gconfig = self.ReadConfigFromFile()
 
         # setup the engine
-        self.SetupManagers()
-        self.SetupModels()
-        self.SetupTimer()
+        self.engine = engine.Engine(self.gconfig)
 
-        # start timer if config says so
-        self.timeron = False
-        if self.gconfig.EngineStart:
-            self.StartTimer()
+        # models for MVC style 
+        self.SetupModels()
+
+        # timer for calling the engine tick
+        self.SetupTimer()
 
         # setup the actual GUI
         self.frame = MyFrame(None, size=(1000, 600),
@@ -34,14 +33,10 @@ class MyApp(wx.App):
         self.SetTopWindow(self.frame)
         self.frame.Show()
 
-        # automations (automatic programs for adding and removing
-        # strategies)
+        # add path to automations (automatic programs for adding and
+        # removing strategies) so that these can be imported.
         sys.path.append(os.path.join(os.path.dirname(__file__), 
                                      'automation'))
-        self.automations = []
-
-        # counter to store how many times we have ticked
-        self.ticks = 0L
 
         return True
 
@@ -79,7 +74,7 @@ class MyApp(wx.App):
         """
         
         # this will ensure the strategy is executed
-        self.stratgroup.add(strat)
+        self.engine.add_strategy(strat)
 
         if bdaqsel and bfsel:
             self.strat_models[key] = models.StrategyModel(bdaqsel, 
@@ -95,7 +90,7 @@ class MyApp(wx.App):
                 bdaq selection name.
         """
 
-        self.stratgroup.remove(self.strat_models[key].strategy)
+        self.engine.remove_strategy(self.strat_models[key].strategy)
         self.strat_models[key].RemoveStrategy()        
 
     def RemoveStrategyByObject(self, strat):
@@ -104,7 +99,7 @@ class MyApp(wx.App):
         strat  - the actual strategy object
         """
 
-        self.stratgroup.remove(strat)
+        self.engine.remove_strategy(strat)
 
         # a bit inefficient
         for k,v in self.strat_models.items():
@@ -118,25 +113,11 @@ class MyApp(wx.App):
     def GetConfig(self):
         return self.gconfig
 
-    def SetupManagers(self):
-        """
-        Setup strategy group and managers to deal with getting new
-        prices and new orders.
-        """
-
-        # strategygroup stores all currently executing strategies
-        # (initialised as empty).
-        self.stratgroup = strategy.StrategyGroup()
-
-        # the managers are used to manage fetching pricing and making
-        # orders for the strategy group.
-        self.omanager = managers.OrderManager(self.stratgroup)
-        self.pmanager = managers.PricingManager(self.stratgroup)
-
     def SetupModels(self):
         """
-        Setup the models that may need to be updated every tick (this
-        is a subset of all the models used in the application.
+        Setup the models for (MVC style) that may need to be updated every
+        tick NB this is a subset of all the models used in the
+        application.
         """
         
         self.pmodel = models.PriceModel()
@@ -156,6 +137,11 @@ class MyApp(wx.App):
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTick, self.timer)
 
+        # start timer if config says so
+        self.timeron = False
+        if self.gconfig.EngineStart:
+            self.StartTimer()
+
     def StartTimer(self):
         """
         Start the timer that calls the updates every tick.
@@ -169,64 +155,30 @@ class MyApp(wx.App):
             self.StartTimer()
 
     def OnTick(self, event):
-        """Main loop of the engine."""
+        """Call the engine main loop and update the models."""
+        
+        # fetch prices and order information, make new orders.
+        self.engine.tick()
 
-        self.ticks += 1
+        # update the relevant models for MVC.
 
-        # handle any 'automations' we have.  All this does is adds or
-        # removes strategies.  We only do this every 60 ticks (60
-        # seconds if timebase is set to be 1 second).
-        if (self.ticks % 1) == 0:
-            for a in self.automations:
-            # note we are passing a the automation a reference to the
-            # app, which it needs in order to add/remove strategies to
-            # the strategy group.
-                a.update(self)
-
-        # update the status of any outstanding (unmatched) orders by
-        # polling BF and BDAQ.
-        self.omanager.update_order_information()
-
-        # feed the current order dictionary just updated to the
-        # strategies.
-        self.stratgroup.update_orders(self.omanager.orders)
-
-        # get prices for any strategies in the strategy group that
-        # want new prices this tick by polling BF and BDAQ.
-        self.pmanager.update_prices(self.ticks)
-
-        # update strategies which got new prices this tick.  As well
-        # as feeding the strategy the new prices, we do the thinking
-        # 'AI' here, changing state, generating any new orders etc.
-        self.stratgroup.update_prices_if(self.pmanager.prices,
-                                         managers.UPDATED)
-
-        # make any new orders (note we only make new orders for
-        # strategies that got new prices this tick, see managers.py).
-        self.omanager.make_orders()
-
-        # update the relevant models.  We pass new_prices so that we
-        # can update only models whose prices were updated this tick.
-
-        # pricing model
-        self.pmodel.Update(self.pmanager.new_prices)
+        # pricing model. Note we pass new_prices so that we can update
+        # only models whose prices were updated this tick.
+        self.pmodel.Update(self.engine.pmanager.new_prices)
 
         # strategy models (keyed by BDAQ selection name).  note that
         # updating these models is distinct from updating the
-        # underlying strategies (which is done by
-        # self.stratgroup.update_if above).  The models are updated
-        # here so that the views seen by the user are kept current.
-        # Note also that the models are themselves responsible for
-        # checking whether new information for them is contained in
-        # new_prices.
+        # underlying strategies (which is done by the engine).  The
+        # models are updated here so that the views seen by the user
+        # are kept current.  Note also that the models are themselves
+        # responsible for checking whether new information for them is
+        # contained in new_prices.
         for k in self.strat_models:
-            self.strat_models[k].Update(self.pmanager.new_prices)
+            self.strat_models[k].Update(self.engine.pmanager.new_prices)
 
         # graph models (keyed by BDAQ selection name).
         for k in self.graph_models:
-            self.graph_models[k].Update(self.pmanager.new_prices)
-
-        print 'TICKS', self.ticks
+            self.graph_models[k].Update(self.engine.pmanager.new_prices)
 
 if __name__ == "__main__":
     app = MyApp(False)

@@ -50,7 +50,7 @@ PRACTICEMODE = False
 UPDATEORDERINFO = True
 
 class OrderManager(object):
-    def __init__(self, stratgroup):
+    def __init__(self, stratgroup, config):
 
         # interface to database
         self.dbman = database.DBMaster()
@@ -68,7 +68,7 @@ class OrderManager(object):
 
         # get app config - we may be in 'practice mode', in which case
         # we don't want to place any bets.
-        self.gconf = wx.GetApp().GetConfig()
+        self.gconf = config
 
     def bootstrap(self):
         # bootstrap BDAQ order information (we don't need to do this

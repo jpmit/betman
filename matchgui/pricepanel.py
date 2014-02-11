@@ -397,6 +397,11 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             # add listener
             self.app.strat_models[key].AddListener(frame.OnUpdateStrat)
 
+            # update the view immediately so that we don't have to
+            # wait till next time the strategy gets new prices before
+            # we show something in the monitor frame.
+            self.app.strat_models[key].UpdateViews()
+
     def OnGraphButton(self, event, key):
         """
         Open a new graph frame if we don't already have one open

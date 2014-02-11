@@ -147,7 +147,7 @@ class MyFrame(wx.Frame):
     def OnCurrentStrategies(self, event):
         """Show frame with currently running strategies."""
 
-        if self.app.stratgroup.strategies:
+        if self.app.engine.have_strategies():
             frame = menuframes.CurrentStrategiesFrame(self)
             frame.Show()
         else:

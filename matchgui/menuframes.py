@@ -15,7 +15,6 @@ class CurrentAutomationsFrame(wx.Frame):
         # need the app instance since it stores the stratgroup
         self.app = wx.GetApp()
 
-
         self.Draw()
 
     def Draw(self):
@@ -94,7 +93,7 @@ class CurrentStrategiesFrame(wx.Frame):
         tit_sz.Add(wx.StaticText(self, label="Strategy", size=self.SIZE))
         main_sz.Add(tit_sz)
 
-        for strat in self.app.stratgroup.strategies:
+        for strat in self.app.engine.get_strategies():
             h_sz = wx.BoxSizer(wx.HORIZONTAL)
 
             # hacky (since we don't use official Strategy object API)
