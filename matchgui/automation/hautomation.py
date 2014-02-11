@@ -1,5 +1,5 @@
 import models
-from automation import Automation
+from automation import automation
 import datetime
 from betman.strategy.bothmmstrategy import BothMMStrategy
 from betman.strategy.mmstrategy import MMStrategy
@@ -7,7 +7,7 @@ import managers
 import wx
 
 # note class must be named MyAutomation for GUI loader
-class MyAutomation(Automation):
+class MyAutomation(automation.Automation):
     """Automation for horse racing.
 
     This will do market making on both BF and BDAQ, for ALL horse
