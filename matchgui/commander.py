@@ -25,7 +25,7 @@ mmod.Update('Horse Racing', True)
 eng.add_automation(hautomation.MyAutomation())
 
 # main loop
-for i in range(1000):
+while 1:
     # do everything
     eng.tick()
 
