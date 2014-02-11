@@ -50,12 +50,17 @@ COURSES = {
            'Newm'  : 'Newmarket', 
            'Plump' : 'Plumpton',
            'Sand'  : 'Sandown',
+           # Scottsville is RSA
+           'Scots' : 'Scottsville',
+           'Sthl'  : 'Southwell',
            # Sunland Park is US
            'SunP'  : 'Sunland Park',
            # Tampa Bay Downs is US
            'Tampa' : 'Tampa Bay Downs',
            # Turfway Park is US
            'Turf'  : 'Turfway Park',
+           # Turffontein is RSA
+           'Turf_R': 'Turffontein',
            # Turf Paradise is US
            'TPara' : 'Turf Paradise',
            'Winc'  : 'Wincanton',
@@ -123,6 +128,12 @@ def match_horse(bdaqmarkets, bfmarkets):
         
         # get course name
         cname = names[-2].split()[0]
+
+        # special cases 
+        # we have a USA Turf and an RSA Turf, which are different
+        # courses
+        if (cname == 'Turf') and (names[-3] == 'RSA'):
+            cname = 'Turf_R'
 
         # try to map this to a bdaq course name
         try:

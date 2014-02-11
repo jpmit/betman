@@ -115,8 +115,8 @@ def _matchselection(sel, sellist):
         mat = re.match('\d+', s.name)
         if mat:
             sn = s.name[mat.end() + 2:]
-        if sn.strip().lower() == selname:
-            return s
+            if sn.strip().lower() == selname:
+                return s
 
     # we tried everything, so give up
     return None
