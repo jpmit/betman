@@ -2,16 +2,22 @@
 # James Mithen
 # jamesmithen@gmail.com
 
-# Simple Clock class for controlling how often we pass through a loop.
-# Similar idea to pygame.clock!
+"""Simple Clock class for controlling how often we pass through a
+ loop.  Similar idea to pygame.clock!
+"""
 
 import time
 
 class Clock(object):
     def __init__(self, deltat):
-        """Create new clock object with interval deltat.  Note this is
-        not intended for precision use.  deltat should be given in
-        seconds."""
+
+        """Create new clock object with interval deltat.
+
+        Note this is not intended for precision use.  deltat should be
+        given in seconds.
+
+        """
+
         self.deltat = deltat
         # only start the timing after first call to self.tick()
         self.running = False

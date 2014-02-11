@@ -46,6 +46,13 @@ class MyAutomation(Automation):
 
         # get all matching horse racing events from DB
         self.hmatches = self.get_all_markets()
+
+        # print all markets
+        if self.hmatches:
+            print 'Automation has markets:'
+            for hm in self.hmatches:
+                # this is the bdaq name
+                print hm[0].name
         
         # we keep an internal count of the strategies we have added
         # that are currently running. This means when updating the

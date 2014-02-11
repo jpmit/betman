@@ -59,15 +59,16 @@ def get_match_markets(m1s, m2s):
         bfms = [m for m in m2s if m.eventname == EVENTMAP[name]]
         matchms += (_matchevent(bdaqms, bfms, name))
 
-        # write the markets not matched to log
         nomatch = [m.name for m in bdaqms if not m
                    in [a[0] for a in matchms]]
         betlog.betlog.debug("Matched {0}/{1} BDAQ {2} markets"\
                             .format(len(matchms), len(bdaqms),
                                     name))
-        nmstr = '\n'.join(nomatch)
-        betlog.betlog.debug("Markets not matched:\n{0}"\
-                            .format(nmstr))
+
+        # write the markets not matched to log
+        #nmstr = '\n'.join(nomatch)
+        #betlog.betlog.debug("Markets not matched:\n{0}"\
+        #                    .format(nmstr))
         
     # write matching markets to DB
     if const.WRITEDB:
