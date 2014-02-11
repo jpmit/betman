@@ -17,17 +17,17 @@ class MyAutomation(Automation):
 
     """
 
-    STARTT = 16 # time in minutes before race start that we will begin
-                # market marking.
-    ENDT = 1    # time in minutes before race start to finish market
-                # making.
-    MAXLAY = 8  # only make markets on selections with lay price <
-                # this number at the time which they are added (STARTT
-                # mins before the race start).
-    MAXBACK = 8 # same but for back, this means we won't make markets
-                # when there are no backers yet.
+    STARTT  = 16 # time in minutes before race start that we will
+                 # begin market marking.
+    ENDT    = 1  # time in minutes before race start to finish market
+                 # making.
+    MAXLAY  = 8  # only make markets on selections with lay price <
+                 # this number at the time which they are added
+                 # (STARTT mins before the race start).
+    MAXBACK = 8  # same but for back, this means we won't make markets
+                 # when there are no backers yet.
 
-    UFREQ = 2   # update frequency in ticks of strategies added.
+    UFREQ   = 2  # update frequency in ticks of strategies added.
 
     # when adding a market, should we use the API to get matching
     # selections? If False, we will simply query the DB.
@@ -76,7 +76,7 @@ class MyAutomation(Automation):
         # market.
         return hmatches
 
-    def update(self, app):
+    def update(self, engine):
         """Add/remove strategies from the stratgroup.
 
         We add strategy when the time first passes starttime - STARTT.
@@ -117,7 +117,7 @@ class MyAutomation(Automation):
         for i in strats_seen:
             self.hmatches.pop(i)
     
-    def add_strategy(self, app, hmatch):
+    def add_strategy(self, engine, hmatch):
         """Add the strategies we want for hmatch = (m1, m2).
 
         (m1, m2) are the matching markets.  This routine adds

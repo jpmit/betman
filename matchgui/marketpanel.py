@@ -17,7 +17,7 @@ class MarketPanel(wx.Panel):
         self.lst = MatchListCtrl(self)
 
         # model from market data
-        self.mmodel = wx.GetApp().mmodel
+        self.mmodel = models.MatchMarketsModel.Instance()
         
         # The listener will update the view
         self.mmodel.AddListener(self.lst.OnGetMatchEvents)

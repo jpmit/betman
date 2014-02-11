@@ -120,8 +120,7 @@ class MyApp(wx.App):
         application.
         """
         
-        self.pmodel = models.PriceModel()
-        self.mmodel = models.MatchMarketsModel()
+        self.pmodel = models.PriceModel.Instance()
         self.strat_models = {}
         self.graph_models = {}
 
@@ -160,14 +159,15 @@ class MyApp(wx.App):
         # fetch prices and order information, make new orders.
         self.engine.tick()
 
-        # update the relevant models for MVC.
+        # update the relevant models for MVC.  Note we pass new_prices
+        # so that we can update only models whose prices were updated
+        # this tick.
 
-        # pricing model. Note we pass new_prices so that we can update
-        # only models whose prices were updated this tick.
+        # (i) pricing model.
         self.pmodel.Update(self.engine.pmanager.new_prices)
 
-        # strategy models (keyed by BDAQ selection name).  note that
-        # updating these models is distinct from updating the
+        # (ii) strategy models (keyed by BDAQ selection name).  note
+        # that updating these models is distinct from updating the
         # underlying strategies (which is done by the engine).  The
         # models are updated here so that the views seen by the user
         # are kept current.  Note also that the models are themselves
@@ -176,7 +176,7 @@ class MyApp(wx.App):
         for k in self.strat_models:
             self.strat_models[k].Update(self.engine.pmanager.new_prices)
 
-        # graph models (keyed by BDAQ selection name).
+        # (iii) graph models (keyed by BDAQ selection name).
         for k in self.graph_models:
             self.graph_models[k].Update(self.engine.pmanager.new_prices)
 

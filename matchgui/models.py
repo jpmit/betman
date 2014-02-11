@@ -4,6 +4,7 @@ from betman.strategy import strategy, cxstrategy, mmstrategy, position
 from betman import const, exchangedata
 from betman.database import DBMaster
 from betman.matchmarkets.matchconst import EVENTMAP
+from singleton import Singleton
 import managers
 import numpy as np
 
@@ -40,6 +41,7 @@ class AbstractModel(object):
         for eachFunc in self.listeners:
             eachFunc(self)
 
+@Singleton
 class PriceModel(AbstractModel):
     """
     Model used for displaying market prices on the main panel.  The
@@ -53,7 +55,9 @@ class PriceModel(AbstractModel):
     """
     
     def __init__(self):
-        super(PriceModel, self).__init__()
+        # we can't use super(PriceModel, self).__init__() here.
+        AbstractModel.__init__(self)
+
         # sels are updated to keep the current selection prices; they
         # are stored in the order displayed on the main pricing panel.
         self.bdaqsels = []
@@ -62,7 +66,7 @@ class PriceModel(AbstractModel):
         # we store a reference to a matching selections model, which
         # gives us details on which BF selection matches which BDAQ
         # selection.
-        self._selmodel = MatchSelectionsModel()
+        self._selmodel = MatchSelectionsModel.Instance()
 
         # We set these once the user has clicked on a matching market.
         self.bdaqmid = None
@@ -117,24 +121,18 @@ class PriceModel(AbstractModel):
                 # call the listener functions.
                 self.UpdateViews()
 
+@Singleton
 class MatchSelectionsModel(AbstractModel):
     """Stores data on matching selections for all the different events."""
     
     # if usedb is set, we will initialise the matching markets cache
     # from the sqlite database.
     USEDB = True
-
-    # singleton design pattern
-    _instance = None
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(MatchSelectionsModel, cls).\
-                            __new__(cls, *args, **kwargs)
-
-        return cls._instance
     
     def __init__(self):
-        super(MatchSelectionsModel, self).__init__()
+        
+        AbstractModel.__init__(self)
+        #super(MatchSelectionsModel, self).__init__()
 
         # matching selections keys are bdaqmid, values are
         # [(bdaq_sels, bf_sels)] where bdaq_sels and bf_sels are lists
@@ -145,10 +143,6 @@ class MatchSelectionsModel(AbstractModel):
 
         # singleton that controls DB access
         self._dbman = DBMaster()
-
-#    def GetBDAQSelFromBFSel(self, bfmid, bfsid):
-#        for bfsel, bfsel in self._match_cache
-        
 
     def GetMatchingSels(self, bdaqmid, bfmid, refresh = False):
         """
@@ -192,24 +186,18 @@ class MatchSelectionsModel(AbstractModel):
 
         return bdaqsels, bfsels
 
+@Singleton
 class MatchMarketsModel(AbstractModel):
     """Stores data on matching markets for all the different events."""
     
     # if usedb is set, we will initialise the matching markets cache
     # from the sqlite database.
     USEDB = True
-
-    # singleton design pattern
-    _instance = None
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(MatchMarketsModel, cls).\
-                            __new__(cls, *args, **kwargs)
-
-        return cls._instance
     
     def __init__(self):
-        super(MatchMarketsModel, self).__init__()
+
+        AbstractModel.__init__(self)
+        #super(MatchMarketsModel, self).__init__()
 
         # key to match_cache is event name, value is list of tuples
         # (m1, m2) where m1 and m2 are the matching markets (m1 is the
@@ -311,6 +299,7 @@ class MatchMarketsModel(AbstractModel):
 
         return self._midmap_cache[bdaqmid]
 
+# not a singleton as we want multiple instances
 class StrategyModel(AbstractModel):
     """Holds information for a single strategy."""
 
@@ -391,6 +380,7 @@ class StrategyModel(AbstractModel):
 
                 self.UpdateViews()
 
+# not a singleton as we want multiple instances
 class GraphPriceModel(AbstractModel):
     """Holds information for a single graph."""
     
