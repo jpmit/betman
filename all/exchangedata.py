@@ -50,6 +50,7 @@ MINODDSPLUS1 = 1.01
 
 def next_shorter_odds(exid, odds):
     """Return odds one shorter (i.e. less in decimal) than odds."""
+
     if exid == const.BDAQID:
         # use BDAQ betting increments
         if odds <= 3:
@@ -68,6 +69,8 @@ def next_shorter_odds(exid, odds):
             return odds - 2
         elif odds <= 1000:
             return odds - 5
+        else:
+            return MAXODDS
 
     elif exid == const.BFID:
         # use BF betting increments
@@ -91,12 +94,16 @@ def next_shorter_odds(exid, odds):
             return odds - 5
         elif odds <= 1000:
             return odds - 10
+        else:
+            return MAXODDS
+
     else:
         raise DataError, 'exid must be either {0} or {1}'\
               .format(const,BDAQID, const.BFID)
 
 def next_longer_odds(exid, odds):
     """Return odds one longer (i.e. greater in decimal) than odds."""
+
     if exid == const.BDAQID:
         # use BDAQ betting increments
         if odds < 3 :
@@ -115,6 +122,8 @@ def next_longer_odds(exid, odds):
             return odds + 2
         elif odds < 1000:
             return odds + 5
+        else:
+            return MAXODDS
 
     elif exid == const.BFID:
         # use BF betting increments
@@ -138,6 +147,8 @@ def next_longer_odds(exid, odds):
             return odds + 5
         elif odds < 1000:
             return odds + 10
+        else:
+            return MAXODDS
 
     else:
         raise DataError, 'exid must be either {0} or {1}'\
@@ -149,7 +160,7 @@ def closest_longer_odds(exid, odds):
 
     if odds < MINODDS:
         return MINODDS
-    elif odds > MAXODDS:
+    elif odds >= MAXODDS:
         return MAXODDS
 
     # first get odds to two decimal places ROUNDED UP
@@ -201,7 +212,7 @@ def closest_shorter_odds(exid, odds):
     """Return closest valid odds on exid that are equal to or shorter
     (i.e. smaller in decimal) than odds passed."""
 
-    if odds < MINODDS:
+    if odds <= MINODDS:
         return MINODDS
     elif odds > MAXODDS:
         return MAXODDS

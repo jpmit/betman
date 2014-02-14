@@ -96,13 +96,13 @@ class Selection(object):
         self.layprices = layprices
 
         # paded back and lay prices to const.NUMPRICES
-        self.padback = self.PadPrices(backprices, const.NUMPRICES)
-        self.padlay = self.PadPrices(layprices, const.NUMPRICES)
+        self.padback = self.pad_prices(backprices, const.NUMPRICES)
+        self.padlay = self.pad_prices(layprices, const.NUMPRICES)
 
         # store all data from API
         self.properties = kwargs
 
-    def PadPrices(self, prices, num):
+    def pad_prices(self, prices, num):
         """
         Pad prices so that if have fewer than num back or lay prices.
         """
@@ -118,21 +118,19 @@ class Selection(object):
         """Return best back price, or 1.0 if no price."""
         
         if self.padback[0][0] is None:
-            # best back is 1000
-            return exchangedata.MAXODDS
+            # this is 1.0
+            return exchangedata.MINODDS
+
         return self.padback[0][0]
-#        return max(exchangedata.MINODDS,
-#                   self.padback[0][0])
 
     def best_lay(self):
         """Return best lay price, or 1000.0 if no price."""
         
         if self.padlay[0][0] is None:
             # best lay is 1.01
-            return exchangedata.MINODDS
+            return exchangedata.MAXODDS
+
         return self.padlay[0][0]
-#        return min(exchangedata.MAXODDS,
-#                   self.padlay[0][0])
 
     def make_best_lay(self):
         """
@@ -145,8 +143,8 @@ class Selection(object):
 
         # design option: if the best back price is 1, we could return
         # None, but instead lets return 1.
-        if blay == exchangedata.MINODDS:
-            return exchangedata.MINODDS
+        #if blay == exchangedata.MINODDS:
+        #    return exchangedata.MINODDS
 
         return exchangedata.next_shorter_odds(self.exid, blay)
 
@@ -161,8 +159,8 @@ class Selection(object):
 
         # design option: if the best lay price is 1000, we could
         # return None, but instead lets return 1000.
-        if bback == exchangedata.MAXODDS:
-            return exchangedata.MAXODDS
+        #if bback == exchangedata.MAXODDS:
+        #    return exchangedata.MAXODDS
 
         return exchangedata.next_longer_odds(self.exid, bback)
 
