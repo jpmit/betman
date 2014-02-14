@@ -9,3 +9,4 @@ logs/
 .\#*
 database/stratgroup.pkl
 *.txt
+*.out
