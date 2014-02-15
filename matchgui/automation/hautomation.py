@@ -17,7 +17,7 @@ class MyAutomation(Automation):
 
     """
 
-    STARTT  = 16 # time in minutes before race start that we will
+    STARTT  = 30 # time in minutes before race start that we will
                  # begin market marking.
     ENDT    = 2  # time in minutes before race start to finish market
                  # making.
@@ -165,12 +165,12 @@ class MyAutomation(Automation):
         for (s1, s2) in zip(bdaqsels, bfsels):
             # only add strategies for which are within our limits on
             # both BDAQ (and maybe also BF).
-            if ((s1.best_lay() < self.MAXLAY) and (s1.best_back() < self.MAXBACK)):
+            if ((s2.best_lay() < self.MAXLAY) and (s2.best_back() < self.MAXBACK)):
                 #and (s2.best_lay() < self.MAXLAY) and (s2.best_back() < self.MAXBACK)):
                 # debug
                 print s1.name, 'best lay', s1.best_lay(), s1.name, 'best back', s1.best_back()
                 # BDAQ only at the moment due to problem with multithreaded BF betting.
-                strat = MMStrategy(s1)#BothMMStrategy(s1, s2)
+                strat = MMStrategy(s2)#BothMMStrategy(s1, s2)
                 # set update frequency 
                 setattr(strat, managers.UTICK, self.UFREQ)
                 

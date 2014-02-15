@@ -96,8 +96,9 @@ class ApiplaceBets(ApiMethod):
         self.dbman = dbman
 
     def create_req(self):
-        # we create the request object in the call method instead.
-        pass
+        # note self.req is a dummy attribute, we create the request
+        # object in the call method instead.
+        self.req = self.client.factory.create('ns1:PlaceBetsReq')
 
     def make_bet_list(self, orderlist):
         blist = []
@@ -141,6 +142,7 @@ class ApiplaceBets(ApiMethod):
         # have to manipulate the internal state of the class in this
         # method.
         req = self.client.factory.create('ns1:PlaceBetsReq')
+        req.header = self.req.header
 
         req.bets.PlaceBets = self.make_bet_list(orderlist)
         betlog.betlog.info('calling BF Api placeBets')
