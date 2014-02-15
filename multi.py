@@ -90,7 +90,10 @@ def make_orders(odict):
 
     # we start one thread for the BDAQ orders, since we can place on
     # multiple markets with a single API call
-    bdaq_threads = 1 if odict[const.BDAQID] else 0
+    if const.BDAQID in odict:
+        bdaq_threads = 1
+    else:
+        bdaq_threads = 0
 
     # for BF, we need one API call for each separate market id.  So
     # first get a list of lists,

@@ -96,7 +96,8 @@ class ApiplaceBets(ApiMethod):
         self.dbman = dbman
 
     def create_req(self):
-        self.req = self.client.factory.create('ns1:PlaceBetsReq')
+        # we create the request object in the call method instead.
+        pass
 
     def make_bet_list(self, orderlist):
         blist = []
@@ -132,13 +133,20 @@ class ApiplaceBets(ApiMethod):
         return blist
         
     def call(self, orderlist):
+        # Note: we want this method to be thread-safe.
         _add_header(self)
-        self.req.bets.PlaceBets = self.make_bet_list(orderlist)
+
+        # we create req here rather than assigning to self.req in the
+        # create_req method for thread-safety.  this means we don't
+        # have to manipulate the internal state of the class in this
+        # method.
+        req = self.client.factory.create('ns1:PlaceBetsReq')
+
+        req.bets.PlaceBets = self.make_bet_list(orderlist)
         betlog.betlog.info('calling BF Api placeBets')
         print 'request follows:'
-        # warning: this seems to not work when multithreaded
-        print self.req
-        response = self.client.service.placeBets(self.req)
+        print req
+        response = self.client.service.placeBets(req)
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
         return allorders
 
