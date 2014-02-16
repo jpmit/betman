@@ -202,7 +202,9 @@ class MMStrategy(strategy.Strategy):
                                                # (for BF)
                                                'cancelrunning' : False,
                                                # warning: only some BF markets allow 'IP' persistence!
+                                               # (and only some allow SP persistence)
                                                'persistence' : 'SP'})
+
         self.lorder = order.Order(sel.exid, sel.id, lstake,
                                   olay, 2, **{'mid': sel.mid,
                                               'src': sel.src,
