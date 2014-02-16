@@ -111,16 +111,15 @@ class CurrentStrategiesFrame(wx.Frame):
                 # shouldn't get here, but just in case
                 continue
             
-            # TODO: if sel is BF selection, get the corresponding BDAQ selection
-            #if (sel.exid == const.BFID):
+            # If sel is BF selection, get the BDAQ market id
+            if (sel.exid == const.BFID):
                 # get the BDAQ mid corresponding to the BF mid
-            #    bfmid = self.mmodel.GetBFMidFromBDAQMid(bdaqmid)
-                
-                
+                mid = self.mmodel.GetBDAQMidFromBFMid(sel.mid)
+            else:
+                mid = sel.mid
 
             selname = sel.name
             sid = sel.id
-            mid = sel.mid
             # name of the class that strat is an instance of
             stratname = strat.__class__.__name__
 

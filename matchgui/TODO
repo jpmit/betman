@@ -9,8 +9,12 @@
 
 # other
 
-* get BF betting on multiple MIDS working
-* write simple command line tool for loading an automation and running all day
+* when calling GetMUBets, partially matched bets split into a matched
+  bet and an unmatched bet (see below): we need to parse these
+  properly
+* add agressive setting(s) to MM strategy 
+- add cancelling capabilities for both BDAQ and BF
+- add getting market information so we have a time series of GBP matched on market
 - save complete state (strategies, automations etc.) when exit, and load this when startup
 - add filters for strategies so that bets are only placed if each bet is below risk limits
 - improve matching markets engine
@@ -20,3 +24,53 @@
 - add market volume to engine and/or GUI
 - sort out how and when info is written to the DB
 - GUI frame to select which markets we want when putting in hautomation
+
+[(MUBet){
+   asianLineId = 0
+   betId = 34348149831
+   transactionId = 44204904267
+   betStatus = "U"
+   betType = "B"
+   betCategoryType = "E"
+   betPersistenceType = "SP"
+   marketId = 112854872
+   matchedDate = 0001-01-01 00:00:00
+   size = 2.0
+   bspLiability = 0.0
+   placedDate = 2014-02-16 12:51:23
+   price = 5.2
+   selectionId = 7860560
+   handicap = 0.0
+ }, (MUBet){
+   asianLineId = 0
+   betId = 34348149833
+   transactionId = 44204904268
+   betStatus = "U"
+   betType = "L"
+   betCategoryType = "E"
+   betPersistenceType = "SP"
+   marketId = 112854872
+   matchedDate = 0001-01-01 00:00:00
+   size = 1.09
+   bspLiability = 0.0
+   placedDate = 2014-02-16 12:51:23
+   price = 5.0
+   selectionId = 7860560
+   handicap = 0.0
+ }, (MUBet){
+   asianLineId = 0
+   betId = 34348149833
+   transactionId = 44204911566
+   betStatus = "M"
+   betType = "L"
+   betCategoryType = "E"
+   betPersistenceType = "SP"
+   marketId = 112854872
+   matchedDate = 2014-02-16 12:51:34
+   size = 0.98
+   bspLiability = 0.0
+   placedDate = 2014-02-16 12:51:23
+   price = 5.0
+   selectionId = 7860560
+   handicap = 0.0
+ }]

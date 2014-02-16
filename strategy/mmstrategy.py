@@ -201,14 +201,15 @@ class MMStrategy(strategy.Strategy):
                                                # BDAQ) and persistence
                                                # (for BF)
                                                'cancelrunning' : False,
-                                               'persistence' : 'IP'})
+                                               # warning: only some BF markets allow 'IP' persistence!
+                                               'persistence' : 'SP'})
         self.lorder = order.Order(sel.exid, sel.id, lstake,
                                   olay, 2, **{'mid': sel.mid,
                                               'src': sel.src,
                                               'wsn': sel.wsn,
                                               'sname': sel.name,
                                               'cancelrunning' : False,
-                                              'persistence' : 'IP'})
+                                              'persistence' : 'SP'})
 
 class MMStateNoOpp(strategy.State):
     """No betting opportunity."""
