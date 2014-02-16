@@ -8,6 +8,8 @@ from betman import const, Market, Event, order, betlog
 from betman.all.betexception import ApiError
 import datetime
 
+_EPS = 0.000001 # for fp arithmetic
+
 def _check_errors(res):
     """
     Check errors from BF API response.  This function is called before
@@ -40,43 +42,52 @@ def ParsegetMUBets(res, odict):
 
     _check_errors(res)
 
-    # note we could get back more items than orders here, since an order
-    # may have been partially matched to 2 or more others.
-    if len(res.bets.MUBet) != len(odict):
-        betlog.betlog.debug('Got {0} results for updating {1} orders'\
-                            .format(len(res.bets.MUBet), len(odict)))
-        print res.bets.MUBet
-        print odict
+    #if len(res.bets.MUBet) != len(odict):
+    #    betlog.betlog.debug('Got {0} results for updating {1} orders'\
+    #                        .format(len(res.bets.MUBet), len(odict)))
+    #    print res.bets.MUBet
+    #    print odict
+    #print res.bets.MUBet
 
+    # The following is slightly complicated, this is because the BF
+    # API can return multiple orders with the same betid, (although
+    # they will have a different transactionId). We will get this if a
+    # bet has been 'partially' matched.  From our perspective, this is
+    # a single 'unmatched' bet.
+
+    # dictionary of orders we will return
     allorders = {}
+
+    # first initialise each order as unmatched
+    for oref in odict:
+        o = odict[oref]
+        idict = {'mid': o.mid, 'oref': oref, 'status' : order.UNMATCHED,
+                 'matchedstake': 0.0, 'unmatchedstake': o.stake}
+        allorders[oref] = order.Order(const.BFID, o.sid, o.stake,
+                                      o.price, o.polarity, **idict)
+
+    # go through each MUBet, and add the amount matched (if any) to
+    # the appropriate order object.
     for r in res.bets.MUBet:
 
-        # get the order id
-        oref = r.betId
+        if r.betStatus == 'M':
 
-        # get the order in the order dict that has the matching id
-        o = odict[oref]
+            # get the order in the order dict that has the matching id
+            o = allorders[r.betId]
+            
+            # add matched amount
+            o.matchedstake += r.size
+            o.unmatchedstake -= r.size
 
-        # note: will have to change this at some point for partial
-        # matches
-        if r.betStatus == 'U':
-            status = order.UNMATCHED
-            matched = 0.0
-            unmatched = o.stake
-        elif r.betStatus == 'M':
-            status = order.MATCHED
-            matched = o.stake
-            unmatched = 0.0
-        else:
-            raise ApiError, 'Received unknown order status {0}'.\
-                  format(r.betStatus)
-        
-        oinfo = {'mid': o.mid, 'oref': oref, 'status': status,
-                 'matchedstake' : matched, 'unmatchedstake' :
-                 unmatched}
-
-        allorders[oref] = order.Order(const.BFID, o.sid, o.stake,
-                                      o.price, o.polarity, **oinfo)
+    # go through all orders, and changed status of those with
+    # matchedstake equal to original placed stake to order.MATCHED.
+    for o in allorders.values():
+        # fp arithmetic
+        ms = o.matchedstake
+        s = o.stake
+        #print o, ms, s
+        if (ms > s - _EPS) and (ms < s + _EPS):
+            o.status = order.MATCHED
 
     return allorders
 
