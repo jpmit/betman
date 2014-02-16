@@ -101,9 +101,9 @@ def ParseplaceBets(res, olist):
     # BetfairSportsExchangeAPIReferenceGuidev6.pdf, p114.
     _check_errors(res)
 
-    print 'parse place bets:'
-    print olist
-    print res
+#    print 'parse place bets:'
+#    print olist
+#    print res
     
     # check that we have one result for each order executed
     if len(res.betResults.PlaceBetsResult) != len(olist):

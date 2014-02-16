@@ -37,10 +37,27 @@ def display_order(bdaqmid):
     """
     
     minfo = bdaqapi.GetMarketInformation([bdaqmid])
-    order = [None]*len(minfo.Markets.Selections)
+    # Note there can be some numbers missing in the display order!
+    # E.g. we could have 5 selections, with display orders 1,2,3,4,6
+    # respectively.  And, the display orders may not be in numerical
+    # order, so we could also have e.g. 1,3,2,4,6.
+    orderd = {}
     for m in minfo.Markets.Selections:
-        order[m._DisplayOrder - 1] = m._Id
-    return order
+        orderd[m._DisplayOrder] = m._Id
+
+    # from the dict, create a list with the sids.
+    olist = [None]*max(orderd)
+    for k in orderd:
+        # k - 1 since zero indexing
+        olist[k - 1] = orderd[k]
+
+    # finally, remove all occurences of None from the list.
+    flist = []
+    for o in olist:
+        if o is not None:
+            flist.append(o)
+
+    return flist
 
 def market_prices(bdaqmid, bfmid):
     """
