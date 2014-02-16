@@ -205,8 +205,11 @@ class MatchMarketsModel(AbstractModel):
         # tuples is the same as the ordering that appears in the GUI.
         self._match_cache = {}
 
-        # we also store a dict that maps BDAQ mids to BF mids
-        self._midmap_cache = {}
+        # store a dict that maps BDAQ mids to BF mids
+        self._BDAQmap_cache = {}
+
+        # and a dict that maps BF mids to BDAQ mids
+        self._BFmap_cache = {}
 
         # and a dict that maps BDAQ mids to their market objects
         self._BDAQ_cache = {}
@@ -218,17 +221,18 @@ class MatchMarketsModel(AbstractModel):
         self._dbman = DBMaster()
 
         if self.USEDB:
-            self.InitMatchCacheFromDB()
+            self.InitCachesFromDB()
         else:
-            self.InitMatchCacheEmpty()
+            self.InitCachesEmpty()
 
-    def InitMatchCacheEmpty(self):
+    def InitCachesEmpty(self):
         """
         Initialise the matching markets cache as empty.
         """
         
         for ename in EVENTMAP:
             self._match_cache[ename] = []
+            # the other caches are set to be empty after __init__
 
     def GetMids(self, ename, index):
         bdaqmid = self._match_cache[ename][index][0].id
@@ -237,12 +241,15 @@ class MatchMarketsModel(AbstractModel):
         return bdaqmid, bfmid
 
     def GetBFMidFromBDAQMid(self, bdaqmid):
-        return self._midmap_cache[bdaqmid]
+        return self._BDAQmap_cache[bdaqmid]
+
+    def GetBDAQMidFromBFMid(self, bfmid):
+        return self._BFmap_cache[bfmid]
 
     def GetNameFromBDAQMid(self, bdaqmid):
         return self._BDAQ_cache[bdaqmid].name
 
-    def InitMatchCacheFromDB(self):
+    def InitCachesFromDB(self):
         """
         Initialise the matching markets cache from the SQLite
         database.
@@ -260,7 +267,10 @@ class MatchMarketsModel(AbstractModel):
             m1id = m1.id
             m2id = m2.id
             # map bdaq mid to bf mid
-            self._midmap_cache[m1id] = m2id
+            self._BDAQmap_cache[m1id] = m2id
+
+            # map bf mid to bdaq mid
+            self._BFmap_cache[m2id] = m1id
 
             # map bdaq mid to market object
             self._BDAQ_cache[m1id] = m1
@@ -293,11 +303,6 @@ class MatchMarketsModel(AbstractModel):
 
     def GetMatches(self, ename):
         return self._match_cache[ename]
-
-    def GetBFMid(self, bdaqmid):
-        """Return the BF mid that mataches bdaqmid."""
-
-        return self._midmap_cache[bdaqmid]
 
 # not a singleton as we want multiple instances
 class StrategyModel(AbstractModel):
