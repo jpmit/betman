@@ -21,4 +21,4 @@ BLACK   = (0,   0,   0)
 
 # each tick in the application corresponds to this time in
 # milliseconds.
-TICK_LENGTH_MS = 1000
+TICK_LENGTH_MS = 1200
