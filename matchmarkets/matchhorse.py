@@ -44,10 +44,15 @@ COURSES = {
            'Leop'  : 'Leopardstown',
            'Ling'  : 'Lingfield',
            'List'  : 'Listowel',
+           'MrktR' : 'Market Rasen',
            'Naas'  : 'Naas',
+           # Navan is in Ireland
+           'Navan' : 'Navan',
            'Newb'  : 'Newbury',
            'Newc'  : 'Newcastle',
-           'Newm'  : 'Newmarket', 
+           'Newm'  : 'Newmarket',
+           # Pau is in France
+           'Pau'   : 'Pau',
            'Plump' : 'Plumpton',
            'Sand'  : 'Sandown',
            # Scottsville is RSA
