@@ -136,8 +136,18 @@ class MMStrategy(strategy.Strategy):
         # don't place them again (this is last update before we make orders).
         self.toplace = {const.BDAQID: [], const.BFID: []}
 
-        # update selection price
-        self.sel = prices[self.sel.exid][self.sel.mid][self.sel.id]
+        # update prices of selection from dictionary.  Note: even
+        # though the engine only calls this function if we just got
+        # new prices for this strategy, we need to check for KeyError.
+        # This is in case something went wrong in fetching the prices
+        # from the API (e.g. we lost the network connection), in which
+        # case the prices dict will be stale (or it could,
+        # theoretically, be empty).
+        try:
+            self.sel = prices[self.sel.exid][self.sel.mid][self.sel.id]
+        except KeyError:
+            # we don't want to update AI if we didn't get new prices
+            return
 
         # AI
         self.brain.update()

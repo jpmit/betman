@@ -9,6 +9,7 @@ from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from threading import Thread, active_count
 from Queue import Queue
+from urllib2 import URLError
 
 def update_prices(middict):
     """
@@ -25,10 +26,23 @@ def update_prices(middict):
 
     def _worker():
         func, mids, myid = q.get()
-        prices[myid], emids[myid] = func(mids)
+        try:
+            prices[myid], emids[myid] = func(mids)
+        except URLError:
+            # the nApi functions will raise URLError if there is no
+            # network access etc.  There is a choice to be made here.
+            # The 'safest' thing to do is to set emids to the complete
+            # list of mids.  This will mean that all strategies (for
+            # this exchange - either BDAQ or BF) will be removed by
+            # the engine (see update_prices in managers.py).  Instead,
+            # we can set prices to be an empty dict and emids to be an
+            # empty list.  This won't remove the strategy.  
+            prices[myid] = {}
+            emids[myid] = []
         q.task_done()
 
-    # start the threads
+    # start the threads: note we always start two threads here, even
+    # when we are only fetching prices from either BDAQ or BF.
     for i in range(2):
         t = Thread(target = _worker)
         t.setDaemon(True)
@@ -83,6 +97,7 @@ def make_orders(odict):
             print 'api error when placing following bets for id {0}:'.format(myid)
             print olist
             ords = {}
+
         # need to update since we may have more than one thread
         # for the BF bets.
         orders[myid].update(ords)

@@ -314,9 +314,19 @@ class CXStrategy(strategy.Strategy):
         # don't place them again.
         self.toplace = {const.BDAQID: [], const.BFID: []}        
         
-        # update prices of selections from dictionary
-        self.sel1 = prices[self.sel1.exid][self.sel1.mid][self.sel1.id]
-        self.sel2 = prices[self.sel2.exid][self.sel2.mid][self.sel2.id]
+        # update prices of selections from dictionary.  Note: even
+        # though the engine only calls this function if we just got
+        # new prices for this strategy, we need to check for KeyError.
+        # This is in case something went wrong in fetching the prices
+        # from the API (e.g. we lost the network connection), in which
+        # case the prices dict will be stale (or it could,
+        # theoretically, be empty).
+        try:
+            self.sel1 = prices[self.sel1.exid][self.sel1.mid][self.sel1.id]
+            self.sel2 = prices[self.sel2.exid][self.sel2.mid][self.sel2.id]
+        except KeyError:
+            # we don't want to update AI if we didn't get new prices
+            return
         
         # AI
         self.brain.update()
