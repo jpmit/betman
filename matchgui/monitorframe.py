@@ -108,6 +108,10 @@ class SummaryPanel(wx.Panel):
         
     def Update(self, smodel):
 
+        if smodel.postracker is None:
+            # we could get here on the first update
+            return
+
         pos, posif = smodel.postracker.get_positions()
 
         # check if position, position_if, and unmatched_bets have

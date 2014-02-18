@@ -18,6 +18,8 @@ class CurrentAutomationsFrame(wx.Frame):
 
         self.Draw()
 
+        self.Center()
+
     def Draw(self):
 
         panel = wx.Panel(self)
@@ -78,6 +80,8 @@ class CurrentStrategiesFrame(wx.Frame):
         self.mmodel = models.MatchMarketsModel.Instance()
 
         self.Draw()
+
+        self.Center()
 
     def Draw(self):
         panel = wx.Panel(self)
@@ -180,6 +184,8 @@ class SettingsFrame(wx.Frame):
             cb.SetValue(self.gconfig.GetOptionByName(nm))
         
         panel.Bind(wx.EVT_CHECKBOX, self.OnCheckOption)
+
+        self.Center()
 
     def OnCheckOption(self, event):
         sender = event.GetEventObject()

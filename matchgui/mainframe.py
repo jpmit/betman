@@ -61,6 +61,12 @@ class MyFrame(wx.Frame):
         # event handler for close
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
+        # store dict of open frames from the menu only
+        self._oframes = {'settings': None,
+                         'strategies': None,
+                         'automations': None
+                         }
+
         self.Layout()
 
     def CreateMenus(self):
@@ -116,53 +122,94 @@ class MyFrame(wx.Frame):
         # automation gets called every tick.
         self.app.AddAutomation(afile)
 
+    def OnCloseFrame(self, event, nm):
+        self._oframes[nm] = None
+        event.Skip()
+
     def OnSettings(self, event):
         """Show the settings frame."""
 
-        frame = menuframes.SettingsFrame(self)
-        frame.Show()
+        nm = 'settings'
+
+        frame = self._oframes[nm]
+        if frame is None:
+            frame = menuframes.SettingsFrame(self)
+            self._oframes['settings'] = frame
+            frame.Bind(wx.EVT_CLOSE, 
+                       lambda e,n=nm: self.OnCloseFrame(e, n))
+            frame.Show()
+        else:
+            frame.Raise()
 
     def OnAbout(self, event):
         """Show the about dialog."""
-
+        
+        # note that the about box is not modal on Linux, which is
+        # apparently a bug in wxPython.  This means we can open
+        # multiple about boxes.  On Windows and OS/X this is
+        # apparently not a problem.  To solve the Linux problem, it
+        # seems it is necessary to create a custom about box.
         info = wx.AboutDialogInfo()
         info.SetName(const.NAME)
         info.SetVersion("0.1")
-        info.SetCopyright("Copyright (C) 2013 James Mithen")
+        info.SetCopyright("Copyright (C) 2013-2014 James Mithen")
         # info.SetWebSite()
         wx.AboutBox(info)
+
+    def OnCurrentStrategies(self, event):
+        """Show frame with currently running strategies."""
+
+        nm = 'strategies'
+
+        frame = self._oframes[nm]
+        if frame is None:
+            if self.app.engine.have_strategies():
+                if not self._oframes['strategies']:
+                    frame = menuframes.CurrentStrategiesFrame(self)
+                    frame.Show()
+                    self._oframes[nm] = frame
+                    frame.Bind(wx.EVT_CLOSE, 
+                               lambda e,n=nm: self.OnCloseFrame(e, n))
+            else:
+                wx.MessageBox("No strategies currently running.", 
+                              style=wx.CENTER|wx.OK, parent = self)
+        else:
+            frame.Raise()
+
+    def OnCurrentAutomations(self, event):
+        """Show frame with currently running automations."""
+
+        nm = 'automations'
+
+        frame = self._oframes[nm]
+        if frame is None:
+            if self.app.engine.have_automations():
+                if not self._oframes['automations']:
+                    frame = menuframes.CurrentAutomationsFrame(self)
+                    frame.Show()
+                    self._oframes[nm] = frame
+                    frame.Bind(wx.EVT_CLOSE, 
+                               lambda e,n=nm: self.OnCloseFrame(e, n))
+            else:
+                wx.MessageBox("No automations currently running.", 
+                              style=wx.CENTER|wx.OK, parent = self)
+        else:
+            frame.Raise()
 
     def OnClose(self, event):
         result = wx.MessageBox("Are you sure you want to close?",
                                style=wx.CENTER|wx.ICON_QUESTION\
                                |wx.OK|wx.CANCEL, parent=self)
         if result == wx.CANCEL:
-            event.Veto()
+            if event.CanVeto():
+                event.Veto()
         else:
             # save configuration file which may have been changed in
             # settings.
             self.app.gconfig.SaveCurrentConfigToFile()
+            # Skip() will go allow the event to propagate to the
+            # default event handler, which will destroy the window.
             event.Skip()
-
-    def OnCurrentStrategies(self, event):
-        """Show frame with currently running strategies."""
-
-        if self.app.engine.have_strategies():
-            frame = menuframes.CurrentStrategiesFrame(self)
-            frame.Show()
-        else:
-            wx.MessageBox("No strategies currently running.", 
-                          style=wx.CENTER|wx.OK, parent = self)
-
-    def OnCurrentAutomations(self, event):
-        """Show frame with currently running automations."""
-
-        if self.app.engine.have_automations():
-            frame = menuframes.CurrentAutomationsFrame(self)
-            frame.Show()
-        else:
-            wx.MessageBox("No automations currently running.", 
-                          style=wx.CENTER|wx.OK, parent = self)
 
     def ShowSplashPanel(self):
         """
