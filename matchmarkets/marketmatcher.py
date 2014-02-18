@@ -72,7 +72,7 @@ def get_match_markets(m1s, m2s):
         
     # write matching markets to DB
     if const.WRITEDB:
-        database.DBMaster().WriteMarketMatches(matchms)
+        database.DBMaster().write_market_matches(matchms)
     
     return matchms
 
@@ -151,6 +151,6 @@ def get_match_selections(m1sels, m2sels):
                 
     # write matching selections to DB
     if const.WRITEDB:
-        database.DBMaster().WriteSelectionMatches(matchsels)
+        database.DBMaster().write_selection_matches(matchsels)
 
     return matchsels

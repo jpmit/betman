@@ -17,12 +17,12 @@ names = ['Rugby Union', 'Formula 1', 'Soccer']
 
 for name in names:
     # get all markets under this category
-    BDAQMarkets = dbman.ReturnMarkets('SELECT * FROM markets where '
+    BDAQMarkets = dbman.return_markets('SELECT * FROM markets where '
+                                       'exchange_id=? and market_name LIKE ?',
+                                       (const.BDAQID,'|{0}%'.format(name)))
+    BFMarkets =  dbman.return_markets('SELECT * FROM markets where '
                                       'exchange_id=? and market_name LIKE ?',
-                                      (const.BDAQID,'|{0}%'.format(name)))
-    BFMarkets =  dbman.ReturnMarkets('SELECT * FROM markets where '
-                                     'exchange_id=? and market_name LIKE ?',
-                                     (const.BFID,'|{0}%'.format(name)))
+                                      (const.BFID,'|{0}%'.format(name)))
 
     matches = marketmatcher.match(BDAQMarkets, BFMarkets, name)
-    dbman.WriteMarketMatches(matches)
+    dbman.write_market_matches(matches)

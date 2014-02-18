@@ -44,6 +44,7 @@ COURSES = {
            'Leop'  : 'Leopardstown',
            'Ling'  : 'Lingfield',
            'List'  : 'Listowel',
+           'Ludl'  : 'Ludlow',
            'MrktR' : 'Market Rasen',
            'Naas'  : 'Naas',
            # Navan is in Ireland
@@ -51,9 +52,15 @@ COURSES = {
            'Newb'  : 'Newbury',
            'Newc'  : 'Newcastle',
            'Newm'  : 'Newmarket',
+           # Parx Racing is US
+           'Parx'  : 'Parx Racing',
            # Pau is in France
            'Pau'   : 'Pau',
+           # Punchestown is IRE
+           'Punch' : 'Punchestown',
            'Plump' : 'Plumpton',
+           # Sam Houston is US
+           'SamH'  : 'Sam Houston',
            'Sand'  : 'Sandown',
            # Scottsville is RSA
            'Scots' : 'Scottsville',
@@ -62,6 +69,8 @@ COURSES = {
            'SunP'  : 'Sunland Park',
            # Tampa Bay Downs is US
            'Tampa' : 'Tampa Bay Downs',
+           # Toulouse is France
+           'Toul' : 'Toulouse',
            # Turfway Park is US
            'Turf'  : 'Turfway Park',
            # Turffontein is RSA
