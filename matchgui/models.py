@@ -1,8 +1,7 @@
 from operator import itemgetter
 import matchguifunctions
 from betman.strategy import strategy, cxstrategy, mmstrategy, position
-from betman import const, exchangedata
-from betman.database import DBMaster
+from betman import const, exchangedata, order, database
 from betman.matchmarkets.matchconst import EVENTMAP
 from singleton import Singleton
 import managers
@@ -42,7 +41,89 @@ class AbstractModel(object):
             eachFunc(self)
 
 @Singleton
+class OrderModel(AbstractModel):
+    """Model for storing information on orders made.
+
+    Note this model encapsulates the data for ALL orders, not just a
+    single order.
+
+    """
+
+    def __init__(self):
+        AbstractModel.__init__(self)
+
+        # dict that maps order ids to time placed
+        self.tplaced = {}
+
+        # dict that maps order ids to time most recently updated
+        self.tupdated = {}
+
+        # the current state of all orders placed since the start of
+        # the application.  The keys to each sub-dictionary are the
+        # order ids.
+        self.orders = {const.BDAQID: {}, const.BFID: {}}
+
+        # for writing to database
+        self._dbman = database.DBMaster()
+
+    def add_new_orders(self, odict, tplaced):
+        """Add orders to the model.  
+
+        odict   - dictionary of orders with keys const.BDAQID and
+                  const.BFID, values that are lists of order objects.
+        tplaced - time at which the orders were place (a datetime object).
+
+        Note the orders in odict need to have already been placed
+        using the BDAQ and/or BF API (otherwise we won't have an order
+        id).
+
+        """
+
+        # update the dictionary of orders that we have placed
+        # since starting the application.
+        self.orders[const.BDAQID].update(odict.get(const.BDAQID, {}))
+        self.orders[const.BFID].update(odict.get(const.BFID, {}))
+
+        for k in odict:
+            for o in odict[k].values():
+                self.tplaced[o.oref] = tplaced
+                self.tupdated[o.oref] = tplaced
+
+        # save to DB
+        self.write_db(odict, tplaced)
+
+    def get_unmatched_orders(self, exid):
+        """Return list of unmatched orders for exchange exid."""
+        
+        unmatched = []
+        for o in self.orders[exid].values():
+            if o.status == order.UNMATCHED:
+                unmatched.append(o)
+        return unmatched
+
+    def update_orders(self, exid, odict, tupdated):
+        """Update currently existing orders for a particular exchange.
+
+        exid     - either const.BDAQID or const.BFID
+        odict    - dictionary of order objects
+        tupdated - the time of the update
+
+        """
+
+        self.orders[exid].update(odict)
+        
+        for o in odict.values():
+            self.tupdated[o.oref] = tupdated
+
+    def write_db(self, odict, tplaced):
+        ords = [o.values() for o in odict.values()]
+        allords = [item for subl in ords for item in subl]
+
+        self._dbman.write_orders(allords, tplaced)
+
+@Singleton
 class PriceModel(AbstractModel):
+
     """
     Model used for displaying market prices on the main panel.  The
     model currently manages only a single market id, with the main
@@ -142,7 +223,7 @@ class MatchSelectionsModel(AbstractModel):
         self._match_cache = {}
 
         # singleton that controls DB access
-        self._dbman = DBMaster()
+        self._dbman = database.DBMaster()
 
     def GetMatchingSels(self, bdaqmid, bfmid, refresh = False):
         """
@@ -163,7 +244,7 @@ class MatchSelectionsModel(AbstractModel):
                 bdaqsels, bfsels = self._match_cache[bdaqmid]
             else:
                 # try filling up the cache from the DB
-                msels = self._dbman.ReturnSelectionMatches([bdaqmid])
+                msels = self._dbman.return_selection_matches([bdaqmid])
 
                 if msels:
                     bdaqsels, bfsels = [itemgetter(0)(i) for i in msels],\
@@ -218,7 +299,7 @@ class MatchMarketsModel(AbstractModel):
         self._BF_cache = {}
 
         # singleton that controls DB access
-        self._dbman = DBMaster()
+        self._dbman = database.DBMaster()
 
         if self.USEDB:
             self.InitCachesFromDB()
@@ -256,7 +337,7 @@ class MatchMarketsModel(AbstractModel):
         """
 
         for ename in EVENTMAP:
-            mmarks = self._dbman.ReturnMarketMatches([ename])
+            mmarks = self._dbman.return_market_matches([ename])
             self.SetCaches(ename, mmarks)
 
     def SetCaches(self, ename, mmarks):

@@ -37,32 +37,50 @@ class SummaryPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        pos_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        posif_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        wpos_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        wposif_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        lpos_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        lposif_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.position = 0.0
+        self.win_pos = 0.0
+        self.win_posif = 0.0
+        self.lose_pos = 0.0
+        self.lose_posif = 0.0
+
         self.unmatched_bets = []
-        self.position_if = 0.0
 
-        self.position_text = wx.StaticText(self)
-        pos_sizer.Add(wx.StaticText(self, label = 'position:  '))
-        pos_sizer.Add(self.position_text)
+        # text that will change dynamically
+        self.dytext = {'win_pos': wx.StaticText(self),
+                       'win_posif': wx.StaticText(self),
+                       'lose_pos': wx.StaticText(self),
+                       'lose_posif': wx.StaticText(self)}
 
-        self.posif_text = wx.StaticText(self)
-        posif_sizer.Add(wx.StaticText(self, label = 'position if:  '))
-        posif_sizer.Add(self.posif_text)
+        wpos_sizer.Add(wx.StaticText(self, label = 'win position:  '))
+        wpos_sizer.Add(self.dytext['win_pos'])
+
+        wposif_sizer.Add(wx.StaticText(self, label = 'win position if:  '))
+        wposif_sizer.Add(self.dytext['win_posif'])
+
+        lpos_sizer.Add(wx.StaticText(self, label = 'lose position:  '))
+        lpos_sizer.Add(self.dytext['lose_pos'])
+
+        lposif_sizer.Add(wx.StaticText(self, label = 'lose position if:  '))
+        lposif_sizer.Add(self.dytext['lose_posif'])
 
         main_sizer.AddSpacer(20)
-        main_sizer.Add(pos_sizer)
-        main_sizer.Add(posif_sizer)
+        main_sizer.Add(wpos_sizer)
+        main_sizer.Add(wposif_sizer)
+        main_sizer.AddSpacer(20)
+        main_sizer.Add(lpos_sizer)
+        main_sizer.Add(lposif_sizer)
         main_sizer.AddSpacer(40)
         main_sizer.Add(wx.StaticText(self, label = 'unmatched bets:  '))
         self.bets_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.bets_sizer)
 
         # draw text
-        self.DrawPositionIfText()
-        self.DrawPositionText()
+        for nm in self.dytext:
+            self.DrawPositionText(nm, 0.0)
 
         self.SetSizer(main_sizer)
         self.Layout()
@@ -84,27 +102,17 @@ class SummaryPanel(wx.Panel):
             self.bets_sizer.Add(bsz)
         self.Layout()
 
-    def DrawPositionText(self):
-        if self.position == 0.0:
+    def DrawPositionText(self, name, value):
+        if value == 0.0:
             col = const.BLACK
-        elif self.position > 0.0:
+        elif value > 0.0:
             col = const.GREEN
         else:
             col = const.RED
-
-        self.position_text.SetLabel('{:.2f}'.format(self.position))
-        self.position_text.SetForegroundColour(col)
-
-    def DrawPositionIfText(self):
-        if self.position_if == 0.0:
-            col = const.BLACK
-        elif self.position_if > 0.0:
-            col = const.GREEN
-        else:
-            col = const.RED
-
-        self.posif_text.SetLabel('{:.2f}'.format(self.position_if))
-        self.posif_text.SetForegroundColour(col)        
+        
+        txt = self.dytext[name]
+        txt.SetLabel('{:.2f}'.format(value))
+        txt.SetForegroundColour(col)
         
     def Update(self, smodel):
 
@@ -112,17 +120,17 @@ class SummaryPanel(wx.Panel):
             # we could get here on the first update
             return
 
-        pos, posif = smodel.postracker.get_positions()
+        win_pos, win_posif, lose_pos, \
+        lose_posif = smodel.postracker.get_positions()
 
         # check if position, position_if, and unmatched_bets have
         # changed, and update the panel to reflect this if so.
-
-        if pos != self.position:
-            self.position = pos
-            self.DrawPositionText()
-        if posif != self.position_if:
-            self.position_if = posif
-            self.DrawPositionIfText()
+        lcls = locals()
+        for a in ['win_pos', 'win_posif', 'lose_pos', 'lose_posif']:
+            val = lcls[a]
+            if val != getattr(self, a):
+                setattr(self, a, val)
+                self.DrawPositionText(a, val)
 
         unmatched = smodel.postracker.get_unmatched_bets()
 
@@ -160,6 +168,9 @@ class BetsPanel(wx.Panel):
         self.Layout()
         
     def Update(self, smodel):
+
+        if smodel.postracker is None:
+            return
 
         all_bets = smodel.postracker.get_all_bets()
 
