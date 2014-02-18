@@ -96,7 +96,7 @@ class StrategyGroup(object):
         for strat in self.strategies:
             strat.update_orders(orders)
 
-    def update_prices_if(self, prices, attr = '__dict__'):
+    def update_prices_if(self, prices, attr='__dict__'):
         """
         Update all strategies in group if attr of strategy is True.
 
@@ -124,7 +124,7 @@ class StrategyGroup(object):
         
         return toplace
 
-    def get_orders_to_place_if(self, attr = '__dict__'):
+    def get_orders_to_place_if(self, attr='__dict__'):
         """
         Return dictionary with keys that are the exchange ids, and
         items that are lists of order objects that we want to place.

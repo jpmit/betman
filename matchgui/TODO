@@ -13,6 +13,8 @@
   bet and an unmatched bet (see below): we need to parse these
   properly
 * add agressive setting(s) to MM strategy 
+* figure out why GetMUBets is very slow
+* figure out why my SP bets aren't matching
 - add cancelling capabilities for both BDAQ and BF
 - add getting market information so we have a time series of GBP matched on market
 - save complete state (strategies, automations etc.) when exit, and load this when startup

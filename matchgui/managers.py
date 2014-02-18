@@ -43,10 +43,8 @@ import wx
 UTICK = 'update_tick'
 UPDATED = 'updated_last_tick'
 
-# constants used for OrderManager only.
-PRACTICEMODE = False
-# to actually update order info, PRACTICEMODE must be set to False as
-# well.
+# constant used for OrderManager only: to actually update order info,
+# PRACTICEMODE must be set to False as well.
 UPDATEORDERINFO = True
 
 class OrderManager(object):
@@ -174,30 +172,39 @@ class OrderManager(object):
         ords = [o.values() for o in sorders.values()]
         allords = [item for subl in ords for item in subl]
 
-        # time we are writing is going to be a bit off time logged by BDAQ
+        # time we write is going to be a bit off time logged by BDAQ
         self.dbman.WriteOrders(allords, datetime.datetime.now())
 
     def update_order_information(self):
-        if (not PRACTICEMODE) and (UPDATEORDERINFO):
-            # get list of unmatched orders on BDAQ
-            bdaqunmatched = self.unmatched_orders(const.BDAQID)
 
-            # only want to call BDAQ API if we have unmatched bets
-            if bdaqunmatched:
-                # this should automatically keep track of a 'sequence
-                # number', so that we are updating information about all
-                # orders.
-                bdaqors = bdaqapi.ListOrdersChangedSince()
-                self.orders[const.BDAQID].update(bdaqors)
+        if self.gconf.PracticeMode or (not UPDATEORDERINFO):
+            return
+
+        # if we don't have any strategies, don't update.  We will
+        # probably want to change this at some point, but doing this
+        # is a little complicated.
+        if not self.stratgroup.strategies:
+            return
+
+        # get list of unmatched orders on BDAQ
+        bdaqunmatched = self.unmatched_orders(const.BDAQID)
+
+        # only want to call BDAQ API if we have unmatched bets
+        if bdaqunmatched:
+            # this should automatically keep track of a 'sequence
+            # number', so that we are updating information about all
+            # orders.
+            bdaqors = bdaqapi.ListOrdersChangedSince()
+            self.orders[const.BDAQID].update(bdaqors)
             
-            # get list of unmatched orders on BF
-            bfunmatched = self.unmatched_orders(const.BFID)
+        # get list of unmatched orders on BF
+        bfunmatched = self.unmatched_orders(const.BFID)
 
-            if bfunmatched:
-                # we pass this function the list of order objects;
-                bfors = bfapi.GetBetStatus(bfunmatched)
-                # update order dictionary
-                self.orders[const.BFID].update(bfors)
+        if bfunmatched:
+            # we pass this function the list of order objects;
+            bfors = bfapi.GetBetStatus(bfunmatched)
+            # update order dictionary
+            self.orders[const.BFID].update(bfors)
 
     def unmatched_orders(self, exid):
         """Return list of unmatched orders for exchange exid."""
@@ -207,7 +214,6 @@ class OrderManager(object):
             if o.status == order.UNMATCHED:
                 unmatched.append(o)
         return unmatched
-
 
 class PricingManager(object):
     def __init__(self, stratgroup):
