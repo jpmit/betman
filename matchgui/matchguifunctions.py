@@ -77,8 +77,8 @@ def market_prices(bdaqmid, bfmid):
     # TODO: write convenience function somewhere so this is a single
     # line, and fix and document APIs so we know where we should be
     # saving this information.
-    _dbman.WriteSelections(bdaqsels.values() + bfsels.values(),
-                           datetime.datetime.now())    
+    _dbman.write_selections(bdaqsels.values() + bfsels.values(),
+                            datetime.datetime.now())    
 
     # get lists of selections
     bdaqsellist = bdaqsels.values()
@@ -105,7 +105,7 @@ def market_prices(bdaqmid, bfmid):
             bdaqsels[d].dorder = i
             # update the selection in the database so that we have
             # the display order stored for next time we start-up.
-            _dbman.WriteSelections([bdaqsels[d]], tnow)
+            _dbman.write_selections([bdaqsels[d]], tnow)
 
     bdaqorder = [bdaqsels[s[0]] for s in mlist]
     bforder = [bfsels[s[1]] for s in mlist]
@@ -153,10 +153,10 @@ def match_markets(bdaqename):
 
     # Write market stuff to the DB
     # (i) write details of the matching markets
-    _dbman.WriteMarketMatches(matchmarks)
+    _dbman.write_market_matches(matchmarks)
     # (ii) update the bdaqmarkets, since now have totalmatched
     bdmarks = [itemgetter(0)(i) for i in matchmarks]
-    _dbman.WriteMarkets(bdmarks, datetime.datetime.now())
+    _dbman.write_markets(bdmarks, datetime.datetime.now())
         
     # sort matching markets by starttime; NB could sort them by the
     # BDAQ official display order at some point if necessary.

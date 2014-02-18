@@ -60,7 +60,7 @@ class NonApiGetPrices(NonApiMethod):
             # get single flat list of selection objects from dict of dicts
             sels = [m.values() for m in allselections.values()]
             allsels = [item for subl in sels for item in subl]
-            self.dbman.WriteSelections(allsels, datetime.datetime.now())
+            self.dbman.write_selections(allsels, datetime.datetime.now())
 
         # return selection dictionary and the list of erroneous market ids
         return allselections, allemids

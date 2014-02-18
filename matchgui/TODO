@@ -5,12 +5,18 @@
 - make sure we are saving prices to the DB
 - make viewing current strategies scrollable vertically
 - make RHS of strategy monitor scrollable
+- don't let current strategies frame truncate text
+- convert this document to proper markdown
 
 # other
-
+* make all network calls use new threads so we don't block GUI
 * add agressive setting(s) to MM strategy 
 * figure out why GetMUBets is very slow
 * figure out why my SP bets aren't matching
+* figure out how BF and BDAQ do rounding and modify e.g. position.py
+  and other strategy stuff accordingly
+- assign a single time to the engine and use this when tracking times
+  and writing stuff to the database, etc.(?)
 - add cancelling capabilities for both BDAQ and BF
 - allow switching between non-API and API get prices in GUI
 - add getting market information so we have a time series of GBP matched on market
@@ -28,6 +34,7 @@
 - make proper (LaTeX?) documentation
 - custom about box to fix Linux issue
 - make entire GUI app and engine robust against network failure
+- add to list control in market panel so can sort markets by the relevant fields
 
 [(MUBet){
    asianLineId = 0

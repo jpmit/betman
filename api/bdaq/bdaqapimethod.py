@@ -64,7 +64,7 @@ class ApiGetEventSubTreeNoSelections(ApiMethod):
                      ParseGetEventSubTreeNoSelections(response)
 
         if const.WRITEDB:
-            self.dbman.WriteMarkets(allmarkets, response.Timestamp)
+            self.dbman.write_markets(allmarkets, response.Timestamp)
         return allmarkets
 
 # not fully implemented (do not use)
@@ -220,8 +220,8 @@ class ApiGetAccountBalances(ApiMethod):
         # _Credit, _Exposure).
         accinfo = bdaqapiparse.ParseGetAccountBalances(result)
         if const.WRITEDB:
-            self.dbman.WriteAccountBalance(const.BDAQID, accinfo,
-                                           result.Timestamp)
+            self.dbman.write_account_balance(const.BDAQID, accinfo,
+                                             result.Timestamp)
 
         return accinfo
 
@@ -300,7 +300,7 @@ class ApiListOrdersChangedSince(ApiMethod):
 
         # update changed orders
         if const.WRITEDB:
-            self.dbman.WriteOrders(orders.values(), resp.Timestamp)
+            self.dbman.write_orders(orders.values(), resp.Timestamp)
         return orders
 
 # this sequence number is updated by both ApiListOrdersChangedSince
@@ -330,7 +330,7 @@ class ApiListBootstrapOrders(ApiMethod):
         ORDER_SEQUENCE_NUMBER = result._MaximumSequenceNumber
         allorders = bdaqapiparse.ParseListBootstrapOrders(result)
         if const.WRITEDB:
-            self.dbman.WriteOrders(allorders.values(), result.Timestamp)
+            self.dbman.write_orders(allorders.values(), result.Timestamp)
         return allorders
 
 # not fully implemented (do not use)

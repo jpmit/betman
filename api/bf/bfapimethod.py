@@ -86,8 +86,8 @@ class ApigetAllMarkets(ApiMethod):
         allmarkets = bfapiparse.ParsegetAllMarkets(response)
         
         if const.WRITEDB:
-            self.dbman.WriteMarkets(allmarkets,
-                                    response.header.timestamp)
+            self.dbman.write_markets(allmarkets,
+                                     response.header.timestamp)
         return allmarkets
 
 class ApiplaceBets(ApiMethod):
@@ -235,8 +235,8 @@ class ApigetMUBets(ApiMethod):
         allorders = bfapiparse.ParsegetMUBets(response, odict)
 
         if const.WRITEDB:
-            self.dbman.WriteOrders(allorders.values(),
-                                   response.header.timestamp)
+            self.dbman.write_orders(allorders.values(),
+                                    response.header.timestamp)
             
         return allorders
 

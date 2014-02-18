@@ -24,13 +24,13 @@ class DBMaster(object):
 
     def __init__(self, create=False):
         self._isopen = False
-        self.CreateIfNotExist()
+        self.create_if_not_exist()
         self.open()
 
-    def CreateIfNotExist(self):
+    def create_if_not_exist(self):
         """Create the database if it doesn't already exist"""
         if not os.path.exists(const.MASTERDB):
-            self.CreateTables()
+            self.create_tables()
 
     def open(self):
         if not self._isopen:
@@ -46,7 +46,7 @@ class DBMaster(object):
         self.conn.close()
         self._isopen = False
 
-    def WriteOrderMatches(self, omatches, tplaced):
+    def write_order_matches(self, omatches, tplaced):
         """Write to matchorders table"""
         # check database is open
         if not self._isopen:
@@ -62,7 +62,7 @@ class DBMaster(object):
         self.cursor.executemany(qins, alldata)
         self.conn.commit()
 
-    def WriteSelectionMatches(self, selmatches):
+    def write_selection_matches(self, selmatches):
         """Write to matchselections table"""
         # check database is open
         if not self._isopen:
@@ -83,7 +83,7 @@ class DBMaster(object):
                 pass
         self.conn.commit()
 
-    def ReturnMarketMatches(self, elist=[]):
+    def return_market_matches(self, elist=[]):
         """
         Return market matches.  If list of event names elist is not
         given, return all markets in marketmatches table.  If given,
@@ -126,14 +126,14 @@ class DBMaster(object):
         for m in mm:
             ex1mid = m[0]
             ex2mid = m[2]
-            ex1mark = self.ReturnMarkets('SELECT * FROM {0} where '
-                                         'exchange_id=? and market_id=?'\
-                                         .format(schema.MARKETS),
-                                         (const.BDAQID, ex1mid))
-            ex2mark = self.ReturnMarkets('SELECT * FROM {0} where '
-                                         'exchange_id=? and market_id=?'\
-                                         .format(schema.MARKETS),
-                                         (const.BFID, ex2mid))
+            ex1mark = self.return_markets('SELECT * FROM {0} where '
+                                          'exchange_id=? and market_id=?'\
+                                          .format(schema.MARKETS),
+                                          (const.BDAQID, ex1mid))
+            ex2mark = self.return_markets('SELECT * FROM {0} where '
+                                          'exchange_id=? and market_id=?'\
+                                          .format(schema.MARKETS),
+                                          (const.BFID, ex2mid))
             # check our queries worked.  If they didn't, then the
             # database is corrupted, since the market is listed in the
             # matching markets table but not in the markets table.
@@ -146,7 +146,7 @@ class DBMaster(object):
             matchmarkets.append((ex1mark[0], ex2mark[0]))
         return matchmarkets
 
-    def ReturnOrderMatches(self, date=None):
+    def return_order_matches(self, date=None):
         """
         Return list of all matching orders [(o1, o2) ,...].  Note that
         the status of the order will be the most recent one.  If date
@@ -176,14 +176,14 @@ class DBMaster(object):
         for m in mords:
             ex1oid = m[0]
             ex2oid = m[1]
-            ex1order = self.ReturnOrders('SELECT * FROM {0} where '
-                                         'exchange_id=? and order_id=?'\
-                                         .format(schema.ORDERS),
-                                         (const.BDAQID, ex1oid))
-            ex2order = self.ReturnOrders('SELECT * FROM {0} where '
-                                         'exchange_id=? and order_id=?'\
-                                         .format(schema.ORDERS),
-                                         (const.BFID, ex2oid))
+            ex1order = self.return_orders('SELECT * FROM {0} where '
+                                          'exchange_id=? and order_id=?'\
+                                          .format(schema.ORDERS),
+                                          (const.BDAQID, ex1oid))
+            ex2order = self.return_orders('SELECT * FROM {0} where '
+                                          'exchange_id=? and order_id=?'\
+                                          .format(schema.ORDERS),
+                                          (const.BFID, ex2oid))
             # check our queries worked.  If they didn't, then the
             # database is corrupted, since the order is listed in the
             # matching orders table but not in the main orders table.
@@ -196,7 +196,7 @@ class DBMaster(object):
 
         return matchorders
 
-    def ReturnSelectionMatches(self, bdaqmids=[]):
+    def return_selection_matches(self, bdaqmids=[]):
         """
         Return selection matches for market ids in bdaqmids.  If
         bdaqmids not passed, return all selection matches.
@@ -233,14 +233,14 @@ class DBMaster(object):
             ex1sid = s[1]
             ex2mid = s[3]
             ex2sid = s[4]
-            ex1sel = self.ReturnSelections('SELECT * FROM {0} where '
-                                           'exchange_id=? and market_id=? and selection_id=?'\
-                                           .format(schema.SELECTIONS),
-                                           (const.BDAQID, ex1mid, ex1sid))
-            ex2sel = self.ReturnSelections('SELECT * FROM {0} where '
-                                           'exchange_id=? and market_id=? and selection_id=?'\
-                                           .format(schema.SELECTIONS),
-                                           (const.BFID, ex2mid, ex2sid))
+            ex1sel = self.return_selections('SELECT * FROM {0} where '
+                                            'exchange_id=? and market_id=? and selection_id=?'\
+                                            .format(schema.SELECTIONS),
+                                            (const.BDAQID, ex1mid, ex1sid))
+            ex2sel = self.return_selections('SELECT * FROM {0} where '
+                                            'exchange_id=? and market_id=? and selection_id=?'\
+                                            .format(schema.SELECTIONS),
+                                            (const.BFID, ex2mid, ex2sid))
 
             # check our queries worked.  If they didn't, then the
             # database is corrupted, since the selection is listed in the
@@ -254,7 +254,7 @@ class DBMaster(object):
             matchsels.append((ex1sel[0], ex2sel[0]))
         return matchsels
 
-    def WriteMarketMatches(self, matches):
+    def write_market_matches(self, matches):
         """Write to matchingmarkets table"""
 
         # check database is open
@@ -276,7 +276,7 @@ class DBMaster(object):
                 pass
         self.conn.commit()
 
-    def WriteSelections(self, selections, tstamp):
+    def write_selections(self, selections, tstamp):
         """Write to selections table"""
 
         # check database is open
@@ -330,7 +330,7 @@ class DBMaster(object):
             
         self.conn.commit()
 
-    def WriteAccountBalance(self, exid, accinfo, tstamp):
+    def write_account_balance(self, exid, accinfo, tstamp):
         """Write account balance information to accountinfo table"""
         assert len(accinfo) == 4
         self.cursor.execute(('INSERT INTO {0} (exchange_id, available, '
@@ -340,16 +340,16 @@ class DBMaster(object):
                              accinfo[3], tstamp))
         self.conn.commit()
 
-    def ReturnMarketById(self, exid, mid):
+    def return_market_by_id(self, exid, mid):
         qstr = ('SELECT * FROM {0} WHERE exchange_id=? '
                 'and market_id=?'\
                 .format(schema.MARKETS))
-        mark = self.ReturnMarkets(qstr, (exid, mid))
+        mark = self.return_markets(qstr, (exid, mid))
         
         if not mark: return None
         return mark[0]
 
-    def ReturnMarkets(self, sqlstr, sqlargs):
+    def return_markets(self, sqlstr, sqlargs):
         """
         Execute query sqlquery, which should return a list of Markets.
         This convenience function will convert the database
@@ -375,7 +375,7 @@ class DBMaster(object):
         
         return markets
 
-    def ReturnOrders(self, sqlstr, sqlargs=None):
+    def return_orders(self, sqlstr, sqlargs=None):
         """
         Execute query sqlquery, which should return a list of Orders.
         This convenience function will convert the database
@@ -404,7 +404,7 @@ class DBMaster(object):
         
         return orders
 
-    def ReturnSelectionById(self, exid, mid, sid):
+    def return_selection_by_id(self, exid, mid, sid):
         """
         Return a single selection from the database (or None if no
         selection exists with the parameters passed).
@@ -412,12 +412,12 @@ class DBMaster(object):
         qstr = ('SELECT * FROM {0} WHERE exchange_id=? '
                 'and market_id=? and selection_id=?'\
                 .format(schema.SELECTIONS))
-        sel = self.ReturnSelections(qstr, (exid, mid, sid))
+        sel = self.return_selections(qstr, (exid, mid, sid))
         
         if not sel: return None
         return sel[0]
 
-    def ReturnSelections(self, sqlstr, sqlargs=None):
+    def return_selections(self, sqlstr, sqlargs=None):
         """
         Execute query sqlquery, which should return a list of
         Selections.  This convenience function will convert the
@@ -464,7 +464,7 @@ class DBMaster(object):
         
         return selections
 
-    def WriteMarkets(self, markets, tstamp):
+    def write_markets(self, markets, tstamp):
         """Write to markets table."""
 
         # check  database is open
@@ -498,7 +498,7 @@ class DBMaster(object):
                                            m.exid, m.id))
         self.conn.commit()
 
-    def WriteOrders(self, olist, tstamp):
+    def write_orders(self, olist, tstamp):
         """Write to orders table"""
 
         # check  database is open
@@ -546,7 +546,7 @@ class DBMaster(object):
                                             
         self.conn.commit()
         
-    def CreateTables(self):
+    def create_tables(self):
         """Create all of the tables needed"""
 
         self.open()

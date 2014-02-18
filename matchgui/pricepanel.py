@@ -386,13 +386,13 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         """
         
         if key not in self.app.strats_open:
-            # the value is not important here, only that the key is in
-            # the dictionary.
-            self.app.strats_open[key] = True
             
             frame = monitorframe.MonitorFrame(key)
             frame.Bind(wx.EVT_CLOSE, self.OnCloseMonitor)
             frame.Show()
+
+            # store a reference to the frame in the dictionary
+            self.app.strats_open[key] = frame
 
             # add listener
             self.app.strat_models[key].AddListener(frame.OnUpdateStrat)
@@ -402,6 +402,10 @@ class PricePanel(scrolledpanel.ScrolledPanel):
             # we show something in the monitor frame.
             self.app.strat_models[key].UpdateViews()
 
+        else:
+            # bring to foreground
+            self.app.strats_open[key].Raise()
+
     def OnGraphButton(self, event, key):
         """
         Open a new graph frame if we don't already have one open
@@ -409,17 +413,21 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         """
         
         if key not in self.app.graphs_open:
-            # the value is not important here, only that the key is in
-            # the dictionary.
-            self.app.graphs_open[key] = True
 
             frame = graphframe.GraphFrame(key)
             frame.Bind(wx.EVT_CLOSE, self.OnCloseGraph)
             frame.Show()
 
+            # store a reference to the frame in the dictionary
+            self.app.graphs_open[key] = frame
+
             # add listener so that when the appropriate graph model
             # updates its data, the graph can be redrawn.
             self.app.graph_models[key].AddListener(frame.panel.OnUpdatePrices)
+
+        else:
+            # bring to foreground
+            self.app.graphs_open[key].Raise()
 
     def OnCloseGraph(self, event):
         obj = event.GetEventObject()

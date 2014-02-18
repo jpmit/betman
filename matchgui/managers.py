@@ -12,6 +12,7 @@ import datetime
 from betman import const, multi, database, order, betlog
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
+from models import OrderModel
 from operator import attrgetter
 import wx
 
@@ -56,12 +57,14 @@ class OrderManager(object):
         # don't want to place any bets.
         self.gconf = config
 
-        # interface to database
-        self.dbman = database.DBMaster()
+        # order model stores everything to do with orders made since
+        # the start of the application.  It also writes any
+        # information to the database as required.
+        self.omodel = OrderModel.Instance()
 
-        # all orders for both exchanges since starting the
-        # application.
-        self.orders = {const.BDAQID: {}, const.BFID: {}}
+        # we do however store a reference to the dictionary of all
+        # orders placed since the beginning of the application.
+        self.orders = self.omodel.orders
 
         # call startup routine to bootstap BDAQ order information, and
         # login to betfair.
@@ -113,13 +116,14 @@ class OrderManager(object):
             # requests for BDAQ and BF simultaneously.
             saveorders = multi.make_orders(odict)
 
-            # update the dictionary of orders that we have placed
-            # since starting the application.
-            self.orders[const.BDAQID].update(saveorders.get(const.BDAQID, {}))
-            self.orders[const.BFID].update(saveorders.get(const.BFID, {}))
+            # note we use our own internal tplaced rather than
+            # anything returned by either BF or BDAQ (may want to
+            # change this at some point).
+            tplaced = datetime.datetime.now()
 
-            # save the full order information to the DB
-            self.save_orders(saveorders)
+            # save the full order information to the model (this will
+            # handle writing to the DB, etc.)
+            self.omodel.add_new_orders(saveorders, tplaced)
 
             # save the information on matching orders to the DB.  Note
             # we are assuming here that if the number of orders on
@@ -132,51 +136,44 @@ class OrderManager(object):
             #if (len(odict.get(const.BDAQID, [])) == len(odict.get(const.BFID, []))):
             #    self.save_match_orders(odict, saveorders)
 
-    def save_match_orders(self, odict, saveorders):
-        """Save matching order ids to database table matchorders
+    # def save_match_orders(self, odict, saveorders):
+    #     """Save matching order ids to database table matchorders
         
-        odict - dictionary of orders just placed, directly from
-                strategies (no order ids)
+    #     odict - dictionary of orders just placed, directly from
+    #             strategies (no order ids)
         
-        saveorders - dictionary of all orders just placed (including
-                     order ids)
+    #     saveorders - dictionary of all orders just placed (including
+    #                  order ids)
 
-        Here, we go through saveorders to find the orders that match
-        those in odict, in order to fill in the order ids.  We then
-        save the 'matching' orders to the DB.
+    #     Here, we go through saveorders to find the orders that match
+    #     those in odict, in order to fill in the order ids.  We then
+    #     save the 'matching' orders to the DB.
 
-        This routine is really for the 'crossexchange' arbitrage
-        strategy, since an order on BDAQ (back/lay) is paired with
-        ('matched') an order of BF of opposite polarity (lay/back).
-        """
+    #     This routine is really for the 'crossexchange' arbitrage
+    #     strategy, since an order on BDAQ (back/lay) is paired with
+    #     ('matched') an order of BF of opposite polarity (lay/back).
+    #     """
 
-        # since we got odict from each strategy in turn, they
-        # are already in matching order; we just need to add
-        # the order refs that were returned by the BDAQ and BF
-        # API.
-        matchorders = zip(odict[const.BDAQID], odict[const.BFID])
-        for (o1, o2) in matchorders:
+    #     # since we got odict from each strategy in turn, they
+    #     # are already in matching order; we just need to add
+    #     # the order refs that were returned by the BDAQ and BF
+    #     # API.
+    #     matchorders = zip(odict[const.BDAQID], odict[const.BFID])
+    #     for (o1, o2) in matchorders:
             
-            # we need to get the order id for o1 and o2 from
-            # saveorders dictionary
-            for o in saveorders[const.BDAQID].values():
-                if o1.sid == o.sid and o1.mid == o.mid:
-                    o1.oref = o.oref
+    #         # we need to get the order id for o1 and o2 from
+    #         # saveorders dictionary
+    #         for o in saveorders[const.BDAQID].values():
+    #             if o1.sid == o.sid and o1.mid == o.mid:
+    #                 o1.oref = o.oref
 
-            for o in saveorders[const.BFID].values():
-                if o2.sid == o.sid and o2.mid == o.mid:
-                    o2.oref = o.oref
+    #         for o in saveorders[const.BFID].values():
+    #             if o2.sid == o.sid and o2.mid == o.mid:
+    #                 o2.oref = o.oref
 
-        # write to DB
-        self.dbman.WriteOrderMatches(matchorders,
-                                     datetime.datetime.now())
-
-    def save_orders(self, sorders):
-        ords = [o.values() for o in sorders.values()]
-        allords = [item for subl in ords for item in subl]
-
-        # time we write is going to be a bit off time logged by BDAQ
-        self.dbman.WriteOrders(allords, datetime.datetime.now())
+    #     # write to DB
+    #     self.dbman.WriteOrderMatches(matchorders,
+    #                                  datetime.datetime.now())
 
     def update_order_information(self):
 
@@ -188,9 +185,11 @@ class OrderManager(object):
         # different from this is a little complicated.
         if not self.stratgroup.strategies:
             return
+        
+        tupdated = datetime.datetime.now()    
 
         # get list of unmatched orders on BDAQ
-        bdaqunmatched = self.unmatched_orders(const.BDAQID)
+        bdaqunmatched = self.omodel.get_unmatched_orders(const.BDAQID)
 
         # only want to call BDAQ API if we have unmatched bets
         if bdaqunmatched:
@@ -198,25 +197,16 @@ class OrderManager(object):
             # number', so that we are updating information about all
             # orders.
             bdaqors = bdaqapi.ListOrdersChangedSince()
-            self.orders[const.BDAQID].update(bdaqors)
+            self.omodel.update_orders(const.BDAQID, bdaqors, tupdated)
             
         # get list of unmatched orders on BF
-        bfunmatched = self.unmatched_orders(const.BFID)
+        bfunmatched = self.omodel.get_unmatched_orders(const.BFID)
 
         if bfunmatched:
             # we pass this function the list of order objects;
             bfors = bfapi.GetBetStatus(bfunmatched)
             # update order dictionary
-            self.orders[const.BFID].update(bfors)
-
-    def unmatched_orders(self, exid):
-        """Return list of unmatched orders for exchange exid."""
-        
-        unmatched = []
-        for o in self.orders[exid].values():
-            if o.status == order.UNMATCHED:
-                unmatched.append(o)
-        return unmatched
+            self.omodel.update_orders(const.BFID, bfors, tupdated)
 
 class PricingManager(object):
     def __init__(self, stratgroup):
