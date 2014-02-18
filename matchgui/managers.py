@@ -1,10 +1,9 @@
-"""
-Pricing and order manager.
+"""Pricing and order manager.
 
 The pricing manager gets pricing information from BDAQ / BF and pushes
 the prices to the strategies that need it.
 
-The order manager pulls order details from strategies, and makes
+The order manager pulls order details from strategies, makes
 orders, and keeps track of the status of orders so that the strategies
 can pull the order status from the manager.
 """
@@ -50,11 +49,15 @@ UPDATEORDERINFO = True
 class OrderManager(object):
     def __init__(self, stratgroup, config):
 
-        # interface to database
-        self.dbman = database.DBMaster()
-
         # group of all existing strategies
         self.stratgroup = stratgroup
+
+        # app config - we may be in 'practice mode', in which case we
+        # don't want to place any bets.
+        self.gconf = config
+
+        # interface to database
+        self.dbman = database.DBMaster()
 
         # all orders for both exchanges since starting the
         # application.
@@ -64,10 +67,6 @@ class OrderManager(object):
         # login to betfair.
         self.bootstrap()
 
-        # get app config - we may be in 'practice mode', in which case
-        # we don't want to place any bets.
-        self.gconf = config
-
     def bootstrap(self):
         # bootstrap BDAQ order information (we don't need to do this
         # for BF).  We don't need to save these orders (?).
@@ -75,8 +74,12 @@ class OrderManager(object):
         while ords:
             ords = bdaqapi.ListBootstrapOrders()
 
-        # need to login to BF api (we don't need to do this for BF).
-        bfapi.Login()
+        # login to BF api (we don't need to do this for BF).  Note if
+        # we are not configured to login to BF on startup, we will
+        # need to Login at some point later, otherwise we will get API
+        # errors when trying to make / update orders.
+        if self.gconf.BFLogin:
+            bfapi.Login()
 
     def get_new_orders(self):
         """Get new order dictionary from the strategy group."""
@@ -180,9 +183,9 @@ class OrderManager(object):
         if self.gconf.PracticeMode or (not UPDATEORDERINFO):
             return
 
-        # if we don't have any strategies, don't update.  We will
-        # probably want to change this at some point, but doing this
-        # is a little complicated.
+        # if we don't have any strategies, don't update.  We might
+        # want to change this at some point, but doing anything
+        # different from this is a little complicated.
         if not self.stratgroup.strategies:
             return
 

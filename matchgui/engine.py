@@ -80,7 +80,26 @@ class Engine(object):
         return False
 
     def tick(self):
-        """Main loop called every tick."""
+        """Main loop called every tick.
+        
+        At the moment, we:
+
+        (i) update any 'automations' (which automatically add or
+        remove strategies) every 60 ticks.
+
+        (ii) update order information (using BDAQ/BF API) every tick.
+        We then push this new order information to the strategies.
+
+        (iii) update price information (using BDAQ/BF API) for all
+        strategies whose update frequency exactly divides the current
+        tick number.  We push these prices to the strategies.  This
+        triggers the AI for the strategies, which decides whether to
+        cancel/modify/create orders etc.
+
+        (iv) make any new orders, only considering strategies that got
+        new prices (i.e. in part (iii) above) on the current tick.
+
+        """
 
         self.ticks += 1
 

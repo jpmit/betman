@@ -1,7 +1,6 @@
 # list of easy things TODO when I need a break or to waste an hour or two
 
-- don't allow menu frames to be opened multiple times
-- allow changing timebase in global config
+- allow changing timebase in GUI (global config)
 - make everything prettier
 - make sure we are saving prices to the DB
 - make viewing current strategies scrollable vertically
@@ -9,13 +8,11 @@
 
 # other
 
-* when calling GetMUBets, partially matched bets split into a matched
-  bet and an unmatched bet (see below): we need to parse these
-  properly
 * add agressive setting(s) to MM strategy 
 * figure out why GetMUBets is very slow
 * figure out why my SP bets aren't matching
 - add cancelling capabilities for both BDAQ and BF
+- allow switching between non-API and API get prices in GUI
 - add getting market information so we have a time series of GBP matched on market
 - save complete state (strategies, automations etc.) when exit, and load this when startup
 - add filters for strategies so that bets are only placed if each bet is below risk limits
@@ -29,6 +26,8 @@
 - docstring and comment consistently
 - clean up code
 - make proper (LaTeX?) documentation
+- custom about box to fix Linux issue
+- make entire GUI app and engine robust against network failure
 
 [(MUBet){
    asianLineId = 0

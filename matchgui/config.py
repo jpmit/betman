@@ -24,8 +24,8 @@ class GlobalConfig(object):
 
     BINARIES = [('BFLogin', 'Login to BF at startup', True),
                 ('EngineStart', 'Start engine at startup', False),
-                ('ManyMarkets', 'Keep trading on markets', True),
-                ('PracticeMode', 'Practice Mode (no orders)', False)]
+                #('ManyMarkets', 'Keep trading on markets (NOT)', True),
+                ('PracticeMode', 'Practice Mode', False)]
 
     def __init__(self, cfg):
         """Read configuration file and set my state.
