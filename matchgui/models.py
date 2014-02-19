@@ -101,14 +101,30 @@ class OrderModel(AbstractModel):
                 unmatched.append(o)
         return unmatched
 
-    def update_orders(self, exid, odict, tupdated):
+    def update_orders(self, exid, odict, ounmatched, tupdated):
         """Update currently existing orders for a particular exchange.
 
-        exid     - either const.BDAQID or const.BFID
-        odict    - dictionary of order objects
-        tupdated - the time of the update
+        exid       - either const.BDAQID or const.BFID
+        odict      - dictionary of order objects received from API (BF/BDAQ)
+        ounmatched - LIST of order objects unmatched on the exchange (BF/BDAQ)
+        tupdated   - the time of the update
 
         """
+
+        if (exid == const.BFID):
+            # since we use GetMUBets for getting BF bet status, we
+            # won't return any cancelled/voided orders.  But we will
+            # still be tracking them in this order model as being
+            # unmatched.  Therefore, we need to remove these orders
+            # from our internal tracker self.orders (specifically, we
+            # set their status to order.CANCELLED).  Note this is the
+            # method BF recommends for application developers (see p85
+            # of the reference guide).
+            unmatcheddict = {o.oref: o for o in ounmatched}
+            for oid in unmatcheddict:
+                if oid not in odict:
+                    print 'order id {0} was CANCELLED'.format(oid), self.orders[exid][oid]
+                    self.orders[exid][oid].status = order.CANCELLED
 
         self.orders[exid].update(odict)
         

@@ -197,7 +197,8 @@ class OrderManager(object):
             # number', so that we are updating information about all
             # orders.
             bdaqors = bdaqapi.ListOrdersChangedSince()
-            self.omodel.update_orders(const.BDAQID, bdaqors, tupdated)
+            self.omodel.update_orders(const.BDAQID, bdaqors, 
+                                      bdaqunmatched, tupdated)
             
         # get list of unmatched orders on BF
         bfunmatched = self.omodel.get_unmatched_orders(const.BFID)
@@ -206,7 +207,8 @@ class OrderManager(object):
             # we pass this function the list of order objects;
             bfors = bfapi.GetBetStatus(bfunmatched)
             # update order dictionary
-            self.omodel.update_orders(const.BFID, bfors, tupdated)
+            self.omodel.update_orders(const.BFID, bfors, 
+                                      bfunmatched, tupdated)
 
 class PricingManager(object):
     def __init__(self, stratgroup):

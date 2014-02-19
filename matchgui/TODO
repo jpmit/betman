@@ -9,12 +9,18 @@
 - convert this document to proper markdown
 
 # other
-* make all network calls use new threads so we don't block GUI
-* add agressive setting(s) to MM strategy 
-* figure out why GetMUBets is very slow
+- make all network calls use new threads so we don't block GUI
+- add agressive setting(s) to MM strategy 
+- figure out why GetMUBets is very slow
 * figure out why my SP bets aren't matching
 * figure out how BF and BDAQ do rounding and modify e.g. position.py
   and other strategy stuff accordingly
+* make automation signal time / number of ticks remaining to each
+  currently active strategy (put some of this functionality in the
+  base Automation class to handle this).
+* make strategy monitor clickable so can (i) cancel all unmatched (ii) 'green up',
+  (iii) move unmatched bet so can green up at the current bid/offer price etc.
+* add cancelling bet etc.
 - assign a single time to the engine and use this when tracking times
   and writing stuff to the database, etc.(?)
 - add cancelling capabilities for both BDAQ and BF

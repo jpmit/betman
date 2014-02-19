@@ -54,6 +54,8 @@ def ParsegetMUBets(res, odict):
     # they will have a different transactionId). We will get this if a
     # bet has been 'partially' matched.  From our perspective, this is
     # a single 'unmatched' bet.
+    print 'odict from engine', odict
+    print 'result', res
 
     # dictionary of orders we will return
     allorders = {}
