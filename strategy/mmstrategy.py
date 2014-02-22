@@ -22,15 +22,36 @@ class MMStrategy(strategy.Strategy):
 
     This is for a single exchange only, i.e. either BDAQ or BF.
     """
+
+    # if added by an automation, this sets the ttl before we close out
+    # the position.
+    TTL_CLOSE = 60
     
-    def __init__(self, sel = None):
+    def __init__(self, sel=None, auto=False):
         """
-        sel - selection (either BDAQ or BF).
+        sel  - selection (either BDAQ or BF).
+        auto - have we been added by an automation?
         """
         
         super(MMStrategy, self).__init__()
 
         self.sel = sel
+
+        # if auto is true, then we expect to be updated by the
+        # automation.  This will tell us, e.g. our time to live.
+        self.auto = auto
+
+        # The ttl (time to live in seconds) is the time before the
+        # strategy is removed from the engine.  It is only relevant
+        # for when the strategy is added by an 'automation', in which
+        # case self.auto above will be True. Initially we set the ttl
+        # to be a large (arbitrary) value.  This variable will be
+        # updated by the automation. It can be used by the various
+        # strategy states e.g. to close out the position if there is
+        # only 60 seconds left and we have unmatched bets.  Note that
+        # if the strategy is not added by an automation, it is never
+        # updated.
+        self.ttl = 1000000.0
 
         self.init_state_machine()
 
@@ -43,13 +64,15 @@ class MMStrategy(strategy.Strategy):
         back_matched_state = MMStateBackMatched(self)
         lay_matched_state = MMStateLayMatched(self)
         both_matched_state = MMStateBothMatched(self)
+        finished_state = MMStateFinished(self)
 
         self.brain.add_state(noopp_state)
         self.brain.add_state(opp_state)
         self.brain.add_state(both_placed_state)
-        self.brain.add_state(back_matched_state)   
+        self.brain.add_state(back_matched_state)
         self.brain.add_state(lay_matched_state)
-        self.brain.add_state(both_matched_state)        
+        self.brain.add_state(both_matched_state)
+        self.brain.add_state(finished_state)
 
         # initialise into noopp state
         self.brain.set_state(noopp_state.name)
@@ -132,9 +155,12 @@ class MMStrategy(strategy.Strategy):
         prices - dictionary of prices from BDAQ and BF API.
         """
       
-        # important: clear the list of orders to be placed so that we
-        # don't place them again (this is last update before we make orders).
+        # important: clear the list of orders to be placed , to be
+        # cancelled and to be updated, so that we don't place them
+        # again (this is last update before we make orders).
         self.toplace = {const.BDAQID: [], const.BFID: []}
+        self.tocancel = {const.BDAQID: [], const.BFID: []}
+        self.toupdate = {const.BDAQID: [], const.BFID: []}
 
         # update prices of selection from dictionary.  Note: even
         # though the engine only calls this function if we just got
@@ -151,6 +177,11 @@ class MMStrategy(strategy.Strategy):
 
         # AI
         self.brain.update()
+
+    def update_ttl(self, ttl):
+        """Update time to live (if added by automation only)."""
+
+        self.ttl = ttl
 
     def can_make(self):
         """Return True if we 'can' make a market here"""
@@ -223,6 +254,36 @@ class MMStrategy(strategy.Strategy):
                                               'cancelrunning' : False,
                                               'persistence' : 'SP'})
 
+    def close_position(self):
+        """
+        Close current position by either (i) adjusting the price of the
+        back/lay bet to get it matched, if the lay/back is already
+        matched or (ii) cancelling both orders if neither the back nor
+        lay bet is currently matched.
+        """
+        
+        exid = self.sel.exid
+        if self.mmstrat.back_bet_matched():
+            # adjust lay bet, make it a 'market' order so it will get
+            # matched.  Note we try to lay at one worse odds
+            # (i.e. higher odds) than the current best lay, to make
+            # sure the bet is matched.  We don't adjust the stake so
+            # we aren't 'locking in a loss'.
+            lodds = exchangedata.next_longer_odds(exid, self.sel.best_lay())
+            self.lorder.update(price=bodds)
+            self.toupdate[exid] = [self.lorder]
+        elif self.mmstrat.lay_bet_matched():
+            # adjust back bet, make it a 'market' order so it will get
+            # matched.  Note we try to back at one worse odds than the
+            # current best back, to make sure the bet is matched.  We
+            # don't adjust the stake so we aren't 'locking in a loss'.
+            bodds = exchangedata.next_shorter_odds(exid, self.sel.best_back())
+            self.border.update(price=bodds)
+            self.toupdate[exid] = [self.border]
+        else:
+            # neither bet matched, cancel both
+            self.tocancel[exid] = [self.border, self.lorder]
+
 class MMStateNoOpp(strategy.State):
     """No betting opportunity."""
 
@@ -291,6 +352,12 @@ class MMStateBothPlaced(strategy.State):
         if lm:
             return 'laymatched'
 
+        # if we are part of an automation and have limited time to
+        # live, close out position and go into 'finished' state.
+        if self.mmstrat.ttl < self.TTL_CLOSE:
+            self.mmstrat.close_position()
+            return 'finished'
+
 class MMStateBackMatched(strategy.State):
     def __init__(self, mmstrat):
         super(MMStateBackMatched, self).__init__('backmatched')
@@ -299,6 +366,12 @@ class MMStateBackMatched(strategy.State):
     def check_conditions(self):
         if self.mmstrat.lay_bet_matched():
             return 'bothmatched'
+
+        # if we are part of an automation and have limited time to
+        # live, close out position and go into 'finished' state.
+        if self.mmstrat.ttl < self.TTL_CLOSE:
+            self.mmstrat.close_position()
+            return 'finished'
 
 class MMStateLayMatched(strategy.State):
     def __init__(self, mmstrat):
@@ -309,6 +382,12 @@ class MMStateLayMatched(strategy.State):
         if self.mmstrat.back_bet_matched():
             return 'bothmatched'
 
+        # if we are part of an automation and have limited time to
+        # live, close out position and go into 'finished' state.
+        if self.mmstrat.ttl < self.TTL_CLOSE:
+            self.mmstrat.close_position()
+            return 'finished'
+
 class MMStateBothMatched(strategy.State):
     def __init__(self, mmstrat):
         super(MMStateBothMatched, self).__init__('bothmatched')
@@ -318,3 +397,11 @@ class MMStateBothMatched(strategy.State):
         # change state immediately back to noop state, ready to sense
         # another opportunity.
         self.mmstrat.brain.set_state('noopp')
+
+class MMStateFinished(strategy.State):
+    def __init__(self, mmstrat):
+        super(MMStateFinished, self).__init__('finished')
+        self.mmstrat = mmstrat
+
+    # we never change state or do anything here, we simply wait to be
+    # removed by the automation.

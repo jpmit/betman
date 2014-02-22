@@ -4,6 +4,9 @@
 
 """Order object for both exchanges."""
 
+from betman.all import const
+from betman.all.betexception import InternalError
+
 # BDAQ order _Status can be
 # 1 - Unmatched.  Order has SOME amount available for matching.
 # 2 - Matched (but not settled).
@@ -67,8 +70,49 @@ class Order(object):
             # wsn            - withdrawal sequence number
             # persistence    - same as cancelrunning but for BF
             # deltastake     - change to make to stake when updating (BDAQ only)
+            # newpersistence - for updating (BF only)
+            # newprice       - for updating (BF only)
+            # newstake       - for updating (BF only)
 
             setattr(self, kw, kwargs[kw])
+
+    def update(self, price=None, stake=None, persistence=None):
+        """Set new price and new stake, ready for the order to be updated on
+        either BF or BDAQ.
+
+        This method encapsulates the exact details of the APIs.  Note
+        that newpersistence can be used for BF only.
+
+        """
+
+        if (self.exid == const.BDAQID):
+            if price is not None:
+                self.price = price
+                self.deltastake = 0.0
+            if stake is not None:
+                self.deltastake = stake - self.stake
+
+        elif (self.exid == const.BFID):
+            # set new values to old values, then overwrite
+            self.newprice = self.price
+            self.newstake = self.stake
+            self.newpersistence = self.persistence
+            # For BF, we need to keep track of original price, stake
+            # and persistence since the BF API needs this information.
+            if price is not None:
+                self.newprice = price
+                # note we can't update price and stake simultaneously
+                # (if we try to, the new size is ignored!), so raise
+                # an exception if we try to do this.
+                if stake is not None:
+                    raise InternalError, ('can\'t update price and '
+                                          'stake of order simultaneously')
+            if stake is not None:
+                self.newstake = stake
+            if persistence is not None:
+                self.newpersistence = persistence
+        else:
+            raise InternalError, 'exchange ID {0} unknown'.format(self.exid)
 
     def __repr__(self):
         return '{0} {1} ${2} {3}'.format('BACK' if self.polarity == 1

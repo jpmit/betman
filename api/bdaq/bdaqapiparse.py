@@ -306,22 +306,19 @@ def ParseUpdateOrdersNoReceipt(resp, olist):
     return odict
 
 def ParseCancelOrders(resp, olist):
-    """Return list of order objects."""
-    
+    """Return dict of order objects."""
+
     _check_errors(resp)
 
     # warning: according the the BDAQ API docs, we won't get
     # information back about any order that is subject to an in
     # running delay.
+    odict = {o.oref: o for o in olist}
 
     for o in resp.Orders.Order:
         oref = o._OrderHandle
-        # find the order ref in the list of orders
-        for myo in olist:
-            if myo.oref == oref:
-                myo.status = order.CANCELLED
-                break
-    return olist
+        odict[oref] = order.CANCELLED
+    return odict
 
 def ParseCancelAllOrdersOnMarket(resp):
     """Return dict with key order id, value cancelled stake """

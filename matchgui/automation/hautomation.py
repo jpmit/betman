@@ -110,11 +110,19 @@ class MyAutomation(Automation):
         # remove strategies with < ENDT mins to go until start time.
         strats_finished = []
         for i, (s, m) in enumerate(self._strategies):
-            if (curtime + self.endtdelta > m.starttime):
+            # time left to live in seconds
+            ttl = (m.starttime - curtime - self.endtdelta).total_seconds()
+
+            if (ttl < 0):
                 # remove strategy from app/engine
                 self.remove_strategy(engine, s)
                 # remove from internal 
                 strats_finished.append(i)
+            else:
+                # send a pulse to the strategy so that it knows time
+                # left
+                s.update_ttl(ttl)
+
         strats_finished.reverse()
         for i in strats_finished:
             self._strategies.pop(i)
@@ -170,7 +178,7 @@ class MyAutomation(Automation):
                 # debug
                 print s2.name, 'best lay', s2.best_lay(), s2.name, 'best back', s2.best_back()
                 # BDAQ only at the moment due to problem with multithreaded BF betting.
-                strat = MMStrategy(s2)#BothMMStrategy(s1, s2)
+                strat = MMStrategy(s2, auto=True)#BothMMStrategy(s1, s2)
                 # set update frequency 
                 setattr(strat, managers.UTICK, self.UFREQ)
                 

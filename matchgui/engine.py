@@ -106,7 +106,7 @@ class Engine(object):
         # handle any 'automations' we have.  All this does is adds or
         # removes strategies.  We only do this every 60 ticks (60
         # seconds if timebase is set to be 1 second).
-        if (self.ticks % 60) == 0:
+        if (self.ticks % 1) == 0:
             for a in self.automations:
                 # note we are passing a the automation a reference to
                 # the engine, which it needs in order to add/remove

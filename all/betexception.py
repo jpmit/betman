@@ -21,3 +21,5 @@ class ApiError(BetmanError): pass
 # for errors when trying to match selections and markets
 class MatchError(BetmanError): pass
 
+class InternalError(BetmanError): pass
+

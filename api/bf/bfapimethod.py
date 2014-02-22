@@ -152,7 +152,6 @@ class ApiplaceBets(ApiMethod):
         allorders = bfapiparse.ParseplaceBets(response, orderlist)
         return allorders
 
-# cancelBets doesn't seem to be working
 class ApicancelBets(ApiMethod):
     def __init__(self, apiclient, dbman):
         super(ApicancelBets, self).__init__(apiclient)
@@ -161,25 +160,95 @@ class ApicancelBets(ApiMethod):
     def create_req(self):
         self.req = self.client.factory.create('ns1:CancelBetsReq')
 
-    def get_cbets(self, betids):
+    def get_cbets(self, olist):
         cbets = []
-        for b in betids:
+        for o in olist:
             cbet = self.client.factory.create('ns1:CancelBets')
-            cbet.betId = b
+            cbet.betId = o.oref
             cbets.append(cbet)
         return cbets
         
-    def call(self, betids):
+    def call(self, olist):
+        """Return dict with order ids as keys and amount cancelled as values."""
+
         _add_header(self)
-        self.req.bets.CancelBets = self.get_cbets(betids)
+        self.req.bets.CancelBets = self.get_cbets(olist)
         betlog.betlog.info('calling BF Api cancelBets')        
         response = self.client.service.cancelBets(self.req)
-        
-        if const.WRITEDB:
-            # need to update the order here!
-            pass
+        odict = bfapiparse.ParsecancelBets(response, olist)
+        return odict
 
-        return response
+# cancelBetsByMarket isn't available for the free version of the API!
+# Hence the class below is incomplete, it can't even be tested.
+class ApicancelBetsByMarket(ApiMethod):
+    def __init__(self, apiclient, dbman):
+        super(ApicancelBetsByMarket, self).__init__(apiclient)
+        self.dbman = dbman
+
+    def create_req(self):
+        self.req = self.client.factory.create('ns1:CancelBetsByMarketReq')
+        
+    def call(self, midlist):
+        """Return dict with order ids as keys and amount cancelled as values."""
+
+        _add_header(self)
+        self.req.markets = midlist
+        betlog.betlog.info('calling BF Api cancelBetsByMarket')
+        response = self.client.service.cancelBetsByMarket(self.req)
+        print response
+
+# there are a number of subtleties with updateBets, see p121 of the BF
+# API docs.
+class ApiupdateBets(ApiMethod):
+    # some notes on updating bets:
+    #
+    # the main point from below is that either changing the price or
+    # increasing the size (stake) - but not reducing the size - will
+    # produce new bets with new bet ids.  This will create extra
+    # bookkeeping.
+    #
+    # (i) changing the price will cause the bet to be cancelled and a
+    # new bet (with a new id) to be created.
+    #
+    # (ii) increasing the size will cause the bet to remain, but a new
+    # bet to be created with the new size (note this new bet can have
+    # a stake < 2.0 GBP).
+    # 
+    # (iii) reducing the size will mean that the bet keeps the same
+    # id, but a part of it will be cancelled (no new bets created).
+    
+    def __init__(self, apiclient, dbman):
+        super(ApiupdateBets, self).__init__(apiclient)
+        self.dbman = dbman
+
+    def create_req(self):
+        self.req = self.client.factory.create('ns1:UpdateBetsReq')
+
+    def make_update_bet_list(self, orderlist):
+        blist = []
+
+        for o in orderlist:
+            ubet = self.client.factory.create('ns1:UpdateBets')
+            ubet.betId = o.oref
+            ubet.newPrice = o.newprice
+            ubet.newSize = o.newstake
+            ubet.oldPrice = o.price
+            ubet.oldSize = o.stake
+            ubet.oldBetPersistenceType = o.persistence
+            ubet.newBetPersistenceType = o.newpersistence
+            blist.append(ubet)
+        return blist
+
+    def call(self, olist):
+        """Update list of orders for a single market."""
+        
+        _add_header(self)
+        print self.req.bets
+        self.req.bets.UpdateBets = self.make_update_bet_list(olist)
+        betlog.betlog.info('calling BF Api updateBets')
+        print self.req
+        response = self.client.service.updateBets(self.req)
+        print response
 
 class ApigetMUBets(ApiMethod):
     def __init__(self, apiclient, dbman):

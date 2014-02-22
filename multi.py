@@ -73,15 +73,26 @@ def _get_bf_orderlist(olist):
     # (necessarily) preserve ordering, which is totally ok here.
     return odict.values()
 
-def make_orders(odict):
-    """
-    Make orders.  Here oddict is a dictionary with keys
-    const.BDAQID, const.BFID, and items which are the orders.
-    Return dictionary of orders with the same keys.
+def make_orders(ocancel, oupdate, onew):
+    """Cancel/update/make new orders.
+
+    ocancel - dict of orders to cancel
+    oupdate - dict of orders to update
+    onew    - dict of new orders to make
+
+    Each dict has two, keys const.BDAQID, const.BFID, and items which
+    are lists of order objects.
+
+    We return three dictionaries corresponding to the output of
+    cancelling, updating and making new orders.
+
     """
 
     q = Queue()
-    orders = {const.BDAQID: {}, const.BFID: {}} # the orders
+    # the order dictionaries we return
+    corders = {const.BDAQID: {}, const.BFID: {}}
+    uorders = {const.BDAQID: {}, const.BFID: {}}
+    neworders = {const.BDAQID: {}, const.BFID: {}}
 
     def _worker():
         """
@@ -90,53 +101,62 @@ def make_orders(odict):
         errors...
         """
 
-        func, olist, myid = q.get()
+        func, olist, eid, rdict = q.get()
         try:
             ords = func(olist)
         except betexception.ApiError:
-            print 'api error when placing following bets for id {0}:'.format(myid)
+            print 'api error when placing following bets for id {0}:'.format(eid)
             print olist
             ords = {}
 
         # need to update since we may have more than one thread
         # for the BF bets.
-        orders[myid].update(ords)
+        rdict[eid].update(ords)
         q.task_done()
 
-    # we start one thread for the BDAQ orders, since we can place on
-    # multiple markets with a single API call
-    if const.BDAQID in odict:
-        bdaq_threads = 1
-    else:
-        bdaq_threads = 0
+    # list of order dictionary, BDAQ function, BF function, return
+    # dictionary for cancelling, updating, and making new orders
+    # respectively.
+    ostuff = [[ocancel, bdaqapi.CancelOrders, bfapi.CancelBets, corders],
+              [oupdate, bdaqapi.UpdateOrders, bfapi.UpdateBets, uorders],
+              [onew, bdaqapi.PlaceOrdersNoReceipt, bfapi.PlaceBets, neworders]]
 
-    # for BF, we need one API call for each separate market id.  So
-    # first get a list of lists,
-    # [[mid1_o1,mid1_o2,...],[mid2_o1,mid2_o2,...],...] Each list will
-    # be given a single thread, and a BF API call.
-    bf_betlist = _get_bf_orderlist(odict[const.BFID])
+    for odict, bdaqfunc, bffunc, retdict in ostuff:
 
-    # get list of lists, orders on each market.
-    bf_threads = len(bf_betlist)
+        # we start at most one thread for the BDAQ orders, since we
+        # can place on multiple markets with a single API call
+        if odict.get(const.BDAQID, []):
+            bdaq_threads = 1
+        else:
+            bdaq_threads = 0
+
+        # for BF, we need one API call for each separate market id.  So
+        # first get a list of lists,
+        # [[mid1_o1,mid1_o2,...],[mid2_o1,mid2_o2,...],...] Each list will
+        # be given a single thread, and a BF API call.
+        bf_betlist = _get_bf_orderlist(odict[const.BFID])
+
+        # get list of lists, orders on each market.
+        bf_threads = len(bf_betlist)
     
-    # debug
-    print 'number of bf_threads', bf_threads
-    for olist in bf_betlist:
-        print olist
+        # debug
+        print 'number of bf_threads', bf_threads
+        for olist in bf_betlist:
+            print olist
     
-    for i in range(bdaq_threads + bf_threads):
-        t = Thread(target = _worker)
-        t.setDaemon(True)
-        t.start()
+        for i in range(bdaq_threads + bf_threads):
+            t = Thread(target = _worker)
+            t.setDaemon(True)
+            t.start()
 
-    # tuple we put on the queue is function to call, argument, exid
-    if bdaq_threads:
-        q.put((bdaqapi.PlaceOrdersNoReceipt, odict[const.BDAQID],
-               const.BDAQID))
-    for i in range(bf_threads):
-        q.put((bfapi.PlaceBets, bf_betlist[i], const.BFID))
+        # tuple we put on the queue is function to call, argument, exid
+        if bdaq_threads:
+            q.put((bdaqfunc, odict[const.BDAQID],
+                   const.BDAQID, retdict))
+        for i in range(bf_threads):
+            q.put((bffunc, bf_betlist[i], const.BFID, retdict))
         
     # block and wait for finish
     q.join()
 
-    return orders
+    return corders, uorders, neworders

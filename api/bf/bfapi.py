@@ -59,8 +59,11 @@ GetMarketInfo = bfapimethod.ApigetMarketInfo(cluk, dbman).call
 #GetPrices = bfapimethod.ApigetMarketPrices(cluk, dbman).call
 PlaceBets = bfapimethod.ApiplaceBets(cluk, dbman).call
 
-# cancel bets doesn't seem to be working at the moment...
+# cancel bets 
 CancelBets = bfapimethod.ApicancelBets(cluk, dbman).call
+
+# update bets
+UpdateBets = bfapimethod.ApiupdateBets(cluk, dbman).call
 
 # this only checks if matched or unmatched at the moment
 GetBetStatus = bfapimethod.ApigetMUBets(cluk, dbman).call

@@ -96,14 +96,43 @@ class OrderManager(object):
 
         return self.stratgroup.get_orders_to_place_if(UPDATED)
 
+    def get_cancel_orders(self):
+        """Get cancel order dictionary from the strategy group."""
+
+        return self.stratgroup.get_orders_to_cancel_if(UPDATED)
+
+    def get_update_orders(self):
+        """Get update order dictionary from the strategy group."""
+
+        return self.stratgroup.get_orders_to_update_if(UPDATED)
+
     def make_orders(self):
         """Make any outstanding orders, and update DB."""
 
-        # new orders from all of the strategies
-        odict = self.get_new_orders()
+        # orders to cancel from all of the strategies
+        ocancel = self.get_cancel_orders()
 
-        if (odict[const.BDAQID]) or (odict[const.BFID]):
-            betlog.betlog.debug('making orders: {0}'.format(odict))
+        # orders to update from all of the strategies
+        oupdate = self.get_update_orders()
+
+        # new orders from all of the strategies
+        onew = self.get_new_orders()
+        
+        # do we need to cancel, update, or make new orders?
+        tocancel = bool(ocancel[const.BDAQID] or ocancel[const.BFID])
+        toupdate = bool(oupdate[const.BDAQID] or oupdate[const.BFID])
+        tonew = bool(onew[const.BDAQID] or onew[const.BFID])
+
+        if tocancel:
+            betlog.betlog.debug('cancelling orders: {0}'.format(ocancel))
+
+        if toupdate:
+            betlog.betlog.debug('updating orders: {0}'.format(oupdate))
+
+        if tonew:
+            betlog.betlog.debug('making new orders: {0}'.format(onew))
+
+        if (tocancel or toupdate or tonew):
             
             # we could instead do 'monkey patching' here so we don't
             # need to check this every tick...
@@ -112,9 +141,11 @@ class OrderManager(object):
                 print 'bets not made since in practice mode'
                 return
 
-            # call multithreaded make orders so that we make order
-            # requests for BDAQ and BF simultaneously.
-            saveorders = multi.make_orders(odict)
+            # call multithreaded make orders so that we make all order
+            # requests (cancelling, updating, making new) for BDAQ and
+            # BF simultaneously.
+            corders, uorders, neworders = multi.\
+                                          make_orders(ocancel, oupdate, onew)
 
             # note we use our own internal tplaced rather than
             # anything returned by either BF or BDAQ (may want to
@@ -123,7 +154,10 @@ class OrderManager(object):
 
             # save the full order information to the model (this will
             # handle writing to the DB, etc.)
-            self.omodel.add_new_orders(saveorders, tplaced)
+            self.omodel.add_new_orders(neworders, tplaced)
+
+            # TODO: something with the cancel and update order info we
+            # got back from multi.make_orders.
 
             # save the information on matching orders to the DB.  Note
             # we are assuming here that if the number of orders on

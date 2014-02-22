@@ -15,6 +15,12 @@ class Strategy(object):
         # orders to place
         self.toplace = {const.BDAQID: [], const.BFID: []}
 
+        # orders to update
+        self.toupdate = {const.BDAQID: [], const.BFID: []}
+
+        # orders to cancel
+        self.tocancel = {const.BDAQID: [], const.BFID: []}
+
         # list of all orders successfully placed (nb, these may or may
         # not have been matched) by the strategy.  These should be
         # ordered by time placed (with the oldest order being the
@@ -36,6 +42,22 @@ class Strategy(object):
         """
 
         return self.toplace
+
+    def get_orders_to_cancel(self):
+        """Return a dictionary of orders to cancel.
+
+        Dictionary should have keys const.BDAQID and const.BFID.
+        """
+
+        return self.tocancel
+
+    def get_orders_to_update(self):
+        """Return a dictionary of orders to update.
+
+        Dictionary should have keys const.BDAQID and const.BFID.
+        """
+
+        return self.toupdate
 
     def get_allorders(self):
         """Return list of all successfully placed orders."""
@@ -137,6 +159,42 @@ class StrategyGroup(object):
             if getattr(strat, attr):
                 # get order dictionary for each strat
                 pldict = strat.get_orders_to_place()
+                for k in pldict: # k is BDAQID or BFID
+                    toplace[k] = toplace[k] + pldict[k]
+        
+        return toplace
+
+    def get_orders_to_cancel_if(self, attr='__dict__'):
+        """
+        Return dictionary with keys that are the exchange ids, and
+        items that are lists of order objects that we want to cancel.
+
+        We only consider strategies for which attr is True.
+        """
+        
+        toplace = {const.BDAQID: [], const.BFID: []}
+        for strat in self.strategies:
+            if getattr(strat, attr):
+                # get order dictionary for each strat
+                pldict = strat.get_orders_to_cancel()
+                for k in pldict: # k is BDAQID or BFID
+                    toplace[k] = toplace[k] + pldict[k]
+        
+        return toplace
+
+    def get_orders_to_update_if(self, attr='__dict__'):
+        """
+        Return dictionary with keys that are the exchange ids, and
+        items that are lists of order objects that we want to update.
+
+        We only consider strategies for which attr is True.
+        """
+        
+        toplace = {const.BDAQID: [], const.BFID: []}
+        for strat in self.strategies:
+            if getattr(strat, attr):
+                # get order dictionary for each strat
+                pldict = strat.get_orders_to_update()
                 for k in pldict: # k is BDAQID or BFID
                     toplace[k] = toplace[k] + pldict[k]
         

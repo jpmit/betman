@@ -30,7 +30,7 @@ def _check_errors(res):
 
     if service_ecode != 'OK':
         print res
-        raise ApiError, api_ecode        
+        raise ApiError, service_ecode        
 
 def ParsegetMUBets(res, odict):
 
@@ -143,6 +143,27 @@ def ParseplaceBets(res, olist):
                                       o.price, o.polarity, **odict)
     
     return allorders
+
+def ParsecancelBets(res, olist):
+    """Return dict with key order id, value cancelled stake."""
+
+    _check_errors(res)
+
+    ocancel = {}
+    
+    # the API gives us a few things back that we are not using:
+    # resultCode (which can be many things), sizeMatched, and success.
+    # However, for our purposes, we should be able to figure
+    # everything out from sizeCancelled.  This also means we maintain
+    # consistency with the BDAQ API (for which sizeCancelled is the
+    # only thing we can get).
+    if isinstance(res.betResults.CancelBetsResult, list):
+        data = res.betResults.CancelBetsResult
+    else:
+        data = [res.betResults.CancelBetsResult]
+    for o in data:
+        ocancel[o.betId] = o.sizeCancelled
+    return ocancel
 
 def ParsegetActiveEventTypes(res):
     events = []
