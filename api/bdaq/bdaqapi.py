@@ -74,6 +74,13 @@ PlaceOrdersNoReceipt = bdaqapimethod.\
 
 # cancel orders
 CancelOrders = bdaqapimethod.ApiCancelOrders(_scl, _dbman).call
+CancelAllOrdersOnMarket = bdaqapimethod.\
+                          ApiCancelAllOrdersOnMarket(_scl, _dbman).call
+CancelAllOrders = bdaqapimethod.\
+                  ApiCancelAllOrders(_scl, _dbman).call
+
+# update orders
+UpdateOrders = bdaqapimethod.ApiUpdateOrdersNoReceipt(_scl, _dbman).call
 
 # which Api services (hopefully none) am I currently blacklisted from?
 ListBlacklistInformation = bdaqapimethod.\

@@ -347,6 +347,10 @@ class ApiGetOrderDetails(ApiMethod):
         return result
 
 class ApiPlaceOrdersNoReceipt(ApiMethod):
+
+    # max number of orders that can be placed per API call
+    MAXORDERS = 50
+
     def __init__(self, apiclient, dbman):
         super(ApiPlaceOrdersNoReceipt, self).__init__(apiclient)        
         self.dbman = dbman
@@ -381,8 +385,7 @@ class ApiPlaceOrdersNoReceipt(ApiMethod):
     def call(self, orderlist):
         assert isinstance(orderlist, list)
         orders = {}
-        MAXORDERS = 50
-        for ol in util.chunks(orderlist, MAXORDERS):        
+        for ol in util.chunks(orderlist, self.MAXORDERS):        
             # make BDAQ representation of orders from orderlist past
             self.req.Orders.Order = self.makeorderlist(ol)
             betlog.betlog.info('calling BDAQ Api PlaceOrdersNoReceipt')
@@ -414,20 +417,62 @@ class ApiPlaceOrdersWithReceipt(ApiMethod):
         # we probably need to look at the market information to put
         # this stuff in correctly
         self.order._ExpectedSelectionResetCount = 1
-        self.order. _ExpectedWithdrawalSequenceNumber = 0,         
+        self.order._ExpectedWithdrawalSequenceNumber = 0
         self.order._CancelOnInRunning = True
-        self.order._CancelIfSelectionReset = True        
+        self.order._CancelIfSelectionReset = True 
 
     def call(self, order):
         # order passed should be a dict with keys
         # see 'ordertest.py' for what the dict should contain
         self.makeorder(order)
         self.req.Orders.Order = [self.order]
-        betlog.betlog.info('calling BDAQ Api PlaceOrdersWithReceipt')        
+        betlog.betlog.info('calling BDAQ Api PlaceOrdersWithReceipt')
         result = self.client.service.PlaceOrdersWithReceipt(self.req)
         return result
 
-#class ApiUpdateOrdersNoReceipt(ApiMethod):
+class ApiUpdateOrdersNoReceipt(ApiMethod):
+    # note, according to BDAQ API docs, we can't update an order on an
+    # in-running market.  I guess instead we have to cancel the order
+    # and make a new order at the new odds and/or stake.
+
+    # max number of orders that can be updated per API call.
+    MAXORDERS = 50
+
+    def __init__(self, apiclient, dbman):
+        super(ApiUpdateOrdersNoReceipt, self).__init__(apiclient)
+        self.dbman = dbman
+    
+    def create_req(self):
+        self.req = self.client.factory.create('UpdateOrdersNoReceiptRequest')
+
+    def makeorderlist(self, orderlist):
+        olist = []
+
+        for o in orderlist:
+            # add object for a single order update
+            order = self.client.factory.create('UpdateOrdersNoReceiptRequestItem')
+
+            order._BetId = o.oref
+            order._DeltaStake = o.deltastake
+            order._Price = o.price
+            order._ExpectedSelectionResetCount = o.src
+            order._ExpectedWithdrawalSequenceNumber = o.wsn
+            order._CancelOnInRunning = o.cancelrunning
+            order._CancelIfSelectionReset = o.cancelreset
+
+            olist.append(order)
+        return olist
+
+    def call(self, orderlist):
+        orders = {}
+        for ol in util.chunks(orderlist, self.MAXORDERS):
+            self.req.Orders.Order = self.makeorderlist(ol)
+            betlog.betlog.info('calling BDAQ Api UpdateOrdersNoReceipt')
+            result = self.client.service.UpdateOrdersNoReceipt(self.req)
+            ors = bdaqapiparse.ParseUpdateOrdersNoReceipt(result, orderlist)
+            orders.update(ors)
+
+        return orders
 
 class ApiCancelOrders(ApiMethod):
     def __init__(self, apiclient, dbman):
@@ -444,11 +489,39 @@ class ApiCancelOrders(ApiMethod):
         ol = bdaqapiparse.ParseCancelOrders(result, olist)
         return ol
 
-#class ApiCancelOrders(ApiMethod):
+class ApiCancelAllOrdersOnMarket(ApiMethod):
+    def __init__(self, apiclient, dbman):
+        super(ApiCancelAllOrdersOnMarket, self).__init__(apiclient)
+        self.dbman = dbman
 
-#class ApiCancelAllOrdersOnMarket(ApiMethod):
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('CancelAllOrdersOnMarketRequest')
 
-#class ApiCancelAllOrders(ApiMethod):
+    def call(self, midlist):
+        self.req.MarketIds = midlist
+        betlog.betlog.info('calling BDAQ Api CancelAllOrdersOnMarket')
+        result = self.client.service.CancelAllOrdersOnMarket(self.req)
+        ocancel = bdaqapiparse.ParseCancelAllOrdersOnMarket(result)
+        return ocancel
+
+class ApiCancelAllOrders(ApiMethod):
+    # be careful with this method, since if there are too many orders
+    # to be cancelled, we will get an error, response RC137 (see the
+    # docs).
+    def __init__(self, apiclient, dbman):
+        super(ApiCancelAllOrders, self).__init__(apiclient)
+        self.dbman = dbman
+
+    def create_req(self):
+        self.req = self.client.factory.\
+                   create('CancelAllOrdersRequest')
+
+    def call(self):
+        betlog.betlog.info('calling BDAQ Api CancelAllOrders')
+        result = self.client.service.CancelAllOrders(self.req)
+        ocancel = bdaqapiparse.ParseCancelAllOrders(result)
+        return ocancel
 
 class ApiListBlacklistInformation(ApiMethod):
     def __init__(self, apiclient):

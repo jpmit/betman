@@ -66,6 +66,7 @@ class Order(object):
             # src            - selection reset count
             # wsn            - withdrawal sequence number
             # persistence    - same as cancelrunning but for BF
+            # deltastake     - change to make to stake when updating (BDAQ only)
 
             setattr(self, kw, kwargs[kw])
 

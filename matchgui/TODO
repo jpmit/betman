@@ -9,6 +9,7 @@
 - convert this document to proper markdown
 
 # other
+* Make the GUI functional as a 'live' trading machine
 - make all network calls use new threads so we don't block GUI
 - add agressive setting(s) to MM strategy 
 - figure out why GetMUBets is very slow
@@ -20,7 +21,8 @@
   base Automation class to handle this).
 * make strategy monitor clickable so can (i) cancel all unmatched (ii) 'green up',
   (iii) move unmatched bet so can green up at the current bid/offer price etc.
-* add cancelling bet etc.
+* add cancelling bet to ordermanager.make_orders routine.
+- sort out organisation of source code tree
 - assign a single time to the engine and use this when tracking times
   and writing stuff to the database, etc.(?)
 - add cancelling capabilities for both BDAQ and BF

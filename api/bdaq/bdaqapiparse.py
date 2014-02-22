@@ -250,10 +250,69 @@ def ParsePlaceOrdersNoReceipt(resp, olist):
                                                     'unmatchedstake': o.stake})
     return allorders
 
+def ParseUpdateOrdersNoReceipt(resp, olist):
+    """Return dictionary of updated order objects"""
+
+    # the dict of orders we wanted to update
+    odict = {o.oref : o for o in olist}
+
+    if hasattr(resp, 'Orders'):
+        if isinstance(resp.Orders.Order, list):
+            data = resp.Orders.Order
+        else:
+            data = [resp.Orders.Order]
+        for o in data:
+            retcode = o._ReturnCode
+            if (retcode == 0):
+                # we just need to update the stake by adding
+                # deltastake, the price is already the new price.
+                myo = odict[o._BetId]
+                myo.stake += myo.deltastake
+                # delete attribute since don't want to confuse
+                # ourselves later.
+                del myo.deltastake
+            elif (retcode == 22 or retcode == 306):
+                # the above return codes seem harmless, all others
+                # will raise ApiError (see below for what all of the
+                # return codes, including those above, mean).
+                pass
+            else:
+                # there are quite a few possible return codes here
+                # (from BDAQ API docs):
+                # RC015	MarketNotActive
+                # RC017	SelectionNotActive
+                # RC021	OrderDoesNotExist
+                # RC022	NoUnmatchedAmount
+                # RC114	ResetHasOccurred
+                # RC128	TradingCurrentlySuspended
+                # RC131	InvalidOdds
+                # RC136	WithdrawalSequenceNumberIsInvalid
+                # RC137	MaximumInputRecordsExceeded
+                # RC208	PunterSuspended
+                # RC240	PunterProhibitedFromPlacingOrders
+                # RC241	InsufficientPunterFunds
+                # RC271	OrderAPIInProgress 
+                # RC274	PunterOrderMismatch
+                # RC293	InRunningDelayInEffect
+                # RC299	DuplicateOrderSpecified
+                # RC302	PunterIsSuspendedFromTrading 
+                # RC305	ExpiryTimeInThePast
+                # RC306	NoChangeSpecified
+                # RC406	PunterIsBlacklisted
+                raise ApiError, ('could not update order {0}'
+                                 ', return code {1}'.\
+                                 format(o._BetId, o._ReturnCode))
+
+    return odict
+
 def ParseCancelOrders(resp, olist):
     """Return list of order objects."""
     
     _check_errors(resp)
+
+    # warning: according the the BDAQ API docs, we won't get
+    # information back about any order that is subject to an in
+    # running delay.
 
     for o in resp.Orders.Order:
         oref = o._OrderHandle
@@ -263,6 +322,39 @@ def ParseCancelOrders(resp, olist):
                 myo.status = order.CANCELLED
                 break
     return olist
+
+def ParseCancelAllOrdersOnMarket(resp):
+    """Return dict with key order id, value cancelled stake """
+
+    _check_errors(resp)
+
+    ocancel = {}
+    # need hasattr since we get success even when no orders cancelled
+    if hasattr(resp, 'Order'):
+        if isinstance(resp.Order, list):
+            data = resp.Order
+        else:
+            data = [resp.Order]
+        for o in data:
+            ocancel[o._OrderHandle] = o._cancelledForSideStake
+    return ocancel
+
+def ParseCancelAllOrders(resp):
+    """Return dict with key order id, value cancelled stake """
+
+    _check_errors(resp)
+
+    ocancel = {}
+    # this is very similar to the above, but there is an extra layer
+    # of 'nesting' in the response (for some unfathomable reason).
+    if hasattr(resp, 'Orders'):
+        if isinstance(resp.Orders.Order, list):
+            data = resp.Orders.Order
+        else:
+            data = [resp.Orders.Order]
+        for o in data:
+            ocancel[o._OrderHandle] = o._cancelledForSideStake
+    return ocancel
 
 def ParseGetAccountBalances(resp):
     """
