@@ -498,8 +498,12 @@ class DBMaster(object):
                                            m.exid, m.id))
         self.conn.commit()
 
-    def write_orders(self, olist, tstamp):
-        """Write to orders table"""
+    def write_orders(self, olist):
+        """Write to orders table
+
+        olist - list of order objects to write to orders table.
+
+        """
 
         # check  database is open
         if not self._isopen:
@@ -511,27 +515,28 @@ class DBMaster(object):
         qins = ('INSERT INTO {0} (order_id, '
                 'exchange_id, market_id, selection_id,'
                 'strategy, price, stake, polarity, matched,'
-                'unmatched, status, tstamp) values '
-                '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                'unmatched, status, tplaced, tstamp) values '
+                '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         qupd = ('UPDATE {0} SET matched=?, unmatched=?, status=?,'
                 'tstamp=? WHERE order_id=?').format(schema.ORDERS)
         
         for o in olist:
             # get default values for things not guaranteed to exist
+            strategy = getattr(o, 'strategy', None)
             matched = getattr(o, 'matched', 0.0)
             unmatched = getattr(o, 'matched', o.stake)            
             status = getattr(o, 'status', order.UNMATCHED)
-            strategy = getattr(o, 'strategy', None)
+            tplaced = getattr(o, 'tplaced', None)
 
             # we won't know the market id if we are here from BDAQ API
-            # ListBootstrapOrders; otherwise we should know the market
+            # ListBootstrapOrders!; otherwise we should know the market
             # id.
             mid = getattr(o, 'mid', None)
 
             # add to orders table; update if the order id already exists
             data = (o.oref, o.exid, mid, o.sid, strategy, o.price,
                     o.stake, o.polarity, matched, unmatched, status,
-                    tstamp)
+                    tplaced, o.tupdated)
             try:
                 self.cursor.execute(qins.format(schema.ORDERS), data)
 
@@ -539,7 +544,7 @@ class DBMaster(object):
                 # already have order_id. Update matched amount,
                 # unmatched amount, status and timestamp.
                 self.cursor.execute(qupd, (matched, unmatched, status,
-                                           tstamp, o.oref))
+                                           o.tupdated, o.oref))
 
             # add to historical orders table
             self.cursor.execute(qins.format(schema.HISTORDERS), data)

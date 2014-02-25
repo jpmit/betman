@@ -292,16 +292,19 @@ class ApiListOrdersChangedSince(ApiMethod):
         # if we did get some orders changed, the data consists of the
         # order information and the new max sequence number.
         orders, snum = data
+
         # set order sequence number to the maximum one returned by Api
         ORDER_SEQUENCE_NUMBER = snum        
 
         betlog.betlog.debug('Setting sequence number to: {0}'\
                             .format(snum))
 
-        # update changed orders
-        if const.WRITEDB:
-            self.dbman.write_orders(orders.values(), resp.Timestamp)
         return orders
+
+        # update changed orders
+        #if const.WRITEDB:
+        #    self.dbman.write_orders(orders.values(), resp.Timestamp)
+        #return orders
 
 # this sequence number is updated by both ApiListOrdersChangedSince
 # (above) and ApiListBootstrapOrders (below).
@@ -329,8 +332,8 @@ class ApiListBootstrapOrders(ApiMethod):
         # assign sequence number we get back to ORDER_SEQUENCE_NUMBER
         ORDER_SEQUENCE_NUMBER = result._MaximumSequenceNumber
         allorders = bdaqapiparse.ParseListBootstrapOrders(result)
-        if const.WRITEDB:
-            self.dbman.write_orders(allorders.values(), result.Timestamp)
+#        if const.WRITEDB:
+#            self.dbman.write_orders(allorders.values(), result.Timestamp)
         return allorders
 
 # not fully implemented (do not use)
@@ -486,8 +489,8 @@ class ApiCancelOrders(ApiMethod):
         self.req.OrderHandle = [o.oref for o in olist]
         betlog.betlog.info('calling BDAQ Api CancelOrders')
         result = self.client.service.CancelOrders(self.req)
-        ol = bdaqapiparse.ParseCancelOrders(result, olist)
-        return ol
+        odict = bdaqapiparse.ParseCancelOrders(result, olist)
+        return odict
 
 class ApiCancelAllOrdersOnMarket(ApiMethod):
     def __init__(self, apiclient, dbman):

@@ -3,16 +3,17 @@
 The pricing manager gets pricing information from BDAQ / BF and pushes
 the prices to the strategies that need it.
 
-The order manager pulls order details from strategies, makes
-orders, and keeps track of the status of orders so that the strategies
-can pull the order status from the manager.
+The order manager pulls order details from strategies, makes orders,
+and keeps track of the status of orders so that the strategies can
+pull the order status from the manager.
+
 """
 
 import datetime
 from betman import const, multi, database, order, betlog
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
-from models import OrderModel
+from stores import OrderStore
 from operator import attrgetter
 import wx
 
@@ -60,11 +61,10 @@ class OrderManager(object):
         # order model stores everything to do with orders made since
         # the start of the application.  It also writes any
         # information to the database as required.
-        self.omodel = OrderModel.Instance()
+        self.ostore = OrderStore.Instance()
 
-        # we do however store a reference to the dictionary of all
-        # orders placed since the beginning of the application.
-        self.orders = self.omodel.orders
+        # we do store a ref to current order dictionary
+        #self.orders = self.ostore._orders
 
         # call startup routine to bootstap BDAQ order information, and
         # login to betfair.
@@ -107,7 +107,7 @@ class OrderManager(object):
         return self.stratgroup.get_orders_to_update_if(UPDATED)
 
     def make_orders(self):
-        """Make any outstanding orders, and update DB."""
+        """Use BDAQ/BF Apis to cancel, update, and make new orders"""
 
         # orders to cancel from all of the strategies
         ocancel = self.get_cancel_orders()
@@ -150,11 +150,14 @@ class OrderManager(object):
             # note we use our own internal tplaced rather than
             # anything returned by either BF or BDAQ (may want to
             # change this at some point).
-            tplaced = datetime.datetime.now()
+            #tplaced = datetime.datetime.now()
 
-            # save the full order information to the model (this will
+            # save the full order information to the order store (this will
             # handle writing to the DB, etc.)
-            self.omodel.add_new_orders(neworders, tplaced)
+            self.ostore.add_orders(corders, uorders, neworders)
+
+            # this will update the views connected to ostore
+            self.ostore.Update()
 
             # TODO: something with the cancel and update order info we
             # got back from multi.make_orders.
@@ -219,11 +222,9 @@ class OrderManager(object):
         # different from this is a little complicated.
         if not self.stratgroup.strategies:
             return
-        
-        tupdated = datetime.datetime.now()    
 
         # get list of unmatched orders on BDAQ
-        bdaqunmatched = self.omodel.get_unmatched_orders(const.BDAQID)
+        bdaqunmatched = self.ostore.get_unmatched_orders(const.BDAQID)
 
         # only want to call BDAQ API if we have unmatched bets
         if bdaqunmatched:
@@ -231,18 +232,23 @@ class OrderManager(object):
             # number', so that we are updating information about all
             # orders.
             bdaqors = bdaqapi.ListOrdersChangedSince()
-            self.omodel.update_orders(const.BDAQID, bdaqors, 
-                                      bdaqunmatched, tupdated)
+            self.ostore.process_order_updates(const.BDAQID, bdaqors, 
+                                              bdaqunmatched)
             
         # get list of unmatched orders on BF
-        bfunmatched = self.omodel.get_unmatched_orders(const.BFID)
+        bfunmatched = self.ostore.get_unmatched_orders(const.BFID)
 
         if bfunmatched:
             # we pass this function the list of order objects;
             bfors = bfapi.GetBetStatus(bfunmatched)
             # update order dictionary
-            self.omodel.update_orders(const.BFID, bfors, 
-                                      bfunmatched, tupdated)
+            self.ostore.process_order_updates(const.BFID, bfors, 
+                                              bfunmatched)
+
+        if bdaqunmatched or bfunmatched:
+            # updating the order store means that the order store will
+            # update its views
+            self.ostore.Update()
 
 class PricingManager(object):
     def __init__(self, stratgroup):

@@ -1,5 +1,5 @@
 import wx
-from betman import const
+from betman import const, order
 import models
 
 """Frames that are created by clicking things on the menu bar."""
@@ -59,6 +59,52 @@ class CurrentAutomationsFrame(wx.Frame):
             child.Destroy()
 
         self.Draw()
+
+class CurrentOrdersFrame(wx.Frame):
+
+    """Frame for user to view/edit current orders."""    
+
+    PAD = 5
+
+    def __init__(self, parent):
+        wx.Frame.__init__(self, parent, size=(300, 200), 
+                          title='Orders')
+
+        self.parent = parent
+        self.Draw(self.parent)
+
+        self.Center()
+
+    def Draw(self, parent):
+
+        panel = wx.Panel(self)
+        main_sz = wx.BoxSizer(wx.VERTICAL)
+        main_sz.AddSpacer(self.PAD)
+
+        omodel = parent.omodel
+        for odict in [omodel.GetBDAQOrders(), omodel.GetBFOrders()]:
+            for oref in odict:
+                o = odict[oref]
+                h_sz = wx.BoxSizer(wx.HORIZONTAL)
+                # add the name and a button to remove
+                h_sz.Add(wx.StaticText(self, label="{0}".format(oref)))
+                h_sz.AddSpacer(20)
+                h_sz.Add(wx.StaticText(self, label = 'BDAQ' if o.exid == const.BDAQID else 'BF'))
+                h_sz.AddSpacer(20)
+                h_sz.Add(wx.StaticText(self, label = 'back' if o.polarity == order.BACK else 'lay'))
+                h_sz.AddSpacer(20)
+                h_sz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.price)))
+                h_sz.AddSpacer(20)
+                h_sz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.matchedstake)))
+                h_sz.AddSpacer(20)            
+                h_sz.Add(wx.StaticText(self, label = '{:.2f}'.format(o.unmatchedstake)))
+                main_sz.Add(h_sz)
+                main_sz.AddSpacer(self.PAD)
+
+        # main sizer for frame
+        panel.SetSizer(main_sz)
+        panel.Layout()
+        self.Layout()
 
 class CurrentStrategiesFrame(wx.Frame):
 

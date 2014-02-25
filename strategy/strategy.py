@@ -21,11 +21,11 @@ class Strategy(object):
         # orders to cancel
         self.tocancel = {const.BDAQID: [], const.BFID: []}
 
-        # list of all orders successfully placed (nb, these may or may
-        # not have been matched) by the strategy.  These should be
+        # dict of refs of orders successfully placed (nb, these may or
+        # may not have been matched) by the strategy.  These should be
         # ordered by time placed (with the oldest order being the
         # first in the list).
-        self.allorders = []
+        self.allorefs = {const.BDAQID: [], const.BFID: []}
         
     def get_marketids(self):
         """
@@ -59,10 +59,10 @@ class Strategy(object):
 
         return self.toupdate
 
-    def get_allorders(self):
-        """Return list of all successfully placed orders."""
+    def get_all_orefs(self):
+        """Return dict containing order refs of all placed orders."""
 
-        return self.allorders
+        return self.allorefs
 
     def update_prices(self, prices):
         """

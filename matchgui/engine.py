@@ -117,9 +117,9 @@ class Engine(object):
         # polling BF and BDAQ.
         self.omanager.update_order_information()
 
-        # feed the current order dictionary just updated to the
-        # strategies.
-        self.stratgroup.update_orders(self.omanager.orders)
+        # feed the order store (which holds the newly updated orders)
+        # to the strategies.
+        self.stratgroup.update_orders(self.omanager.ostore)
 
         # get prices for any strategies in the strategy group that
         # want new prices this tick by polling BF and BDAQ.

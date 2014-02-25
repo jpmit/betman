@@ -1,6 +1,5 @@
 # list of easy things TODO when I need a break or to waste an hour or two
 
-* Add NSF server to list of backup when backing up code
 - allow changing timebase in GUI (global config)
 - make everything prettier
 - make sure we are saving prices to the DB
@@ -11,27 +10,17 @@
 
 # other
 
+* Finish live bets panel
 * Test updating and cancelling orders on BF
-* Make order model handle bookkeeping of new, updated and cancelled
-  orders, and make the strategies communicate with the order model to
-  keep order information up to date.
 * Make the GUI functional as a 'live' trading machine
 - make all network calls use new threads so we don't block GUI
 - add agressive setting(s) to MM strategy 
 - figure out why GetMUBets is very slow
-* figure out why my SP bets aren't matching
-* figure out how BF and BDAQ do rounding and modify e.g. position.py
-  and other strategy stuff accordingly
-* make automation signal time / number of ticks remaining to each
-  currently active strategy (put some of this functionality in the
-  base Automation class to handle this).
+* add a switch we can click to close out all automation positions
+* finish sorting out how and when info is written to the DB
 * make strategy monitor clickable so can (i) cancel all unmatched (ii) 'green up',
   (iii) move unmatched bet so can green up at the current bid/offer price etc.
-* add cancelling bet to ordermanager.make_orders routine.
 - sort out organisation of source code tree
-- assign a single time to the engine and use this when tracking times
-  and writing stuff to the database, etc.(?)
-- add cancelling capabilities for both BDAQ and BF
 - allow switching between non-API and API get prices in GUI
 - add getting market information so we have a time series of GBP matched on market
 - save complete state (strategies, automations etc.) when exit, and load this when startup
@@ -41,7 +30,6 @@
 - global position monitoring (probably in models.py)
 - viewer/backtester, either in current GUI or as separate GUI app
 - add market volume to engine and/or GUI
-- sort out how and when info is written to the DB
 - GUI frame to select which markets we want when putting in hautomation
 - docstring and comment consistently
 - clean up code

@@ -102,6 +102,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            ' matched      real NOT NULL,'
                            ' unmatched    real NOT NULL,'
                            ' status       int  NOT NULL,'
+                           ' tplaced      timestamp NOT NULL,'
                            ' tstamp       timestamp NOT NULL)'),
               MATCHORDERS: ('(order1_id   int  primary key, '
                             ' order2_id   int  NOT NULL, '
@@ -153,13 +154,17 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                                ' matched      real NOT NULL,'
                                ' unmatched    real NOT NULL,'
                                ' status       int  NOT NULL,'
+                               # note tplaced can be null in this
+                               # table, though it can't be null in
+                               # ORDERS table.
+                               ' tplaced      timestamp,'
                                ' tstamp       timestamp NOT NULL)')              
               }
 
 def getschema(tname):
-    """Get string for creating table for particular table name"""
+    """Get string for creating table for particular table name."""
+
     if tname not in _SQLSCHEMA:
         raise DbException, 'table name {0} has no schema'\
               .format(tname)
-    return '{0} {1} {2}'.format('CREATE TABLE', tname,
-                                _SQLSCHEMA[tname])
+    return '{0} {1} {2}'.format('CREATE TABLE', tname, _SQLSCHEMA[tname])

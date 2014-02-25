@@ -173,17 +173,16 @@ class MyAutomation(Automation):
         for (s1, s2) in zip(bdaqsels, bfsels):
             # only add strategies for which are within our limits on
             # both BDAQ (and maybe also BF).
-            if ((s2.best_lay() < self.MAXLAY) and (s2.best_back() < self.MAXBACK)):
+            if ((s1.best_lay() < self.MAXLAY) and (s1.best_back() < self.MAXBACK)):
                 #and (s2.best_lay() < self.MAXLAY) and (s2.best_back() < self.MAXBACK)):
                 # debug
-                print s2.name, 'best lay', s2.best_lay(), s2.name, 'best back', s2.best_back()
-                # BDAQ only at the moment due to problem with multithreaded BF betting.
-                strat = MMStrategy(s2, auto=True)#BothMMStrategy(s1, s2)
+                print s1.name, 'best lay', s1.best_lay(), s1.name, 'best back', s1.best_back()
+                strat = MMStrategy(s1, auto=True)#BothMMStrategy(s1, s2)
                 # set update frequency 
                 setattr(strat, managers.UTICK, self.UFREQ)
                 
                 if self.app:
-                    self.app.AddStrategy('Make Both', s1.name, strat, s1, s2)
+                    self.app.AddStrategy('Make BDAQ', s1.name, strat, s1, s2)#'Make Both', s1.name, strat, s1, s2)
                 else:
                     engine.add_strategy(strat)
 

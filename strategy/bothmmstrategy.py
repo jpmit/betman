@@ -4,7 +4,7 @@
 
 """Market making strategy for both exchanges simultaneously."""
 
-from betman import const, order
+from betman import const, order, util
 from betman.strategy import strategy, mmstrategy
 
 class BothMMStrategy(strategy.Strategy):
@@ -61,7 +61,7 @@ class BothMMStrategy(strategy.Strategy):
         self.strat1.update_orders(orders)
         self.strat2.update_orders(orders)
 
-    def get_allorders(self):
-        # we may want to order these according to time placed at some
-        # point
-        return self.strat1.get_allorders() + self.strat2.get_allorders()
+    def get_allorefs(self):
+        # return dictionary of all order refs
+        return util.cdict(self.strat1.get_allorefs(), 
+                          self.strat2.get_allorefs())

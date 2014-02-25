@@ -101,7 +101,9 @@ def ParseplaceBets(res, olist):
     # if the main errorcode is "OK".  This is a 'known issue' in the
     # BF API, as detailed by the documentation
     # BetfairSportsExchangeAPIReferenceGuidev6.pdf, p114.
+    print res
     _check_errors(res)
+    tstamp = res.header.timestamp
 
 #    print 'parse place bets:'
 #    print olist
@@ -138,7 +140,8 @@ def ParseplaceBets(res, olist):
 
         odict = {'mid': o.mid, 'oref': oref, 'status': status,
                  'matchedstake': matched, 'unmatchedstake':
-                 o.stake - matched}
+                 o.stake - matched, 'tplaced' : tstamp, 
+                 'tupdated': tstamp}
         allorders[oref] = order.Order(const.BFID, o.sid, o.stake,
                                       o.price, o.polarity, **odict)
     
@@ -148,8 +151,11 @@ def ParsecancelBets(res, olist):
     """Return dict with key order id, value cancelled stake."""
 
     _check_errors(res)
+    tstamp = res.header.timestamp
 
-    ocancel = {}
+    # we should get information back for every order we tried to
+    # cancel.
+    odict = {o.oref: o for o in olist}
     
     # the API gives us a few things back that we are not using:
     # resultCode (which can be many things), sizeMatched, and success.
@@ -162,8 +168,13 @@ def ParsecancelBets(res, olist):
     else:
         data = [res.betResults.CancelBetsResult]
     for o in data:
-        ocancel[o.betId] = o.sizeCancelled
-    return ocancel
+        myo = odict[o.betId]
+        myo.status = order.CANCELLED
+        myo.tupdated = tstamp
+        # store sizeMatched and sizeCancelled for now
+        myo.sizeCancelled = o.sizeCancelled
+        myo.sizeMatched = o.sizeMatched
+    return odict
 
 def ParsegetActiveEventTypes(res):
     events = []

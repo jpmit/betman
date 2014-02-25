@@ -17,16 +17,15 @@ class UpdateStrategy(strategy.Strategy):
     """
     
     def __init__(self, bdaqmids = [], bfmids = []):
+
+        super(UpdateStrategy, self).__init__()
+
         self.bdaqmids = bdaqmids
         self.bfmids = bfmids
 
         # we store a prices dict for this strategy, since we couple it
         # with the pricing model in the GUI.
         self.prices = {const.BDAQID: {}, const.BFID: {}}
-
-        # we never place any orders with this strategy, but we still
-        # need to define toplace dict.
-        self.toplace = {}
 
     def get_marketids(self):
         return {const.BDAQID: self.bdaqmids, const.BFID: self.bfmids}

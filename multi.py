@@ -31,12 +31,13 @@ def update_prices(middict):
         except URLError:
             # the nApi functions will raise URLError if there is no
             # network access etc.  There is a choice to be made here.
-            # The 'safest' thing to do is to set emids to the complete
-            # list of mids.  This will mean that all strategies (for
-            # this exchange - either BDAQ or BF) will be removed by
-            # the engine (see update_prices in managers.py).  Instead,
-            # we can set prices to be an empty dict and emids to be an
-            # empty list.  This won't remove the strategy.  
+            # The 'safest' thing to do (maybe) is to set emids to the
+            # complete list of mids.  This will mean that all
+            # strategies (for this exchange - either BDAQ or BF) will
+            # be removed by the engine (see update_prices in
+            # managers.py).  Instead, we can set prices to be an empty
+            # dict and emids to be an empty list.  This won't remove
+            # the strategy.
             prices[myid] = {}
             emids[myid] = []
         q.task_done()

@@ -3,11 +3,13 @@ import const
 import os
 import wx.lib.scrolledpanel as scrolledpanel
 import menuframes
+import livebetsframe
 from eventpanel import EventPanel
 from marketpanel import MarketPanel
 from pricepanel import PricePanel
 from controlpanel import ControlPanel
 from imgpanel import SplashPanel
+import models
 
 class MyFrame(wx.Frame):
     """Main window.
@@ -64,7 +66,9 @@ class MyFrame(wx.Frame):
         # store dict of open frames from the menu only
         self._oframes = {'settings': None,
                          'strategies': None,
-                         'automations': None
+                         'automations': None,
+                         'orders': None,
+                         'livebets': None
                          }
 
         self.Layout()
@@ -86,6 +90,7 @@ class MyFrame(wx.Frame):
         # view menu
         viewmenu = wx.Menu()
         currstrat = viewmenu.Append(wx.ID_ANY, "Current Strategies")
+        currord = viewmenu.Append(wx.ID_ANY, "Current Orders")
         currauto = viewmenu.Append(wx.ID_ANY, "Current Automations")
         menubar.Append(viewmenu, "View")
 
@@ -100,6 +105,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnLoadAutomation, id = wx.ID_FILE)
         self.Bind(wx.EVT_MENU, self.OnClose, id = wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.OnCurrentStrategies, currstrat)
+        self.Bind(wx.EVT_MENU, self.OnCurrentOrders, currord)
         self.Bind(wx.EVT_MENU, self.OnCurrentAutomations, currauto)
         self.Bind(wx.EVT_MENU, self.OnSettings, id = wx.ID_PREFERENCES)
         self.Bind(wx.EVT_MENU, self.OnAbout, id = wx.ID_ABOUT)
@@ -123,7 +129,12 @@ class MyFrame(wx.Frame):
         self.app.AddAutomation(afile)
 
     def OnCloseFrame(self, event, nm):
+        """Called when we close a frame opened by a menu option."""
+
+        print "closing frame", nm
+
         self._oframes[nm] = None
+        print 'sucessfully set oframe to None'
         event.Skip()
 
     def OnSettings(self, event):
@@ -172,6 +183,29 @@ class MyFrame(wx.Frame):
                                lambda e,n=nm: self.OnCloseFrame(e, n))
             else:
                 wx.MessageBox("No strategies currently running.", 
+                              style=wx.CENTER|wx.OK, parent = self)
+        else:
+            frame.Raise()
+
+    def OnCurrentOrders(self, event):
+        """Show frame with orders made so far and their status."""
+
+        nm = 'livebets'
+
+        frame = self._oframes[nm]
+
+        # MVC
+        #self.omodel = models.OrderModel.Instance()
+
+        if frame is None:
+            if not self._oframes['livebets']:
+                frame = livebetsframe.LiveBetsFrame(self)
+                frame.Show()
+                self._oframes[nm] = frame
+                frame.Bind(wx.EVT_CLOSE, 
+                           lambda e,n=nm: self.OnCloseFrame(e, n))
+            else:
+                wx.MessageBox("No orders made yet.", 
                               style=wx.CENTER|wx.OK, parent = self)
         else:
             frame.Raise()

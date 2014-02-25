@@ -4,7 +4,9 @@
 
 """Class for monitoring net position for strategy."""
 
-from betman import order
+from betman import const, order, util
+from operator import attrgetter
+import stores
 
 class PositionTracker(object):
     """Position tracker for a strategy involving a single selection."""
@@ -13,7 +15,7 @@ class PositionTracker(object):
 
         self.strategy = strategy
 
-        # reference to order model
+        self.ostore = stores.OrderStore.Instance()
     
     def get_all_orders(self):
         """
@@ -21,12 +23,19 @@ class PositionTracker(object):
         (nb, these may or may not have been matched), ordered by time
         placed (oldest first).
         """
+        
+        # dictionary of order references
+        orefdict = self.strategy.get_allorefs()
+        
+        # dictionary of the actual order objects
+        odict = self.ostore.get_orders_from_oref_dict(orefdict)
 
-        # this gives us a list of order objects.  The order id of each
-        # object in the list, we can get information such as the time
-        # the order was placed, etc. via the OrderModel (see
-        # models.py).
-        return self.strategy.get_allorders()
+        # get a single list of order objects ordered by time placed
+        olist = util.flatten(odict)
+        self.ostore.set_tplaced(olist)
+        olist.sort(key=attrgetter('tplaced'))
+
+        return olist
 
     def get_positions(self):
         """
@@ -47,7 +56,8 @@ class PositionTracker(object):
         lose_pos = 0.0
         lose_posif = 0.0
         
-        for o in self.strategy.get_allorders():
+        
+        for o in self.get_allorders():
             # add this to all positions
             if o.status == order.MATCHED:
                 if o.polarity == order.LAY:
@@ -86,7 +96,7 @@ class PositionTracker(object):
     def get_unmatched_bets(self):
 
         unmatched = []
-        for o in self.strategy.get_allorders():
+        for o in self.get_allorders():
             if o.status == order.UNMATCHED:
                 unmatched.append(o)
 

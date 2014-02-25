@@ -27,6 +27,18 @@ SUSPENDED = 6
 BACK = 1
 LAY = 2
 
+# mapping of order number to order status
+STATUS_MAP = {0: 'Not Placed',
+              1: 'Unmatched',
+              2: 'Matched',
+              3: 'Cancelled',
+              4: 'Settled',
+              5: 'Void',
+              6: 'Suspended'}
+# mapping of polarity to name
+POLARITY_MAP = {1: 'BACK',
+                2: 'LAY'}
+
 class Order(object):
     """Used to place an order, and returned after an order is placed."""    
     
@@ -73,6 +85,10 @@ class Order(object):
             # newpersistence - for updating (BF only)
             # newprice       - for updating (BF only)
             # newstake       - for updating (BF only)
+            # tupdated       - the API parsing functions store the time 
+            #                  returned from BDAQ/BF API here.
+            # tplaced        - the API parsing functions store the time 
+            #                  returned from BDAQ/BF API here.
 
             setattr(self, kw, kwargs[kw])
 

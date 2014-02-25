@@ -234,6 +234,7 @@ def ParsePlaceOrdersNoReceipt(resp, olist):
     """Return list of order objects."""
 
     _check_errors(resp)
+    tstamp = resp.Timestamp
 
     # list of order refs - I am presuming BDAQ returns them in the order
     # the orders were given!
@@ -247,11 +248,17 @@ def ParsePlaceOrdersNoReceipt(resp, olist):
                                      o.polarity, **{'oref': ref, 'mid': o.mid,
                                                     'status': order.UNMATCHED,
                                                     'matchedstake': 0.0,
-                                                    'unmatchedstake': o.stake})
+                                                    'unmatchedstake': o.stake,
+                                                    # we will write t placed to the DB
+                                                    'tplaced': tstamp,
+                                                    'tupdated': tstamp})
     return allorders
 
 def ParseUpdateOrdersNoReceipt(resp, olist):
     """Return dictionary of updated order objects"""
+
+    _check_errors(resp)
+    tstamp = resp.Timestamp
 
     # the dict of orders we wanted to update
     odict = {o.oref : o for o in olist}
@@ -309,21 +316,34 @@ def ParseCancelOrders(resp, olist):
     """Return dict of order objects."""
 
     _check_errors(resp)
+    tstamp = resp.Timestamp
+
+    print resp
 
     # warning: according the the BDAQ API docs, we won't get
     # information back about any order that is subject to an in
     # running delay.
+
     odict = {o.oref: o for o in olist}
 
+    orefseen = []
     for o in resp.Orders.Order:
         oref = o._OrderHandle
-        odict[oref] = order.CANCELLED
-    return odict
+        orefseen.append(oref)
+
+        myo = odict[oref]
+        myo.status = order.CANCELLED
+        myo.tupdated = tstamp
+
+    # return information on the order refs we saw (which may not be
+    # all of them, due to the in running delay mentioned above).
+    return {k: odict[k] for k in odict if k in orefseen}
 
 def ParseCancelAllOrdersOnMarket(resp):
     """Return dict with key order id, value cancelled stake """
 
     _check_errors(resp)
+    tstamp = resp.Timestamp
 
     ocancel = {}
     # need hasattr since we get success even when no orders cancelled
@@ -340,6 +360,7 @@ def ParseCancelAllOrders(resp):
     """Return dict with key order id, value cancelled stake """
 
     _check_errors(resp)
+    tstamp = resp.Timestamp
 
     ocancel = {}
     # this is very similar to the above, but there is an extra layer
@@ -370,6 +391,7 @@ def ParseListOrdersChangedSince(resp):
     """Returns list of orders that have changed"""
 
     _check_errors(resp)
+    tstamp = resp.Timestamp
     
     if not hasattr(resp, 'Orders'):
         # no orders have changed
@@ -397,7 +419,8 @@ def ParseListOrdersChangedSince(resp):
         odict = {'oref': o._Id,
                  'status': o._Status,
                  'matchedstake' : o._MatchedStake,
-                 'unmatchedstake': o._UnmatchedStake}
+                 'unmatchedstake': o._UnmatchedStake,
+                 'tupdated': tstamp}
 
         allorders[o._Id] = order.Order(const.BDAQID, o._SelectionId,
                                        o._MatchedStake + o._UnmatchedStake,

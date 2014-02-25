@@ -1,7 +1,10 @@
+"""Models used in MVC style for the GUI."""
+
 from operator import itemgetter
 import matchguifunctions
+import stores
 from betman.strategy import strategy, cxstrategy, mmstrategy, position
-from betman import const, exchangedata, order, database
+from betman import const, exchangedata, database
 from betman.matchmarkets.matchconst import EVENTMAP
 from singleton import Singleton
 import managers
@@ -16,11 +19,11 @@ class AbstractModel(object):
     def __init__(self):
         self.listeners = []
 
-    def AddListener(self, listenerFunc):
-        self.listeners.append(listenerFunc)
+    def AddListener(self, listenerf):
+        self.listeners.append(listenerf)
 
-    def RemoveListener(self, listenerFunc):
-        self.listeners.remove(listenerFunc)
+    def RemoveListener(self, listenerf):
+        self.listeners.remove(listenerf)
 
     def Update(self):
         """
@@ -37,105 +40,37 @@ class AbstractModel(object):
         Execute all the listener functions, thus updating the views.
         """
         
-        for eachFunc in self.listeners:
-            eachFunc(self)
+        for eachf in self.listeners:
+            eachf(self)
 
 @Singleton
 class OrderModel(AbstractModel):
-    """Model for storing information on orders made.
+    """Model for tracking the orders used in the application.
 
-    Note this model encapsulates the data for ALL orders, not just a
-    single order.
+    This uses the OrderStore (stores.py).
 
     """
 
     def __init__(self):
         AbstractModel.__init__(self)
 
-        # dict that maps order ids to time placed
-        self.tplaced = {}
+        self._ostore = stores.OrderStore.Instance()
 
-        # dict that maps order ids to time most recently updated
-        self.tupdated = {}
+    def HaveMadeOrders(self):
+        """Have we made any orders since starting the application?"""
 
-        # the current state of all orders placed since the start of
-        # the application.  The keys to each sub-dictionary are the
-        # order ids.
-        self.orders = {const.BDAQID: {}, const.BFID: {}}
+        return bool(self._ostore.get_current_orders(const.BDAQID) or
+                    self._ostore.get_current_orders(const.BFID))
 
-        # for writing to database
-        self._dbman = database.DBMaster()
+    def GetBDAQOrders(self):
+        """Return dict of BDAQ orders."""
 
-    def add_new_orders(self, odict, tplaced):
-        """Add orders to the model.  
+        return self._ostore.get_current_orders(const.BDAQID)
 
-        odict   - dictionary of orders with keys const.BDAQID and
-                  const.BFID, values that are lists of order objects.
-        tplaced - time at which the orders were place (a datetime object).
+    def GetBFOrders(self):
+        """Return dict of BF orders."""
 
-        Note the orders in odict need to have already been placed
-        using the BDAQ and/or BF API (otherwise we won't have an order
-        id).
-
-        """
-
-        # update the dictionary of orders that we have placed
-        # since starting the application.
-        self.orders[const.BDAQID].update(odict.get(const.BDAQID, {}))
-        self.orders[const.BFID].update(odict.get(const.BFID, {}))
-
-        for k in odict:
-            for o in odict[k].values():
-                self.tplaced[o.oref] = tplaced
-                self.tupdated[o.oref] = tplaced
-
-        # save to DB
-        self.write_db(odict, tplaced)
-
-    def get_unmatched_orders(self, exid):
-        """Return list of unmatched orders for exchange exid."""
-        
-        unmatched = []
-        for o in self.orders[exid].values():
-            if o.status == order.UNMATCHED:
-                unmatched.append(o)
-        return unmatched
-
-    def update_orders(self, exid, odict, ounmatched, tupdated):
-        """Update currently existing orders for a particular exchange.
-
-        exid       - either const.BDAQID or const.BFID
-        odict      - dictionary of order objects received from API (BF/BDAQ)
-        ounmatched - LIST of order objects unmatched on the exchange (BF/BDAQ)
-        tupdated   - the time of the update
-
-        """
-
-        if (exid == const.BFID):
-            # since we use GetMUBets for getting BF bet status, we
-            # won't return any cancelled/voided orders.  But we will
-            # still be tracking them in this order model as being
-            # unmatched.  Therefore, we need to remove these orders
-            # from our internal tracker self.orders (specifically, we
-            # set their status to order.CANCELLED).  Note this is the
-            # method BF recommends for application developers (see p85
-            # of the reference guide).
-            unmatcheddict = {o.oref: o for o in ounmatched}
-            for oid in unmatcheddict:
-                if oid not in odict:
-                    print 'order id {0} was CANCELLED'.format(oid), self.orders[exid][oid]
-                    self.orders[exid][oid].status = order.CANCELLED
-
-        self.orders[exid].update(odict)
-        
-        for o in odict.values():
-            self.tupdated[o.oref] = tupdated
-
-    def write_db(self, odict, tplaced):
-        ords = [o.values() for o in odict.values()]
-        allords = [item for subl in ords for item in subl]
-
-        self._dbman.write_orders(allords, tplaced)
+        return self._ostore.get_current_orders(const.BFID)
 
 @Singleton
 class PriceModel(AbstractModel):
@@ -241,7 +176,7 @@ class MatchSelectionsModel(AbstractModel):
         # singleton that controls DB access
         self._dbman = database.DBMaster()
 
-    def GetMatchingSels(self, bdaqmid, bfmid, refresh = False):
+    def GetMatchingSels(self, bdaqmid, bfmid, refresh=False):
         """
         Return lists bdaqsels, bfsels, where bdaqsels[i] is the
         selection that matches bfsels[i], and the ordering of the
@@ -322,30 +257,6 @@ class MatchMarketsModel(AbstractModel):
         else:
             self.InitCachesEmpty()
 
-    def InitCachesEmpty(self):
-        """
-        Initialise the matching markets cache as empty.
-        """
-        
-        for ename in EVENTMAP:
-            self._match_cache[ename] = []
-            # the other caches are set to be empty after __init__
-
-    def GetMids(self, ename, index):
-        bdaqmid = self._match_cache[ename][index][0].id
-        bfmid = self._match_cache[ename][index][1].id
-        
-        return bdaqmid, bfmid
-
-    def GetBFMidFromBDAQMid(self, bdaqmid):
-        return self._BDAQmap_cache[bdaqmid]
-
-    def GetBDAQMidFromBFMid(self, bfmid):
-        return self._BFmap_cache[bfmid]
-
-    def GetNameFromBDAQMid(self, bdaqmid):
-        return self._BDAQ_cache[bdaqmid].name
-
     def InitCachesFromDB(self):
         """
         Initialise the matching markets cache from the SQLite
@@ -355,6 +266,37 @@ class MatchMarketsModel(AbstractModel):
         for ename in EVENTMAP:
             mmarks = self._dbman.return_market_matches([ename])
             self.SetCaches(ename, mmarks)
+
+    def InitCachesEmpty(self):
+        """
+        Initialise the matching markets cache as empty.
+        """
+        
+        for ename in EVENTMAP:
+            self._match_cache[ename] = []
+            # the other caches are set to be empty after __init__
+
+    def GetBFMidFromBDAQMid(self, bdaqmid):
+        return self._BDAQmap_cache[bdaqmid]
+
+    def GetBDAQMidFromBFMid(self, bfmid):
+        return self._BFmap_cache[bfmid]
+
+    def GetMarketName(self, ename, index):
+        """
+        Return market name for particular event with particular index.
+        """
+        
+        return self._match_cache[ename][index][0].name
+
+    def GetMids(self, ename, index):
+        bdaqmid = self._match_cache[ename][index][0].id
+        bfmid = self._match_cache[ename][index][1].id
+        
+        return bdaqmid, bfmid
+
+    def GetNameFromBDAQMid(self, bdaqmid):
+        return self._BDAQ_cache[bdaqmid].name
 
     def SetCaches(self, ename, mmarks):
         # ordered list of matching markets for event ename
@@ -374,13 +316,6 @@ class MatchMarketsModel(AbstractModel):
 
             # map bf mid to market object
             self._BF_cache[m2id] = m2
-
-    def GetMarketName(self, ename, index):
-        """
-        Return market name for particular event with particular index.
-        """
-        
-        return self._match_cache[ename][index][0].name
 
     def Update(self, ename, refresh=False):
         """
@@ -462,8 +397,6 @@ class StrategyModel(AbstractModel):
             setattr(self.strategy, managers.UTICK, newfreq)
 
     def Update(self, prices):
-        # we provide
-        # new_states - 
         # check that there is an underlying strategy, and that it was
         # updated in the last tick
         if self.strategy is not None:

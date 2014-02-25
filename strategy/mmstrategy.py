@@ -4,7 +4,7 @@
 
 """Market making strategy."""
 
-from betman import const, order
+from betman import const, order, exchangedata
 from betman.strategy import strategy
 
 # commission on winnings taken from both exchanges.
@@ -98,7 +98,7 @@ class MMStrategy(strategy.Strategy):
     def get_orders_to_place(self):
         return self.toplace
 
-    def update_orders(self, orders):
+    def update_orders(self, ostore):
         """
         Update order information for any outstanding orders for this strategy.
 
@@ -112,19 +112,20 @@ class MMStrategy(strategy.Strategy):
             if hasattr(self.border, 'oref'):
                 # we already know the order reference, just see if the
                 # order has changed.
-                if self.border.oref in orders[self.border.exid]:
-                    self.border = orders[self.border.exid][self.border.oref]
+                border = ostore.get_order(self.border.exid, self.border.oref)
+                if border is not None:
+                    self.border = border
             else: # we need to figure out which order in the orders
                   # dictionary is ours! (we should only have to do
                   # this once, on the tick after which the order was
                   # placed).
-                  border = self.find_order_in_dict(self.border, orders)
+                  border = self.find_order_in_dict(self.border, ostore._orders)
                   if border:
                       print 'found order with id', border.oref
                       self.border = border
                       # add the order to the list of successfully
                       # placed orders
-                      self.allorders.append(border)
+                      self.allorefs[border.exid].append(border.oref)
                   else:
                       print 'warning: could not find border in dictionary!'
 
@@ -132,19 +133,20 @@ class MMStrategy(strategy.Strategy):
             if hasattr(self.lorder, 'oref'):
                 # we already know the order reference, just see if the
                 # order has changed.
-                if self.lorder.oref in orders[self.lorder.exid]:
-                    self.lorder = orders[self.lorder.exid][self.lorder.oref]
+                lorder = ostore.get_order(self.lorder.exid, self.lorder.oref)
+                if lorder is not None:
+                    self.lorder = lorder
             else: # we need to figure out which order in the orders
                   # dictionary is ours! (we should only have to do
                   # this once, on the tick after which the order was
                   # placed).
-                  lorder = self.find_order_in_dict(self.lorder, orders)
+                  lorder = self.find_order_in_dict(self.lorder, ostore._orders)
                   if lorder:
                       print 'found order with id', lorder.oref
                       self.lorder = lorder
                       # add the order to the list of successfully
                       # placed orders
-                      self.allorders.append(lorder)
+                      self.allorefs[border.exid].append(lorder.oref)
                   else:
                       print 'warning: could not find lorder in dictionary!'
 
@@ -180,6 +182,8 @@ class MMStrategy(strategy.Strategy):
 
     def update_ttl(self, ttl):
         """Update time to live (if added by automation only)."""
+
+        print 'updated ttl of strategy {0} to {1}'.format(self.sel.name, ttl)
 
         self.ttl = ttl
 
@@ -241,18 +245,21 @@ class MMStrategy(strategy.Strategy):
                                                # cancel running (for
                                                # BDAQ) and persistence
                                                # (for BF)
-                                               'cancelrunning' : False,
-                                               # warning: only some BF markets allow 'IP' persistence!
-                                               # (and only some allow SP persistence)
-                                               'persistence' : 'SP'})
+                                               'cancelrunning' : True,
+                                               # warning: only some BF
+                                               # markets allow 'IP'
+                                               # persistence!  (and
+                                               # only some allow SP
+                                               # persistence)
+                                               'persistence' : 'NONE'})
 
         self.lorder = order.Order(sel.exid, sel.id, lstake,
                                   olay, 2, **{'mid': sel.mid,
                                               'src': sel.src,
                                               'wsn': sel.wsn,
                                               'sname': sel.name,
-                                              'cancelrunning' : False,
-                                              'persistence' : 'SP'})
+                                              'cancelrunning' : True,
+                                              'persistence' : 'NONE'})
 
     def close_position(self):
         """
@@ -263,16 +270,16 @@ class MMStrategy(strategy.Strategy):
         """
         
         exid = self.sel.exid
-        if self.mmstrat.back_bet_matched():
+        if self.back_bet_matched():
             # adjust lay bet, make it a 'market' order so it will get
             # matched.  Note we try to lay at one worse odds
             # (i.e. higher odds) than the current best lay, to make
             # sure the bet is matched.  We don't adjust the stake so
             # we aren't 'locking in a loss'.
             lodds = exchangedata.next_longer_odds(exid, self.sel.best_lay())
-            self.lorder.update(price=bodds)
+            self.lorder.update(price=lodds)
             self.toupdate[exid] = [self.lorder]
-        elif self.mmstrat.lay_bet_matched():
+        elif self.lay_bet_matched():
             # adjust back bet, make it a 'market' order so it will get
             # matched.  Note we try to back at one worse odds than the
             # current best back, to make sure the bet is matched.  We
@@ -354,7 +361,7 @@ class MMStateBothPlaced(strategy.State):
 
         # if we are part of an automation and have limited time to
         # live, close out position and go into 'finished' state.
-        if self.mmstrat.ttl < self.TTL_CLOSE:
+        if self.mmstrat.ttl < self.mmstrat.TTL_CLOSE:
             self.mmstrat.close_position()
             return 'finished'
 
@@ -369,7 +376,7 @@ class MMStateBackMatched(strategy.State):
 
         # if we are part of an automation and have limited time to
         # live, close out position and go into 'finished' state.
-        if self.mmstrat.ttl < self.TTL_CLOSE:
+        if self.mmstrat.ttl < self.mmstrat.TTL_CLOSE:
             self.mmstrat.close_position()
             return 'finished'
 
@@ -384,7 +391,7 @@ class MMStateLayMatched(strategy.State):
 
         # if we are part of an automation and have limited time to
         # live, close out position and go into 'finished' state.
-        if self.mmstrat.ttl < self.TTL_CLOSE:
+        if self.mmstrat.ttl < self.mmstrat.TTL_CLOSE:
             self.mmstrat.close_position()
             return 'finished'
 
