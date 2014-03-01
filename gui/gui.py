@@ -1,12 +1,11 @@
 import wx
 import const
-import managers
+from betman.core import engine, managers
 import models
 from frames.mainframe import MyFrame
-from config import GlobalConfig
+from betman.core.config import GlobalConfig
 import os
 import sys
-import engine
 
 class MyApp(wx.App):
     """Main app instance."""
@@ -166,7 +165,7 @@ class MyApp(wx.App):
         # this tick.
 
         # (i) pricing model.
-        self.pmodel.Update(self.engine.pmanager.new_prices)
+        self.pmodel.Update(self.engine.pmanager.pstore.newprices)
 
         # (ii) order model.
         self.omodel.Update(self.engine.omanager.ostore)

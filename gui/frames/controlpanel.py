@@ -2,7 +2,7 @@ import wx
 import models
 import const
 from betman.strategy import updatestrategy
-import managers
+from betman.core import managers
 
 class ControlPanel(wx.Panel):
     """Panel for setting market refresh rate, etc."""

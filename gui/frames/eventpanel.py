@@ -1,6 +1,6 @@
 import wx
 import wx.lib.scrolledpanel as scrolledpanel
-from betman.matchmarkets.matchconst import EVENTMAP
+from betman.matching.matchconst import EVENTMAP
 
 class EventPanel(scrolledpanel.ScrolledPanel):
     """

@@ -6,7 +6,7 @@
 
 from betman import const, order, util
 from operator import attrgetter
-import stores
+from betman.core import stores
 
 class PositionTracker(object):
     """Position tracker for a strategy involving a single selection."""

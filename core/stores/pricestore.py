@@ -6,7 +6,8 @@ writing order and price information to the database.
 
 """
 
-from ..singleton import Singleton
+from betman import const
+from betman.all.singleton import Singleton
 
 @Singleton
 class PriceStore(object):

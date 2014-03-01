@@ -1,7 +1,7 @@
 import wx
 from wx.lib.agw import ultimatelistctrl as Ulc
 from models import OrderModel
-from stores import OrderStore
+from betman.core import stores
 from betman import const, order
 import models
 

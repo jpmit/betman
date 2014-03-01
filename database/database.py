@@ -8,7 +8,7 @@ import os
 import sqlite3
 from betman import const, Market, Selection, util, order
 from betman.all.betexception import DbError, DbCorruptError
-from betman.matchmarkets.matchconst import EVENTMAP
+from betman.matching.matchconst import EVENTMAP
 import schema
 
 class DBMaster(object):

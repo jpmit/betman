@@ -3,8 +3,8 @@ import wx.lib.scrolledpanel as scrolledpanel
 import const
 import graphframe
 import monitorframe
-import managers
-import models
+from betman.core import managers
+from betman.gui import models
 from betman.strategy import strategy, cxstrategy, mmstrategy, bothmmstrategy
 
 # available strategies, names and 'constructors'

@@ -8,7 +8,7 @@ and price information to the database.
 """
 
 from betman import const, database, order, util
-from ..singleton import Singleton
+from betman.all.singleton import Singleton
 
 @Singleton
 class OrderStore(object):

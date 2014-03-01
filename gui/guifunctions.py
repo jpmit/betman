@@ -3,16 +3,16 @@
 # jamesmithen@gmail.com
 
 """
-A lot of ugly stuff that goes on behind the scenes...
-TODO: sort this out a bit.
+A lot of ugly stuff that goes on behind the scenes...  TODO: sort
+this out a bit.  It should be possible to get rid of this entire
+module really...
 """
 
 import datetime
 from operator import itemgetter
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
-import betman.matchmarkets.marketmatcher as marketmatcher
-import betman.matchmarkets.matchconst as matchconst
+from betman.matching import marketmatcher, matchconst
 from betman import database, const
 
 class GuiError(Exception):

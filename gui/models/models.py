@@ -1,13 +1,12 @@
 """Models used in MVC style for the GUI."""
 
 from operator import itemgetter
-import matchguifunctions
-import stores
+from betman.gui import guifunctions
+from betman.core import stores, managers
 from betman.strategy import strategy, cxstrategy, mmstrategy, position
 from betman import const, exchangedata, database, order
-from betman.matchmarkets.matchconst import EVENTMAP
-from singleton import Singleton
-import managers
+from betman.matching.matchconst import EVENTMAP
+from betman.all.singleton import Singleton
 import numpy as np
 
 class AbstractModel(object):
@@ -260,7 +259,7 @@ class MatchSelectionsModel(AbstractModel):
         if callapi:
             # call BDAQ and BF api to get selections, and store in
             # local cache.
-            bdaqsels, bfsels = matchguifunctions.\
+            bdaqsels, bfsels = guifunctions.\
                                market_prices(bdaqmid, bfmid)
 
         # put entries into match cache.
@@ -409,7 +408,7 @@ class MatchMarketsModel(AbstractModel):
         if refresh:
             # code to set match cache; note this will automatically
             # save the details to the DB.
-            mmarks = matchguifunctions.match_markets(ename)
+            mmarks = guifunctions.match_markets(ename)
             self.SetCaches(ename, mmarks)
 
         # update should call the function that updates the view
