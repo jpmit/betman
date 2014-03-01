@@ -122,6 +122,7 @@ class MyApp(wx.App):
         """
         
         self.pmodel = models.PriceModel.Instance()
+        self.omodel = models.OrderModel.Instance()
         self.strat_models = {}
         self.graph_models = {}
 
@@ -167,7 +168,10 @@ class MyApp(wx.App):
         # (i) pricing model.
         self.pmodel.Update(self.engine.pmanager.new_prices)
 
-        # (ii) strategy models (keyed by BDAQ selection name).  note
+        # (ii) order model.
+        self.omodel.Update(self.engine.omanager.ostore)
+
+        # (iii) strategy models (keyed by BDAQ selection name).  note
         # that updating these models is distinct from updating the
         # underlying strategies (which is done by the engine).  The
         # models are updated here so that the views seen by the user
@@ -177,7 +181,7 @@ class MyApp(wx.App):
         for k in self.strat_models:
             self.strat_models[k].Update(self.engine.pmanager.new_prices)
 
-        # (iii) graph models (keyed by BDAQ selection name).
+        # (iv) graph models (keyed by BDAQ selection name).
         for k in self.graph_models:
             self.graph_models[k].Update(self.engine.pmanager.new_prices)
 

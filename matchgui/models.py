@@ -4,7 +4,7 @@ from operator import itemgetter
 import matchguifunctions
 import stores
 from betman.strategy import strategy, cxstrategy, mmstrategy, position
-from betman import const, exchangedata, database
+from betman import const, exchangedata, database, order
 from betman.matchmarkets.matchconst import EVENTMAP
 from singleton import Singleton
 import managers
@@ -45,32 +45,74 @@ class AbstractModel(object):
 
 @Singleton
 class OrderModel(AbstractModel):
-    """Model for tracking the orders used in the application.
-
-    This uses the OrderStore (stores.py).
-
-    """
+    """Model for displaying live orders (see livebetsframe.py)."""
 
     def __init__(self):
         AbstractModel.__init__(self)
 
-        self._ostore = stores.OrderStore.Instance()
+        # dictionary mapping the orefs of the live orders we are
+        # interested in to order objects.  This is useful since we can
+        # get rid of settled/voided/cancelled orders when updated if
+        # we don't want to view them in the panel (just like BDAQ
+        # does).
+        self._lorders = []
 
-    def HaveMadeOrders(self):
-        """Have we made any orders since starting the application?"""
+    def Update(self, ostore):
+        # see if any of the orders we are currently tracking were
+        # updated on the last tick
+        updated = ostore.latest_updates
 
-        return bool(self._ostore.get_current_orders(const.BDAQID) or
-                    self._ostore.get_current_orders(const.BFID))
+        # dicts of orders that were cancelled, updated, or newly
+        # placed using the API.
+        cords, uords, newords = ostore.latest
 
-    def GetBDAQOrders(self):
-        """Return dict of BDAQ orders."""
+        # remove/update orders I currently hold.
+        torem = []
+        for i, o in enumerate(self._lorders):
+            oref = o.oref
+            if oref in cords:
+                o.status = order.CANCELLED
+                o._DRAW = True
+                torem.append(i)
+            if oref in updated[o.exid]:
+                newo = updated[o.exid][o.oref]
+                newo._DRAW = True
+                # might need to add a few more things from the old
+                # order object
+                self._lorders[i] = newo
+            if oref in uords:
+                newo = updated[o.oref]
+                newo._DRAW = True
+                # might need to add a few more things from the old
+                # order object
+                self._lorders[i] = newo
+        
+        torem.reverse()
+        for i in torem:
+            self._lorders.pop(i)
 
-        return self._ostore.get_current_orders(const.BDAQID)
+        # add new orders.
+        for o in newords[const.BDAQID].values() + newords[const.BFID].values():
+            self._lorders.append(o)
 
-    def GetBFOrders(self):
-        """Return dict of BF orders."""
+        if (cords or uords or newords or updated[const.BDAQID] or updated[const.BFID]):
+            self.UpdateViews()
 
-        return self._ostore.get_current_orders(const.BFID)
+    # def HaveMadeOrders(self):
+    #     """Have we made any orders since starting the application?"""
+
+    #     return bool(self._ostore.get_current_orders(const.BDAQID) or
+    #                 self._ostore.get_current_orders(const.BFID))
+
+    # def GetBDAQOrders(self):
+    #     """Return dict of BDAQ orders."""
+
+    #     return self._ostore.get_current_orders(const.BDAQID)
+
+    # def GetBFOrders(self):
+    #     """Return dict of BF orders."""
+
+    #     return self._ostore.get_current_orders(const.BFID)
 
 @Singleton
 class PriceModel(AbstractModel):
@@ -173,6 +215,14 @@ class MatchSelectionsModel(AbstractModel):
         # cache immediately, we add to the cache 'as needed'.
         self._match_cache = {}
 
+        # map a BF sid to a BDAQ sid
+        self._BFmap_cache = {}
+
+        # map a BDAQ sid to selection object.  Note: we do not have an
+        # equivalent cache for BF sid's since these do not map
+        # uniquely onto selections (an annoying feature of the BF API).
+        self._BDAQ_cache = {}
+
         # singleton that controls DB access
         self._dbman = database.DBMaster()
 
@@ -216,7 +266,23 @@ class MatchSelectionsModel(AbstractModel):
         # put entries into match cache.
         self._match_cache[bdaqmid] = (bdaqsels, bfsels)
 
+        # and into map cache from BF sid to BDAQ sid, and cache from
+        # BDAQ sid to selection object.
+        seldict = {}
+        for s1, s2 in zip(bdaqsels, bfsels):
+            seldict[s2.id] = s1.id
+            self._BDAQ_cache[s1.id] = s1
+        self._BFmap_cache[bfmid] = seldict
+
         return bdaqsels, bfsels
+
+    def GetBDAQName(self, exid, mid, sid):
+        """Return BDAQ name of selection."""
+
+        if (exid == const.BFID):
+            # map BF sid to BDAQ sid
+            sid = self._BFmap_cache[mid][sid]
+        return self._BDAQ_cache[sid].name
 
 @Singleton
 class MatchMarketsModel(AbstractModel):
@@ -295,8 +361,24 @@ class MatchMarketsModel(AbstractModel):
         
         return bdaqmid, bfmid
 
+    def GetName(self, exid, mid):
+        if (exid == const.BDAQID):
+            return self.GetNameFromBDAQMid(mid)
+        elif (exid == const.BFID):
+            return self.GetNameFromBFMid(mid)            
+        else:
+            return ''
+
+    def GetBDAQNameFromMid(self, exid, mid):
+        if (exid == const.BFID):
+            mid = self.GetBDAQMidFromBFMid(mid)
+        return self.GetNameFromBDAQMid(mid)
+
     def GetNameFromBDAQMid(self, bdaqmid):
         return self._BDAQ_cache[bdaqmid].name
+
+    def GetNameFromBFMid(self, bfmid):
+        return self._BF_cache[bfmid].name
 
     def SetCaches(self, ename, mmarks):
         # ordered list of matching markets for event ename

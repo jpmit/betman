@@ -147,70 +147,17 @@ class OrderManager(object):
             corders, uorders, neworders = multi.\
                                           make_orders(ocancel, oupdate, onew)
 
-            # note we use our own internal tplaced rather than
-            # anything returned by either BF or BDAQ (may want to
-            # change this at some point).
-            #tplaced = datetime.datetime.now()
-
             # save the full order information to the order store (this will
             # handle writing to the DB, etc.)
             self.ostore.add_orders(corders, uorders, neworders)
 
-            # this will update the views connected to ostore
-            self.ostore.Update()
-
-            # TODO: something with the cancel and update order info we
-            # got back from multi.make_orders.
-
-            # save the information on matching orders to the DB.  Note
-            # we are assuming here that if the number of orders on
-            # each exchange are the same, then orders are made of
-            # matching orders.
-            # TODO: work out how to sensibly do this for
-            # cross-exchange strategies only, as this could get tricky
-            # when placing many orders.
-
-            #if (len(odict.get(const.BDAQID, [])) == len(odict.get(const.BFID, []))):
-            #    self.save_match_orders(odict, saveorders)
-
-    # def save_match_orders(self, odict, saveorders):
-    #     """Save matching order ids to database table matchorders
-        
-    #     odict - dictionary of orders just placed, directly from
-    #             strategies (no order ids)
-        
-    #     saveorders - dictionary of all orders just placed (including
-    #                  order ids)
-
-    #     Here, we go through saveorders to find the orders that match
-    #     those in odict, in order to fill in the order ids.  We then
-    #     save the 'matching' orders to the DB.
-
-    #     This routine is really for the 'crossexchange' arbitrage
-    #     strategy, since an order on BDAQ (back/lay) is paired with
-    #     ('matched') an order of BF of opposite polarity (lay/back).
-    #     """
-
-    #     # since we got odict from each strategy in turn, they
-    #     # are already in matching order; we just need to add
-    #     # the order refs that were returned by the BDAQ and BF
-    #     # API.
-    #     matchorders = zip(odict[const.BDAQID], odict[const.BFID])
-    #     for (o1, o2) in matchorders:
+        else:
             
-    #         # we need to get the order id for o1 and o2 from
-    #         # saveorders dictionary
-    #         for o in saveorders[const.BDAQID].values():
-    #             if o1.sid == o.sid and o1.mid == o.mid:
-    #                 o1.oref = o.oref
-
-    #         for o in saveorders[const.BFID].values():
-    #             if o2.sid == o.sid and o2.mid == o.mid:
-    #                 o2.oref = o.oref
-
-    #     # write to DB
-    #     self.dbman.WriteOrderMatches(matchorders,
-    #                                  datetime.datetime.now())
+            # we need to set latest cancel, update, new orders to be
+            # empty.
+            self.ostore.latest = [{const.BDAQID: {}, const.BFID: {}}, 
+                                  {const.BDAQID: {}, const.BFID: {}}, 
+                                  {const.BDAQID: {}, const.BFID: {}}]
 
     def update_order_information(self):
 
@@ -225,6 +172,9 @@ class OrderManager(object):
 
         # get list of unmatched orders on BDAQ
         bdaqunmatched = self.ostore.get_unmatched_orders(const.BDAQID)
+            
+        # get list of unmatched orders on BF
+        bfunmatched = self.ostore.get_unmatched_orders(const.BFID)
 
         # only want to call BDAQ API if we have unmatched bets
         if bdaqunmatched:
@@ -232,23 +182,18 @@ class OrderManager(object):
             # number', so that we are updating information about all
             # orders.
             bdaqors = bdaqapi.ListOrdersChangedSince()
-            self.ostore.process_order_updates(const.BDAQID, bdaqors, 
-                                              bdaqunmatched)
-            
-        # get list of unmatched orders on BF
-        bfunmatched = self.ostore.get_unmatched_orders(const.BFID)
+        else:
+            bdaqors = {}
+        self.ostore.process_order_updates(const.BDAQID, bdaqors, 
+                                          bdaqunmatched)
 
         if bfunmatched:
             # we pass this function the list of order objects;
             bfors = bfapi.GetBetStatus(bfunmatched)
-            # update order dictionary
-            self.ostore.process_order_updates(const.BFID, bfors, 
-                                              bfunmatched)
-
-        if bdaqunmatched or bfunmatched:
-            # updating the order store means that the order store will
-            # update its views
-            self.ostore.Update()
+        else:
+            bfors = {}
+        self.ostore.process_order_updates(const.BFID, bfors, 
+                                          bfunmatched)
 
 class PricingManager(object):
     def __init__(self, stratgroup):

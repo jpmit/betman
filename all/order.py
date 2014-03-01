@@ -71,6 +71,7 @@ class Order(object):
             # notable kwargs (and therefore possible instance attributes) are:
             # not set at instantiation above:
             # oref           - reference number from API
+            # mid            - market id
             # matchedstake   - amount of order matched
             # unmatchedstake - amount of order unmatched
             # sname          - name of the selection that order is for

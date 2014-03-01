@@ -13,7 +13,7 @@ everything in memory.
 
 from betman import const, database, order, util
 from singleton import Singleton
-from models import AbstractModel
+#from models import AbstractModel
 
 @Singleton
 class PriceStore(object):
@@ -21,7 +21,7 @@ class PriceStore(object):
     pass
 
 @Singleton
-class OrderStore(AbstractModel):
+class OrderStore(object):
     """Model for storing information on orders made.
 
     Note this model encapsulates the data for ALL orders, not just a
@@ -30,8 +30,6 @@ class OrderStore(AbstractModel):
     """
 
     def __init__(self):
-
-        AbstractModel.__init__(self)
 
         # the current state of all orders placed since the start of
         # the application.  The keys to each sub-dictionary are the
@@ -52,6 +50,16 @@ class OrderStore(AbstractModel):
 
         # for writing to database
         self._dbman = database.DBMaster()
+
+        # store dicts of cancelled, updated and new orders placed by
+        # the APIs from the latest tick.
+        self.latest = [{const.BDAQID: {}, const.BFID: {}}, 
+                       {const.BDAQID: {}, const.BFID: {}}, 
+                       {const.BDAQID: {}, const.BFID: {}}]
+
+        # store dict of updated orders from last tick (from querying
+        # order status via the API).
+        self.latest_updates = {const.BDAQID: {}, const.BFID: {}}
 
     def get_tplaced(self, o):
         """Return time placed (a datetime.datetime object_ for order o."""
@@ -118,6 +126,10 @@ class OrderStore(AbstractModel):
         if neworders:
             self.add_new_orders(neworders)
 
+        # we store the cancelled, updated and new orders in a list
+        # every time.
+        self.latest = [corders, uorders, neworders]
+
     def add_cancel_orders(self, odict):
         """Add cancelled orders to the store.
 
@@ -161,8 +173,6 @@ class OrderStore(AbstractModel):
 
         # get flat list of all order objects
         ordlist = util.flattendict(odict)
-#        ords = [o.values() for o in odict.values()]
-#        allords = [item for subl in ords for item in subl]
 
         # store time placed
         for o in ordlist:
@@ -200,7 +210,10 @@ class OrderStore(AbstractModel):
         return unmatched
 
     def process_order_updates(self, exid, odict, ounmatched):
-        """Update currently existing orders for a particular exchange.
+        """Process updating status of currently existing orders.
+
+        Here we are processing the results of call to
+        ListOrdersChangedSince (BDAQ) or GetBetStatus (BF).
 
         exid       - either const.BDAQID or const.BFID
         odict      - dictionary of order objects received from API (BF/BDAQ)
@@ -223,5 +236,14 @@ class OrderStore(AbstractModel):
                 if oid not in odict:
                     print 'order id {0} was CANCELLED'.format(oid), self._orders[exid][oid]
                     self._orders[exid][oid].status = order.CANCELLED
+
+        # next, for all of the orders we got back from either BDAQ or
+        # BF, we want to put in the market id, since this information
+        # isn't returned by the API.
         
+                                        
+        # update main order dictionary
         self._orders[exid].update(odict)
+
+        # refresh latest update dict
+        self.latest_updates[exid] = odict
