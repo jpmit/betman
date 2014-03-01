@@ -7,6 +7,7 @@
 #        print 'Foo created'
 #
 # Note that __init__ method cannot take any additional arguments.
+
 class Singleton:
     """
     A non-thread-safe helper class to ease implementing singletons.

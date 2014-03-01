@@ -21,6 +21,7 @@ appropriate stores.
 * finish sorting out how and when info is written to the DB
 * Test updating and cancelling orders on BF
 * Make the GUI functional as a 'live' trading machine
+- init OrderStore and PriceStore from DB (?)
 - make all network calls use new threads so we don't block GUI
 - add agressive setting(s) to MM strategy 
 - figure out why GetMUBets is very slow

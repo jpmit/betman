@@ -13,7 +13,7 @@ import datetime
 from betman import const, multi, database, order, betlog
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
-from stores import OrderStore
+from stores import OrderStore, PriceStore
 from operator import attrgetter
 import wx
 
@@ -200,12 +200,15 @@ class PricingManager(object):
 
         self.stratgroup = stratgroup
 
+        # the price store actually holds the data
+        self.pstore = PriceStore.Instance()
+
         # current prices
-        self.prices = {const.BDAQID: {}, const.BFID: {}}
+        #self.prices = {const.BDAQID: {}, const.BFID: {}}
 
         # same as above but only contains mids that were updated in
         # the last tick.
-        self.new_prices = {const.BDAQID: {}, const.BFID: {}}
+        #self.new_prices = {const.BDAQID: {}, const.BFID: {}}
 
     def get_strategy_with_mid(bdaqmid):
         """
@@ -263,7 +266,7 @@ class PricingManager(object):
             print 'updating mids', update_mids
 
         # call BDAQ and BF API
-        self.new_prices, emids = multi.update_prices(update_mids)
+        new_prices, emids = multi.update_prices(update_mids)
 
         # remove any strategies from the strategy list that depend on
         # any of the BDAQ or BF markets in emids.
@@ -271,5 +274,5 @@ class PricingManager(object):
             if emids.get(myid):
                 self.stratgroup.remove_marketids(myid, emids[myid])
 
-        # merge the new prices dict into self.prices
-        self.prices.update(self.new_prices)
+        # add the new prices to the price store
+        self.pstore.add_prices(new_prices)

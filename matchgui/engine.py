@@ -85,7 +85,7 @@ class Engine(object):
         At the moment, we:
 
         (i) update any 'automations' (which automatically add or
-        remove strategies) every 60 ticks.
+        remove strategies).
 
         (ii) update order information (using BDAQ/BF API) every tick.
         We then push this new order information to the strategies.
@@ -96,8 +96,9 @@ class Engine(object):
         triggers the AI for the strategies, which decides whether to
         cancel/modify/create orders etc.
 
-        (iv) make any new orders, only considering strategies that got
-        new prices (i.e. in part (iii) above) on the current tick.
+        (iv) cancel/update/make new orders, only considering
+        strategies that got new prices (i.e. in part (iii) above) on
+        the current tick.
 
         """
 
@@ -128,11 +129,12 @@ class Engine(object):
         # update strategies which got new prices this tick.  As well
         # as feeding the strategy the new prices, we do the thinking
         # 'AI' here, changing state, generating any new orders etc.
-        self.stratgroup.update_prices_if(self.pmanager.prices,
+        self.stratgroup.update_prices_if(self.pmanager.pstore.newprices,
                                          managers.UPDATED)
 
-        # make any new orders (note we only make new orders for
-        # strategies that got new prices this tick, see managers.py).
+        # cancel, update, and make any new orders (note we only make
+        # new orders for strategies that got new prices this tick, see
+        # managers.py).
         self.omanager.make_orders()
 
         print 'TICKS', self.ticks

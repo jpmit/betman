@@ -2,7 +2,7 @@ import wx
 import const
 import managers
 import models
-from mainframe import MyFrame
+from frames.mainframe import MyFrame
 from config import GlobalConfig
 import os
 import sys
