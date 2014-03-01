@@ -211,12 +211,42 @@ def ParseListBootstrapOrders(resp):
     # create and return list of order objects.    
     allorders = {}
     for o in resp.Orders.Order:
+
+        # The complete information returned by BDAQ for each order
+        # looks like this:
+        # {
+        #    _Polarity = 1
+        #    _Status = 1
+        #    _TotalForSideTakeStake = 0.0
+        #    _TotalForSideMakeStake = 0.0
+        #    _CancelOnInRunning = True
+        #    _SequenceNumber = 7857
+        #    _SelectionId = 21412244
+        #    _MatchedPrice = 0.0
+        #    _MatchedStake = 0.0
+        #    _MatchedAgainstStake = 0.0
+        #    _CancelIfSelectionReset = False
+        #    _MarketId = 3886077
+        #    _UnmatchedStake = 1.0
+        #    _MakeCommissionRate = 5.0
+        #    _PunterReferenceNumber = 0
+        #    _TakeCommissionRate = 5.0
+        #    _IssuedAt = 2014-03-01 12:12:44.563000
+        #    _RequestedPrice = 6.6
+        #    _IsCurrentlyInRunning = False
+        #    _Id = 2184011240
+        #    _PunterCommissionBasis = 1
+        #    OrderCommissionInformation = 
+        #       (OrderCommissionInformationType){
+        #          _OrderCommission = 0.0
+        #       }
+        #  }
+
         sid = o._SelectionId
+        mid = o._MarketId
         ustake = o._UnmatchedStake
         mstake = o._MatchedStake
         stake = ustake + mstake
-        # note we also get back '_MatchedPrice' if matched; this could
-        # be better than '_RequestedPrice'.
         price = o._RequestedPrice
         pol = o._Polarity
         oref = o._Id
@@ -224,6 +254,7 @@ def ParseListBootstrapOrders(resp):
         
         allorders[oref] = order.Order(const.BDAQID, sid, stake, price,
                                       pol, **{'oref': oref,
+                                              'mid': mid,
                                               'status': status,
                                               'matchedstake': mstake,
                                               'unmatchedstake': ustake})
@@ -416,8 +447,33 @@ def ParseListOrdersChangedSince(resp):
         # Note: at the moment we are not storing all of the data that
         # comes from the BDAQ API function, only the information that
         # seems useful...
+        # example of a full order dict returned is:
+        # {
+        #    _Polarity = 1
+        #    _Status = 1
+        #    _TotalForSideTakeStake = 0.0
+        #    _TotalForSideMakeStake = 0.0
+        #    _CancelOnInRunning = True
+        #    _SequenceNumber = 7857
+        #    _SelectionId = 21412244
+        #    _MatchedPrice = 0.0
+        #    _MatchedStake = 0.0
+        #    _MatchedAgainstStake = 0.0
+        #    _CancelIfSelectionReset = False
+        #    _MarketId = 3886077
+        #    _UnmatchedStake = 1.0
+        #    _MakeCommissionRate = 5.0
+        #    _PunterReferenceNumber = 0
+        #    _TakeCommissionRate = 5.0
+        #    _IssuedAt = 2014-03-01 12:12:44.563000
+        #    _RequestedPrice = 6.6
+        #    _IsCurrentlyInRunning = False
+        #    _Id = 2184011240
+        #    _PunterCommissionBasis = 1
+        #  }
         odict = {'oref': o._Id,
                  'status': o._Status,
+                 'mid': o._MarketId,
                  'matchedstake' : o._MatchedStake,
                  'unmatchedstake': o._UnmatchedStake,
                  'tupdated': tstamp}
