@@ -5,7 +5,6 @@ from betman.gui import guifunctions
 from betman.core import stores, managers
 from betman.strategy import strategy, cxstrategy, mmstrategy, position
 from betman import const, exchangedata, database, order
-from betman.matching.matchconst import EVENTMAP
 from betman.all.singleton import Singleton
 import numpy as np
 
@@ -136,30 +135,35 @@ class PriceModel(AbstractModel):
         self.bdaqsels = []
         self.bfsels = []
 
-        # we store a reference to a matching selections model, which
-        # gives us details on which BF selection matches which BDAQ
-        # selection.
-        self._selmodel = MatchSelectionsModel.Instance()
+        self._mstore = stores.MarketStore.Instance()
+        self._sstore = stores.SelectionStore.Instance()
 
         # We set these once the user has clicked on a matching market.
-        self.bdaqmid = None
-        self.bfmid = None
+        self._bdaqmid = None
+        self._bfmid = None
 
-    def SetMids(self, bdaqmid, bfmid):
-        self.bdaqmid = bdaqmid
-        self.bfmid = bfmid
+    def SetBDAQMid(self, bdaqmid):
+        self._bdaqmid = bdaqmid
+        self.bfmid = self._mstore.get_BFmid_from_BDAQmid(bdaqmid)
 
-    def SetSels(self, refresh = False):
-        """Initialize selections in the correct order."""
+    def GetMids(self):
+        return self._bdaqmid, self._bfmid
 
-        # this may call the BDAQ API
-        self.bdaqsels, self.bfsels = self._selmodel.\
-                                     GetMatchingSels(self.bdaqmid,
-                                                     self.bfmid)
+    def SetSels(self, refresh=False):
+        """Initialize selections in the correct display order."""
 
-        # indexdict means that the price of a particular bdaq
-        # selection name can be easily found.
-        self.indexdict = {s.name : i for (i, s) in enumerate(self.bdaqsels)}
+        # try getting the selections from the selection store
+        self.bdaqsels, self.bfsels = self._sstore.\
+                                     get_matching_sels(self._bdaqmid)
+
+        if (not self.bdaqsels) or (refresh):
+            # call BDAQ and BF api to get selections
+            bfmid = self._mstore.get_BFmid_from_BDAQmid(self._bdaqmid)
+            bdaqsels, bfsels = guifunctions.\
+                               market_prices(self._bdaqmid, bfmid)
+            # write this back to the selection store.
+            self._sstore.add_matching_selections(self.bdaqmid, bdaqsels,
+                                                 bfsels)
 
     def GetSelsByBDAQName(self, bdaqname):
         """
@@ -182,110 +186,21 @@ class PriceModel(AbstractModel):
         we need to.
         """
         
-        if self.bdaqmid != None:
+        if self._bdaqmid != None:
             # check that we got new prices for this selection this tick.
-            if (self.bdaqmid in prices[const.BDAQID] and
-                self.bfmid in prices[const.BFID]):
-                self.bdaqsels = [prices[const.BDAQID][self.bdaqmid][i]
+            if (self._bdaqmid in prices[const.BDAQID] and
+                self._bfmid in prices[const.BFID]):
+                self._bdaqsels = [prices[const.BDAQID][self.bdaqmid][i]
                                  for i in [s.id for s in self.bdaqsels]]
-                self.bfsels = [prices[const.BFID][self.bfmid][i]
+                self._bfsels = [prices[const.BFID][self.bfmid][i]
                                for i in [s.id for s in self.bfsels]]
 
                 # call the listener functions.
                 self.UpdateViews()
 
 @Singleton
-class MatchSelectionsModel(AbstractModel):
-    """Stores data on matching selections for all the different events."""
-    
-    # if usedb is set, we will initialise the matching markets cache
-    # from the sqlite database.
-    USEDB = True
-    
-    def __init__(self):
-        
-        AbstractModel.__init__(self)
-        #super(MatchSelectionsModel, self).__init__()
-
-        # matching selections keys are bdaqmid, values are
-        # [(bdaq_sels, bf_sels)] where bdaq_sels and bf_sels are lists
-        # of bdaq and bf selections, ordered as displayed on the BDAQ
-        # website.  Instead of dumping everything from the DB into the
-        # cache immediately, we add to the cache 'as needed'.
-        self._match_cache = {}
-
-        # map a BF sid to a BDAQ sid
-        self._BFmap_cache = {}
-
-        # map a BDAQ sid to selection object.  Note: we do not have an
-        # equivalent cache for BF sid's since these do not map
-        # uniquely onto selections (an annoying feature of the BF API).
-        self._BDAQ_cache = {}
-
-        # singleton that controls DB access
-        self._dbman = database.DBMaster()
-
-    def GetMatchingSels(self, bdaqmid, bfmid, refresh=False):
-        """
-        Return lists bdaqsels, bfsels, where bdaqsels[i] is the
-        selection that matches bfsels[i], and the ordering of the
-        selections is that given by the BDAQ display order.
-
-        We call the BDAQ and BF api to get this information if
-        necessary.
-        """
-
-        callapi = False # don't refresh prices using BDAQ/BF API
-                        # unless necessary.
-        if refresh:
-            callapi = True
-        else:
-            if bdaqmid in self._match_cache:
-                bdaqsels, bfsels = self._match_cache[bdaqmid]
-            else:
-                # try filling up the cache from the DB
-                msels = self._dbman.return_selection_matches([bdaqmid])
-
-                if msels:
-                    bdaqsels, bfsels = [itemgetter(0)(i) for i in msels],\
-                                       [itemgetter(1)(i) for i in msels]
-                    # check that display order is not None
-                    if bdaqsels[0].dorder is None:
-                        callapi = True
-                else:
-                    # didn't find any matching selections in DB
-                    callapi = True
-
-        if callapi:
-            # call BDAQ and BF api to get selections, and store in
-            # local cache.
-            bdaqsels, bfsels = guifunctions.\
-                               market_prices(bdaqmid, bfmid)
-
-        # put entries into match cache.
-        self._match_cache[bdaqmid] = (bdaqsels, bfsels)
-
-        # and into map cache from BF sid to BDAQ sid, and cache from
-        # BDAQ sid to selection object.
-        seldict = {}
-        for s1, s2 in zip(bdaqsels, bfsels):
-            seldict[s2.id] = s1.id
-            self._BDAQ_cache[s1.id] = s1
-        self._BFmap_cache[bfmid] = seldict
-
-        return bdaqsels, bfsels
-
-    def GetBDAQName(self, exid, mid, sid):
-        """Return BDAQ name of selection."""
-
-        if (exid == const.BFID):
-            # map BF sid to BDAQ sid
-            sid = self._BFmap_cache[mid][sid]
-        return self._BDAQ_cache[sid].name
-
-@Singleton
 class MatchMarketsModel(AbstractModel):
-    """Stores data on matching markets for all the different events."""
+    """Model used for the matching markets view."""
     
     # if usedb is set, we will initialise the matching markets cache
     # from the sqlite database.
@@ -294,109 +209,15 @@ class MatchMarketsModel(AbstractModel):
     def __init__(self):
 
         AbstractModel.__init__(self)
-        #super(MatchMarketsModel, self).__init__()
 
-        # key to match_cache is event name, value is list of tuples
-        # (m1, m2) where m1 and m2 are the matching markets (m1 is the
-        # BDAQ market, m2 is the BF market.  The ordering of the
-        # tuples is the same as the ordering that appears in the GUI.
-        self._match_cache = {}
+        # the market store holds the actual data about markets
+        self.mstore = stores.MarketStore.Instance()
 
-        # store a dict that maps BDAQ mids to BF mids
-        self._BDAQmap_cache = {}
-
-        # and a dict that maps BF mids to BDAQ mids
-        self._BFmap_cache = {}
-
-        # and a dict that maps BDAQ mids to their market objects
-        self._BDAQ_cache = {}
-
-        # and a dict that maps BF mids to their market objects
-        self._BF_cache = {}
-
-        # singleton that controls DB access
-        self._dbman = database.DBMaster()
-
-        if self.USEDB:
-            self.InitCachesFromDB()
-        else:
-            self.InitCachesEmpty()
-
-    def InitCachesFromDB(self):
-        """
-        Initialise the matching markets cache from the SQLite
-        database.
-        """
-
-        for ename in EVENTMAP:
-            mmarks = self._dbman.return_market_matches([ename])
-            self.SetCaches(ename, mmarks)
-
-    def InitCachesEmpty(self):
-        """
-        Initialise the matching markets cache as empty.
-        """
-        
-        for ename in EVENTMAP:
-            self._match_cache[ename] = []
-            # the other caches are set to be empty after __init__
-
-    def GetBFMidFromBDAQMid(self, bdaqmid):
-        return self._BDAQmap_cache[bdaqmid]
-
-    def GetBDAQMidFromBFMid(self, bfmid):
-        return self._BFmap_cache[bfmid]
-
-    def GetMarketName(self, ename, index):
-        """
-        Return market name for particular event with particular index.
-        """
-        
-        return self._match_cache[ename][index][0].name
-
-    def GetMids(self, ename, index):
-        bdaqmid = self._match_cache[ename][index][0].id
-        bfmid = self._match_cache[ename][index][1].id
-        
-        return bdaqmid, bfmid
-
-    def GetName(self, exid, mid):
-        if (exid == const.BDAQID):
-            return self.GetNameFromBDAQMid(mid)
-        elif (exid == const.BFID):
-            return self.GetNameFromBFMid(mid)            
-        else:
-            return ''
-
-    def GetBDAQNameFromMid(self, exid, mid):
-        if (exid == const.BFID):
-            mid = self.GetBDAQMidFromBFMid(mid)
-        return self.GetNameFromBDAQMid(mid)
-
-    def GetNameFromBDAQMid(self, bdaqmid):
-        return self._BDAQ_cache[bdaqmid].name
-
-    def GetNameFromBFMid(self, bfmid):
-        return self._BF_cache[bfmid].name
-
-    def SetCaches(self, ename, mmarks):
-        # ordered list of matching markets for event ename
-        self._match_cache[ename] = mmarks
-
-        for m1, m2 in mmarks:
-            m1id = m1.id
-            m2id = m2.id
-            # map bdaq mid to bf mid
-            self._BDAQmap_cache[m1id] = m2id
-
-            # map bf mid to bdaq mid
-            self._BFmap_cache[m2id] = m1id
-
-            # map bdaq mid to market object
-            self._BDAQ_cache[m1id] = m1
-
-            # map bf mid to market object
-            self._BF_cache[m2id] = m2
+        # we simply need to keep track of the event name, e.g. 'Horse
+        # Racing' and a mapping between indices of data on the list
+        # control, and the (BDAQ) market id.
+        self._ename = ''
+        self._bdaqmids = []
 
     def Update(self, ename, refresh=False):
         """
@@ -406,16 +227,25 @@ class MatchMarketsModel(AbstractModel):
         """
 
         if refresh:
-            # code to set match cache; note this will automatically
-            # save the details to the DB.
+            # use BDAQ and BF api to get list of matching markets
             mmarks = guifunctions.match_markets(ename)
-            self.SetCaches(ename, mmarks)
+            self.mstore.add_matching_markets(ename, mmarks)
+        else:
+            mmarks = self.mstore.get_matches(ename)
+
+        self._ename = ename
+        self._bdaqmids = [m.id for m in [n[0] for n in mmarks]]
 
         # update should call the function that updates the view
         self.UpdateViews()
 
-    def GetMatches(self, ename):
-        return self._match_cache[ename]
+    def GetBDAQMid(self, index):
+        """Return bdaqmid corresponding to an index."""
+
+        return self._bdaqmids[index]
+
+    def GetEventName(self):
+        return self._ename
 
 # not a singleton as we want multiple instances
 class StrategyModel(AbstractModel):

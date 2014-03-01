@@ -1,6 +1,6 @@
 import wx
 import const
-from betman.core import engine, managers
+from betman.core import engine, managers, stores
 import models
 from frames.mainframe import MyFrame
 from betman.core.config import GlobalConfig
@@ -22,6 +22,9 @@ class MyApp(wx.App):
 
         # models for MVC style 
         self.SetupModels()
+
+        # stores for updating the MVC models
+        self.SetupStores()
 
         # timer for calling the engine tick
         self.SetupTimer()
@@ -129,6 +132,10 @@ class MyApp(wx.App):
         self.graphs_open = {}
         self.strats_open = {}
 
+    def SetupStores(self):
+        self._pstore = stores.PriceStore.Instance()
+        self._ostore = stores.OrderStore.Instance()
+
     def SetupTimer(self):
         """
         Setup timer that calls the updates every tick.
@@ -165,10 +172,10 @@ class MyApp(wx.App):
         # this tick.
 
         # (i) pricing model.
-        self.pmodel.Update(self.engine.pmanager.pstore.newprices)
+        self.pmodel.Update(self._pstore.newprices)
 
         # (ii) order model.
-        self.omodel.Update(self.engine.omanager.ostore)
+        self.omodel.Update(self._ostore)
 
         # (iii) strategy models (keyed by BDAQ selection name).  note
         # that updating these models is distinct from updating the
@@ -178,11 +185,11 @@ class MyApp(wx.App):
         # responsible for checking whether new information for them is
         # contained in new_prices.
         for k in self.strat_models:
-            self.strat_models[k].Update(self.engine.pmanager.new_prices)
+            self.strat_models[k].Update(self._pstore.newprices)
 
         # (iv) graph models (keyed by BDAQ selection name).
         for k in self.graph_models:
-            self.graph_models[k].Update(self.engine.pmanager.new_prices)
+            self.graph_models[k].Update(self._pstore.newprices)
 
 if __name__ == "__main__":
     app = MyApp(False)

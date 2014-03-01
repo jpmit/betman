@@ -227,7 +227,7 @@ class DBMaster(object):
 
         # get the matching selections we want
         msels = self.cursor.execute(qstr, qargs).fetchall()
-        matchsels = []
+        bdaqsels, bfsels = [], []
         for s in msels:
             ex1mid = s[0]
             ex1sid = s[1]
@@ -251,8 +251,9 @@ class DBMaster(object):
                                            'table {1}'\
                                            .format(eid, schema.SELECTIONS))
             
-            matchsels.append((ex1sel[0], ex2sel[0]))
-        return matchsels
+            bdaqsels.append(ex1sel[0])
+            bfsels.append(ex2sel[0])
+        return bdaqsels, bfsels
 
     def write_market_matches(self, matches):
         """Write to matchingmarkets table"""

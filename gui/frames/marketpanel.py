@@ -2,6 +2,7 @@ import wx
 from pricepanel import PricePanel
 import const
 import models
+from betman.core import stores
 
 class MarketPanel(wx.Panel):
     """Panel that displays a list of markets for a given event."""
@@ -18,6 +19,9 @@ class MarketPanel(wx.Panel):
 
         # model from market data
         self.mmodel = models.MatchMarketsModel.Instance()
+
+        # market store has information about the markets such as name etc.
+        self.mstore = stores.MarketStore.Instance()
         
         # The listener will update the view
         self.mmodel.AddListener(self.lst.OnGetMatchEvents)
@@ -121,15 +125,13 @@ class MarketPanel(wx.Panel):
         """Change panel to the PricePanel that shows prices etc."""
 
         index_sel = event.GetIndex()
-        event_sel = self.GetTopLevelParent().GetEventPanel().\
-                         GetSelectedEvent()
 
         # map the event and row to BDAQ and BF market ids and market name.
-        bdaqmid, bfmid = self.mmodel.GetMids(event_sel, index_sel)
-        name = self.mmodel.GetMarketName(event_sel, index_sel)
+        bdaqmid = self.mmodel.GetBDAQMid(index_sel)
+        name = self.mstore.get_name_from_BDAQmid(bdaqmid)
 
         # go to the price panel.
-        self.GetTopLevelParent().GoToPricePanel(name, bdaqmid, bfmid)
+        self.GetTopLevelParent().GoToPricePanel(name, bdaqmid)
 
     def Clear(self):
         for child in self.GetChildren():
@@ -166,9 +168,10 @@ class MatchListCtrl(wx.ListCtrl):
         the view.  We add the items, which are pairs of markets, to the ListCtrl
         """
 
-        # note this only retreives information from the model; it does
-        # not update the model.
-        mmarks = mmodel.GetMatches(self.ename)
+        # we use the event name in the model to access the matching
+        # markets for that event in the Market Store.
+        mstore = stores.MarketStore.Instance()
+        mmarks = mstore.get_matches(mmodel.GetEventName())
 
         # Clear any existing items on the ListCtrl
         self.DeleteAllItems()

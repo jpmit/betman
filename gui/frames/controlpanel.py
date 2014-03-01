@@ -57,10 +57,10 @@ class ControlPanel(wx.Panel):
         self.Layout()
 
     def AddUpdateStrat(self):
-        print self.pmodel.bdaqmid, self.pmodel.bfmid
+        bdaqmid, bfmid = self.pmodel.GetMids()
         self.ustrat = updatestrategy.\
-                      UpdateStrategy(bdaqmids = [self.pmodel.bdaqmid],
-                                     bfmids = [self.pmodel.bfmid])
+                      UpdateStrategy(bdaqmids = [bdaqmid],
+                                     bfmids = [bfmid])
         
         # set update tick frequency to match selection
         updatetick = self.freqspin.GetValue()

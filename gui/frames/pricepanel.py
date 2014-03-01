@@ -44,24 +44,26 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         # the pricing model controls the view (the price grid).
         self.pmodel = self.app.pmodel
 
-    def InitMids(self, mname, bdaqmid, bfmid):
-        """Set market name, bdaqmid and bfmid.  This method is sort of like a
-        second initialization method,since setting these means knowing
-        which market and hence the selections etc.
+    def InitMids(self, mname, bdaqmid):
+        """Set market name, and bdaqmid.  
+
+        This method is sort of like a second initialization
+        method,since setting these means knowing which market and
+        hence the selections etc.
 
         """
         
         self.name = mname
-        self.bdaqmid = bdaqmid
-        self.bfmid = bfmid
 
         # remove any previous event from the panel if necessary
         self.Clear()
 
         # configure pricing model
-        self.pmodel.SetMids(self.bdaqmid, self.bfmid)
+        self.pmodel.SetBDAQMid(bdaqmid)
         
-        # get selection information from BDAQ and BF
+        # get selection information from BDAQ and BF; we won't get
+        # fresh prices from the API via this call unless we absolutely
+        # need to.
         self.pmodel.SetSels()
         
         # setup information for graphs and strategies
@@ -121,10 +123,12 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         name_sz = wx.BoxSizer(wx.HORIZONTAL)
 
+        bdaqmid, bfmid = self.pmodel.GetMids()
+
         # write market name at top, along with mids
         mtext = '{0}\nMIDS: BDAQ {1} BF {2}'.format(self.name, 
-                                                    self.bdaqmid,
-                                                    self.bfmid)
+                                                    bdaqmid,
+                                                    bfmid)
         name_sz.Add(wx.StaticText(self, label=mtext))
         main_sizer.Add(name_sz)
         main_sizer.AddSpacer(50)

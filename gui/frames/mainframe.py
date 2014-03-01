@@ -288,9 +288,9 @@ class MyFrame(wx.Frame):
         print "size of splitter: ", self._splitter.GetSize()
         print "size of marketpanel: ", self._mpanel.GetSize()
 
-    def GoToPricePanel(self, name, bdaqmid, bfmid):
+    def GoToPricePanel(self, name, bdaqmid):
         self.ShowPricePanel()
-        self._ppanel.InitMids(name, bdaqmid, bfmid)
+        self._ppanel.InitMids(name, bdaqmid)
 
     def ShowPricePanel(self):
         """
