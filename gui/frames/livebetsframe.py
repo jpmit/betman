@@ -32,7 +32,7 @@ class LiveBetsPanel(wx.Panel):
 
         self.lst = BetListCtrl(self)
 
-        sizer.Add(self.lst, 0, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER)
+        sizer.Add(self.lst, 1, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER)
 
         self.SetSizer(sizer)
 
@@ -72,35 +72,40 @@ class BetListCtrl(Ulc.UltimateListCtrl):
         self.SetColumnWidth(7, 70)
 
         # we use this model to map mids to market names
-        self.mmodel = models.MatchMarketsModel.Instance()
+        self.mstore = stores.MarketStore.Instance()
 
         # we use this model to map sids to selection names
-        self.smodel = models.MatchSelectionsModel.Instance()
+        self.sstore = stores.SelectionStore.Instance()
+
+        # this dict tracks the orders that are currently displayed
+        self._curords = {}
 
     def OnNewOrderInformation(self, omodel):
         print "refresh order information!"
        
         #bdaqors = ostore.get_current_orders(const.BDAQID).values()
-        testors = [order.Order(1, 21410664, 0.5, 5.4, 1, **{'unmatchedstake': 0.5,
-                                                            'matchedstake': 0.7,
-                                                            'status': 1,
-                                                            'mid': 3885853}),
-                   order.Order(2, 3166570, 1.04, 1.41, 2, **{'unmatchedstake': 3.21,
-                                                             'matchedstake': 0.0,
-                                                             'status': 2,
-                                                             'mid': 113058412}),
-                   order.Order(2, 3166570, 1.04, 1.41, 2, **{'unmatchedstake': 3.21,
-                                                             'matchedstake': 0.0,
-                                                             'status': 2,
-                                                             'mid': 113058412}),
-                   order.Order(2, 3166570, 1.04, 1.41, 2, **{'unmatchedstake': 3.21,
-                                                             'matchedstake': 0.0,
-                                                             'status': 2,
-                                                             'mid': 113058412})]
+        #testors = [order.Order(1, 21410664, 0.5, 5.4, 1, **{'unmatchedstake': 0.5,
+        #                                                    'matchedstake': 0.7,
+        #                                                    'status': 1,
+        #                                                    'mid': 3885853}),
+        #           order.Order(2, 3166570, 1.04, 1.41, 2, **{'unmatchedstake': 3.21,
+        #                                                     'matchedstake': 0.0,
+        #                                                     'status': 2,
+        #                                                     'mid': 113058412}),
+        #           order.Order(2, 3166570, 1.04, 1.41, 2, **{'unmatchedstake': 3.21,
+        #                                                     'matchedstake': 0.0,
+        #                                                     'status': 2,
+        #                                                     'mid': 113058412}),
+        #           order.Order(2, 3166570, 1.04, 1.41, 2, **{'unmatchedstake': 3.21,
+        #                                                     'matchedstake': 0.0,
+        #                                                     'status': 2,
+        #                                                     'mid': 113058412})]
 
-        COLOURS = {0: wx.BLACK,
-                   1: wx.RED,
-                   2: wx.GREEN}
+        COLOURS = {0: wx.BLACK, # not placed
+                   1: wx.RED,   # unmatched
+                   2: wx.GREEN, # matched
+                   3: wx.BLACK  # cancelled
+                   }
 
         # get rid of all existing items on the ListCtrl
         self.DeleteAllItems()
@@ -108,7 +113,7 @@ class BetListCtrl(Ulc.UltimateListCtrl):
         currors = omodel._lorders
         print 'current orders to draw', currors
         currors.reverse()
-        allors = testors + currors
+        allors = currors
 
         for (i, o) in enumerate(allors):
             status = order.STATUS_MAP[o.status]
@@ -117,8 +122,8 @@ class BetListCtrl(Ulc.UltimateListCtrl):
             unmatched = o.unmatchedstake
             matched = o.matchedstake
             # note we use BDAQ name for both market and selection
-            mname = _short_mname(self.mmodel.GetBDAQNameFromMid(o.exid, o.mid))
-            sname = self.smodel.GetBDAQName(o.exid, o.mid, o.sid)
+            mname = _short_mname(self.mstore.get_BDAQname_from_mid(o.exid, o.mid))
+            sname = self.sstore.get_BDAQ_name(o.exid, o.mid, o.sid)
             item = ("", "", status, mname, polarity, sname, odds,
                     unmatched, matched, "", "")
             self.Append(item)

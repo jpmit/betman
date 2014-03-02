@@ -172,7 +172,7 @@ class BetsPanel(wx.Panel):
         if smodel.postracker is None:
             return
 
-        all_bets = smodel.postracker.get_all_bets()
+        all_bets = smodel.postracker.get_all_orders()
 
         # todo: this comparison is inefficient
         if self.all_bets != all_bets:

@@ -80,7 +80,8 @@ class PricePanel(scrolledpanel.ScrolledPanel):
         
         gmodels = self.app.graph_models
         smodels = self.app.strat_models
-        for (bdaqsel, bfsel) in zip(self.pmodel.bdaqsels, self.pmodel.bfsels):
+        bdaqsels, bfsels = self.pmodel.GetSels()
+        for (bdaqsel, bfsel) in zip(bdaqsels, bfsels):
             # see if current models exist for this selection,
             # otherwise create new models.  Note this means we won't
             # wipe out the old ones, important for when we navigate

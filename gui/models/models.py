@@ -132,8 +132,8 @@ class PriceModel(AbstractModel):
 
         # sels are updated to keep the current selection prices; they
         # are stored in the order displayed on the main pricing panel.
-        self.bdaqsels = []
-        self.bfsels = []
+        self._bdaqsels = []
+        self._bfsels = []
 
         self._mstore = stores.MarketStore.Instance()
         self._sstore = stores.SelectionStore.Instance()
@@ -144,7 +144,7 @@ class PriceModel(AbstractModel):
 
     def SetBDAQMid(self, bdaqmid):
         self._bdaqmid = bdaqmid
-        self.bfmid = self._mstore.get_BFmid_from_BDAQmid(bdaqmid)
+        self._bfmid = self._mstore.get_BFmid_from_BDAQmid(bdaqmid)
 
     def GetMids(self):
         return self._bdaqmid, self._bfmid
@@ -153,17 +153,20 @@ class PriceModel(AbstractModel):
         """Initialize selections in the correct display order."""
 
         # try getting the selections from the selection store
-        self.bdaqsels, self.bfsels = self._sstore.\
-                                     get_matching_sels(self._bdaqmid)
+        self._bdaqsels, self._bfsels = self._sstore.\
+                                       get_matching_selections(self._bdaqmid)
 
-        if (not self.bdaqsels) or (refresh):
+        if (not self._bdaqsels) or (refresh):
             # call BDAQ and BF api to get selections
             bfmid = self._mstore.get_BFmid_from_BDAQmid(self._bdaqmid)
-            bdaqsels, bfsels = guifunctions.\
-                               market_prices(self._bdaqmid, bfmid)
+            self._bdaqsels, self._bfsels = guifunctions.\
+                                           market_prices(self._bdaqmid, bfmid)
             # write this back to the selection store.
-            self._sstore.add_matching_selections(self.bdaqmid, bdaqsels,
-                                                 bfsels)
+            self._sstore.add_matching_selections(self._bdaqmid, self._bdaqsels,
+                                                 self._bfsels)
+
+        # store mapping of BDAQ selection name to index into sel list
+        self._selindx = dict([(s.name, i) for (i, s) in enumerate(self._bdaqsels)])
 
     def GetSelsByBDAQName(self, bdaqname):
         """
@@ -171,14 +174,14 @@ class PriceModel(AbstractModel):
         certain BDAQ name.
         """
 
-        indx = self.indexdict[bdaqname]
+        indx = self._selindx[bdaqname]
 
-        return self.bdaqsels[indx], self.bfsels[indx]
+        return self._bdaqsels[indx], self._bfsels[indx]
 
     def GetSels(self):
         """Return lists bdaqsels, bfsels."""
 
-        return self.bdaqsels, self.bfsels
+        return self._bdaqsels, self._bfsels
 
     def Update(self, prices):
         """
@@ -190,10 +193,10 @@ class PriceModel(AbstractModel):
             # check that we got new prices for this selection this tick.
             if (self._bdaqmid in prices[const.BDAQID] and
                 self._bfmid in prices[const.BFID]):
-                self._bdaqsels = [prices[const.BDAQID][self.bdaqmid][i]
-                                 for i in [s.id for s in self.bdaqsels]]
-                self._bfsels = [prices[const.BFID][self.bfmid][i]
-                               for i in [s.id for s in self.bfsels]]
+                self._bdaqsels = [prices[const.BDAQID][self._bdaqmid][i]
+                                 for i in [s.id for s in self._bdaqsels]]
+                self._bfsels = [prices[const.BFID][self._bfmid][i]
+                               for i in [s.id for s in self._bfsels]]
 
                 # call the listener functions.
                 self.UpdateViews()

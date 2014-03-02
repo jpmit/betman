@@ -25,13 +25,13 @@ class PositionTracker(object):
         """
         
         # dictionary of order references
-        orefdict = self.strategy.get_allorefs()
+        orefdict = self.strategy.get_all_orefs()
         
         # dictionary of the actual order objects
         odict = self.ostore.get_orders_from_oref_dict(orefdict)
 
         # get a single list of order objects ordered by time placed
-        olist = util.flatten(odict)
+        olist = odict[const.BDAQID] + odict[const.BFID]
         self.ostore.set_tplaced(olist)
         olist.sort(key=attrgetter('tplaced'))
 
@@ -56,8 +56,7 @@ class PositionTracker(object):
         lose_pos = 0.0
         lose_posif = 0.0
         
-        
-        for o in self.get_allorders():
+        for o in self.get_all_orders():
             # add this to all positions
             if o.status == order.MATCHED:
                 if o.polarity == order.LAY:
@@ -96,11 +95,11 @@ class PositionTracker(object):
     def get_unmatched_bets(self):
 
         unmatched = []
-        for o in self.get_allorders():
+        for o in self.get_all_orders():
             if o.status == order.UNMATCHED:
                 unmatched.append(o)
 
         return unmatched
                 
     def get_all_bets(self):
-        return self.strategy.get_allorders()
+        return self.strategy.get_all_orders()

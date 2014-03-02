@@ -7,16 +7,16 @@ SelectionStore also stores the display order of the selections.
 
 """
 
-from betman import database
+from betman import const, database
 from betman.all.singleton import Singleton
 from betman.matching.matchconst import EVENTMAP
 
 @Singleton
 class MarketStore(object):
     
-    # if usedb is set, we will initialise the matching markets cache
-    # from the sqlite database.
-    USEDB = True
+    # if True, we will initialise the the store with information in
+    # the sqlite database.
+    INITDB = True
     
     def __init__(self):
 
@@ -41,7 +41,7 @@ class MarketStore(object):
         # singleton that controls DB access
         self._dbman = database.DBMaster()
 
-        if self.USEDB:
+        if self.INITDB:
             self.init_caches_from_DB()
         else:
             self.init_caches_empty()
@@ -125,6 +125,13 @@ class MarketStore(object):
 
 @Singleton
 class SelectionStore(object):
+
+    # if True, init the selection store with information in the DB.
+    # Note: we probably don't want to do this, or at least we should
+    # filter out most of the matching selections, since otherwise
+    # we'll be storing a lot of information about selections from
+    # markets that ended long ago.
+    INITDB = True
     
     def __init__(self):
 
@@ -155,7 +162,47 @@ class SelectionStore(object):
         # singleton that controls DB access
         self._dbman = database.DBMaster()
 
-    def add_matching_sels(self, bdaqmid, bdaqsels, bfsels):
+        if self.INITDB:
+            self.init_caches_from_DB()
+
+    def init_caches_from_DB(self):
+        bdaqsels, bfsels = self._dbman.return_selection_matches()
+        m_cache = {}
+        for (s1, s2) in zip(bdaqsels, bfsels):
+            bdaqmid = s1.mid
+            bfmid = s2.mid
+            
+            # match cache: slightly horrible, we fill this up here,
+            # but later we need to re-order the selections according
+            # to their display order.
+            if bdaqmid in self._match_cache:
+                self._match_cache[bdaqmid][0].append(s1)
+                self._match_cache[bdaqmid][1].append(s2)                
+            else:
+                # tuple of two lists bdaqsels, bfsels
+                self._match_cache[bdaqmid] = ([s1], [s2])
+
+            # mapping from BF sid (for this mid) to BDAQ sid
+            if bfmid in self._BFmap_cache:
+                self._BFmap_cache[bfmid][s2.id] = s1.id
+            else:
+                self._BFmap_cache[bfmid] = {s2.id: s1.id}
+
+            # mapping from BDAQ sid to selection object
+            self._BDAQ_cache[s1.id] = s1
+
+        # sort self._match_cache so we have two lists of selections
+        # sorted by the BDAQ display order.
+        mykey = lambda k: k[1].dorder
+        for bdaqmid in self._match_cache:
+            bdaqsels = self._match_cache[bdaqmid][0]
+            bfsels = self._match_cache[bdaqmid][1]
+            # note only BDAQ selections have a display order.
+            indices, sbdaqsels = zip(*sorted(enumerate(bdaqsels), key=mykey))
+            sbfsels = [bfsels[i] for i in indices]
+            self._match_cache[bdaqmid] = (sbdaqsels, sbfsels)
+
+    def add_matching_selections(self, bdaqmid, bdaqsels, bfsels):
         """Add matching selections, in the correct display order."""
         
         # add to match cache
@@ -164,10 +211,14 @@ class SelectionStore(object):
         # get the BF mid from bdaq mid
         bfmid = self._mstore.get_BFmid_from_BDAQmid(bdaqmid)
 
+        # mapping from BF sid (for this mid) to BDAQ sid
         for s1, s2 in zip(bdaqsels, bfsels):
             self._BFmap_cache[bfmid][s2.id] = s1.id
 
-    def get_matching_sels(self, bdaqmid):
+            # mapping from BDAQ sid to selection object
+            self._BDAQ_cache[s1.id] = s1
+
+    def get_matching_selections(self, bdaqmid):
         """Return two lists bdaqsels, bfsels, of matching selections.
 
         bdaqsels[i] is the selection that matches bfsels[i], and the
