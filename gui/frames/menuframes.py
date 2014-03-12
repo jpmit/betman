@@ -1,6 +1,6 @@
 import wx
 from betman import const, order
-import models
+from betman.core import stores
 
 """Frames that are created by clicking things on the menu bar."""
 
@@ -122,8 +122,8 @@ class CurrentStrategiesFrame(wx.Frame):
         # need the app instance since it stores the stratgroup
         self.app = wx.GetApp()
 
-        # matching markets model
-        self.mmodel = models.MatchMarketsModel.Instance()
+        # market store
+        self.mstore = stores.MarketStore.Instance()
 
         self.Draw()
 
@@ -164,7 +164,7 @@ class CurrentStrategiesFrame(wx.Frame):
             # If sel is BF selection, get the BDAQ market id
             if (sel.exid == const.BFID):
                 # get the BDAQ mid corresponding to the BF mid
-                mid = self.mmodel.GetBDAQMidFromBFMid(sel.mid)
+                mid = self.mstore.get_BDAQmid_from_BFmid(sel.mid)
             else:
                 mid = sel.mid
 
@@ -204,11 +204,10 @@ class CurrentStrategiesFrame(wx.Frame):
         # note bdaqmid is a string so we need to convert to int here
         bdaqmid = int(event.GetEventObject().GetURL())
 
-        bfmid = self.mmodel.GetBFMidFromBDAQMid(bdaqmid)
-        bdaqname = self.mmodel.GetNameFromBDAQMid(bdaqmid)
+        bdaqname = self.mstore.get_name_from_BDAQmid(bdaqmid)
 
         # show the price panel for the market selected
-        self.app.frame.GoToPricePanel(bdaqname, bdaqmid, bfmid)
+        self.app.frame.GoToPricePanel(bdaqname, bdaqmid)
 
 class SettingsFrame(wx.Frame):
     """Frame for user to configure global application settings."""

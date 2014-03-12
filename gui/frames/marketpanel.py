@@ -1,8 +1,10 @@
 import wx
+import datetime
 from pricepanel import PricePanel
 import const
 import models
 from betman.core import stores
+import wx.lib.mixins.listctrl as listmix
 
 class MarketPanel(wx.Panel):
     """Panel that displays a list of markets for a given event."""
@@ -137,7 +139,7 @@ class MarketPanel(wx.Panel):
         for child in self.GetChildren():
             child.Destroy()
 
-class MatchListCtrl(wx.ListCtrl):
+class MatchListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
     """List matching markets for event name ename."""
     
     def __init__(self, parent):
@@ -176,14 +178,31 @@ class MatchListCtrl(wx.ListCtrl):
         # Clear any existing items on the ListCtrl
         self.DeleteAllItems()
 
+        i = 0
+        markdata = {}
         for (m1, m2) in mmarks:
-
             item = (m1.name.split('|')[-2],
                     m1.starttime.strftime('%d/%m/%y %H:%M'),
                     m1.totalmatched,
                     m2.totalmatched)
             # add the item to the list box
             self.Append(item)
+            # for sorting
+            markdata[i] = item
+            self.SetItemData(i, i)
+            i += 1
+
+        # stuff for sorting
+        self.itemDataMap = markdata
+        listmix.ColumnSorterMixin.__init__(self, 4)
+        self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColClick, self)
 
         # set column width of event name to be sufficiently large
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+
+    # Used by the ColumnSorterMixin, see wx/lib/mixins/listctrl.py
+    def GetListCtrl(self):
+        return self
+
+    def OnColClick(self, event):
+        event.Skip()

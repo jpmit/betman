@@ -7,6 +7,7 @@ from betman.strategy import strategy, cxstrategy, mmstrategy, position
 from betman import const, exchangedata, database, order
 from betman.all.singleton import Singleton
 import numpy as np
+import datetime
 
 class AbstractModel(object):
     """
@@ -55,6 +56,8 @@ class OrderModel(AbstractModel):
         # does).
         self._lorders = []
 
+        self._neworders = []
+
     def Update(self, ostore):
         # see if any of the orders we are currently tracking were
         # updated on the last tick
@@ -68,30 +71,36 @@ class OrderModel(AbstractModel):
         torem = []
         for i, o in enumerate(self._lorders):
             oref = o.oref
-            if oref in cords:
+            exid = o.exid
+            if oref in cords[exid]:
                 o.status = order.CANCELLED
                 o._DRAW = True
                 torem.append(i)
-            if oref in updated[o.exid]:
-                newo = updated[o.exid][o.oref]
+            if oref in updated[exid]:
+                newo = updated[exid][oref]
                 newo._DRAW = True
                 # might need to add a few more things from the old
                 # order object
                 self._lorders[i] = newo
-            if oref in uords:
-                newo = updated[o.oref]
+            if oref in uords[exid]:
+                newo = uords[oref]
                 newo._DRAW = True
                 # might need to add a few more things from the old
                 # order object
                 self._lorders[i] = newo
         
-        torem.reverse()
-        for i in torem:
-            self._lorders.pop(i)
+        #torem.reverse()
+        #for i in torem:
+        #    self._lorders.pop(i)
 
         # add new orders.
-        for o in newords[const.BDAQID].values() + newords[const.BFID].values():
-            self._lorders.append(o)
+        self._neworders = []
+        if newords:
+            self._neworders = []
+            for o in newords[const.BDAQID].values() + newords[const.BFID].values():
+                self._neworders.append(o)
+            # new orders appear at start of list
+            self._lorders = self._lorders + self._neworders
 
         if (cords or uords or newords or updated[const.BDAQID] or updated[const.BFID]):
             self.UpdateViews()
@@ -203,7 +212,13 @@ class PriceModel(AbstractModel):
 
 @Singleton
 class MatchMarketsModel(AbstractModel):
-    """Model used for the matching markets view."""
+    """Model used for the matching markets view.
+
+    Note the model is responsible for filtering the matching markets,
+    e.g. so that we don't display historical markets in the matching
+    markets panel.
+
+    """
     
     # if usedb is set, we will initialise the matching markets cache
     # from the sqlite database.
@@ -231,16 +246,34 @@ class MatchMarketsModel(AbstractModel):
 
         if refresh:
             # use BDAQ and BF api to get list of matching markets
-            mmarks = guifunctions.match_markets(ename)
-            self.mstore.add_matching_markets(ename, mmarks)
+            self._mmarks = guifunctions.match_markets(ename)
+            self.mstore.add_matching_markets(ename, self._mmarks)
         else:
-            mmarks = self.mstore.get_matches(ename)
+            self._mmarks = self.mstore.get_matches(ename)
+
+        # remove matching markets that don't concern the view
+        # (e.g. historical markets).
+        self._FilterMMarks()
 
         self._ename = ename
-        self._bdaqmids = [m.id for m in [n[0] for n in mmarks]]
+        self._bdaqmids = [m.id for m in [n[0] for n in self._mmarks]]
 
         # update should call the function that updates the view
         self.UpdateViews()
+
+    def _FilterMMarks(self):
+        """Remove matching markets that started > than 1 hour ago."""
+
+        to_remove = []
+        tplus1 = datetime.datetime.now() - datetime.timedelta(hours=1)
+
+        for (i, (m1, m2)) in enumerate(self._mmarks):
+            if (m1.starttime < tplus1):
+                to_remove.append(i)
+
+        to_remove.reverse()
+        for i in to_remove:
+            self._mmarks.pop(i)
 
     def GetBDAQMid(self, index):
         """Return bdaqmid corresponding to an index."""

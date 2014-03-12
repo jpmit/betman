@@ -133,6 +133,11 @@ class MyFrame(wx.Frame):
 
         print "closing frame", nm
 
+        # remove any listeners so that we don't try to update this
+        # view after the frame has been killed.
+        if hasattr(self._oframes[nm], 'RemoveListeners'):
+            self._oframes[nm].RemoveListeners()
+
         self._oframes[nm] = None
         print 'sucessfully set oframe to None'
         event.Skip()

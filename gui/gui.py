@@ -37,8 +37,9 @@ class MyApp(wx.App):
 
         # add path to automations (automatic programs for adding and
         # removing strategies) so that these can be imported.
-        sys.path.append(os.path.join(os.path.dirname(__file__), 
-                                     'automation'))
+        apath = os.path.abspath(os.path.join(os.path.dirname(__file__), 
+                                             '..', 'core', 'automation'))
+        sys.path.append(apath)
 
         return True
 
