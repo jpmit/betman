@@ -3,7 +3,7 @@ from automation import Automation
 import datetime
 from betman.strategy.bothmmstrategy import BothMMStrategy
 from betman.strategy.mmstrategy import MMStrategy
-import managers
+from betman.core import managers, stores
 import wx
 
 # note class must be named MyAutomation for GUI loader
@@ -36,9 +36,9 @@ class MyAutomation(Automation):
     def __init__(self):
         super(MyAutomation, self).__init__('Horse MM Automation')
         
-        # we access data on markets and selections through the 'models'
-        self.mmarkmodel = models.MatchMarketsModel.Instance()
-        self.mselmodel = models.MatchSelectionsModel.Instance()
+        # we access data on markets and selections through the 'stores'
+        self.mstore = stores.MarketStore.Instance()
+        self.sstore = stores.SelectionStore.Instance()
 
         # store time deltas for figuring out when strategies start/end
         self.starttdelta = datetime.timedelta(minutes=self.STARTT)
@@ -74,7 +74,7 @@ class MyAutomation(Automation):
     def get_all_markets(self):
 
         # get all matching horse racing events
-        allhmatches = self.mmarkmodel.GetMatches('Horse Racing')
+        allhmatches = self.mstore.get_matches('Horse Racing')
 
         curtime = datetime.datetime.now()
 
@@ -163,8 +163,8 @@ class MyAutomation(Automation):
         # succession), since we call BDAQ and BF api once for each
         # pair of mids.  if so, try refresh = False, although then
         # beware since we will use 'stale' data.
-        bdaqsels, bfsels = self.mselmodel.\
-                           GetMatchingSels(hmatch[0].id, hmatch[1].id, refresh=True)
+        bdaqsels, bfsels = self.sstore.\
+                           get_matching_selections(hmatch[0].id)
 
         # we want to add market making strategy on both exchanges, for
         # all selections that have prices < some certain number (we

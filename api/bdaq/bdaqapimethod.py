@@ -362,7 +362,7 @@ class ApiPlaceOrdersNoReceipt(ApiMethod):
         self.req = self.client.factory.\
                    create('PlaceOrdersNoReceiptRequest')
         # if one fails, none will be placed
-        self.req.WantAllOrNothingBehaviour = True
+        self.req.WantAllOrNothingBehaviour = False
 
     def makeorderlist(self, orderlist):
         olist = []

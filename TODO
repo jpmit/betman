@@ -2,7 +2,7 @@
 
 - allow changing timebase in GUI (global config)
 - make everything prettier
-- make sure we are saving prices to the DB
+- get new logo / start image
 - make viewing current strategies scrollable vertically
 - make RHS of strategy monitor scrollable
 - don't let current strategies frame truncate text
@@ -10,14 +10,18 @@
 
 # other
 
-* Finish live bets panel
 * finish sorting out how and when info is written to the DB
 * Test updating and cancelling orders on BF
+
+* Don't crash application if error in thread (close thread and raise
+  exception when back in single thread land?)
+
 * Make the GUI functional as a 'live' trading machine
 - make all network calls use new threads so we don't block GUI
 - add agressive setting(s) to MM strategy 
-- figure out why GetMUBets is very slow
 * add a switch we can click to close out all automation positions
+* add features to get volume on Market / selection
+* update PyBetdaq with cancelling orders, etc.
 * make strategy monitor clickable so can (i) cancel all unmatched (ii) 'green up',
   (iii) move unmatched bet so can green up at the current bid/offer price etc.
 - allow switching between non-API and API get prices in GUI
@@ -35,7 +39,6 @@
 - make proper (LaTeX?) documentation
 - custom about box to fix Linux issue
 - make entire GUI app and engine robust against network failure
-- add to list control in market panel so can sort markets by the relevant fields
 
 [(MUBet){
    asianLineId = 0
