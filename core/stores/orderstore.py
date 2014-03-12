@@ -51,6 +51,14 @@ class OrderStore(object):
         # order status via the API).
         self.latest_updates = {const.BDAQID: {}, const.BFID: {}}
 
+        # store dict used by strategies to seach for order references
+        # immediately after order placed.  Since we get the order
+        # reference when placing bets on BF, we write to this when
+        # placing bets.  But when placing bets on BDAQ, we don't get
+        # the order reference, so instead this is written when we call
+        # ListOrdersChangedSince.
+        self.orders_tosearch = {const.BDAQID: {}, const.BFID: {}}
+
     def get_tplaced(self, o):
         """Return time placed (a datetime.datetime object_ for order o."""
 
@@ -167,6 +175,9 @@ class OrderStore(object):
         for o in ordlist:
             self._tplaced[o.exid][o.oref] = o.tplaced
 
+        # we already have the order ref from BF
+        self.orders_tosearch[const.BFID] = odict[const.BFID]
+
         # write to DB
         self._dbman.write_orders(ordlist)
 
@@ -229,10 +240,13 @@ class OrderStore(object):
         # next, for all of the orders we got back from either BDAQ or
         # BF, we want to put in the market id, since this information
         # isn't returned by the API.
-        
                                         
         # update main order dictionary
         self._orders[exid].update(odict)
 
-        # refresh latest update dict
+        # latest updates
         self.latest_updates[exid] = odict
+
+        # we need to seach this dict to get oref of placed order
+        if (exid == const.BDAQID):
+            self.orders_tosearch[exid] = odict

@@ -183,6 +183,9 @@ class OrderManager(object):
             # number', so that we are updating information about all
             # orders.
             bdaqors = bdaqapi.ListOrdersChangedSince()
+            # debug
+            for o in bdaqors.values():
+                print o.__dict__
         else:
             bdaqors = {}
         self.ostore.process_order_updates(const.BDAQID, bdaqors, 

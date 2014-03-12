@@ -84,6 +84,12 @@ class MMStrategy(strategy.Strategy):
         return {self.sel.exid: [self.sel.mid]}
 
     def find_order_in_dict(self, order, orders):
+        """Find order in dict (to get oref)
+
+        This assumes we didn't just make more than one bet on a
+        selection on the given exchange with a single polarity.
+
+        """
 
         exid = order.exid
         sid = order.sid
@@ -119,9 +125,9 @@ class MMStrategy(strategy.Strategy):
                   # dictionary is ours! (we should only have to do
                   # this once, on the tick after which the order was
                   # placed).
-                  border = self.find_order_in_dict(self.border, ostore._orders)
+                  border = self.find_order_in_dict(self.border, ostore.orders_tosearch)
                   if border:
-                      print 'found order with id', border.oref
+                      print 'found order with id', border.oref, border.polarity, border.price, border.stake, border.status
                       self.border = border
                       # add the order to the list of successfully
                       # placed orders
@@ -140,13 +146,13 @@ class MMStrategy(strategy.Strategy):
                   # dictionary is ours! (we should only have to do
                   # this once, on the tick after which the order was
                   # placed).
-                  lorder = self.find_order_in_dict(self.lorder, ostore._orders)
+                  lorder = self.find_order_in_dict(self.lorder, ostore.orders_tosearch)
                   if lorder:
-                      print 'found order with id', lorder.oref
+                      print 'found order with id', lorder.oref, lorder.polarity, lorder.price, lorder.stake, lorder.status
                       self.lorder = lorder
                       # add the order to the list of successfully
                       # placed orders
-                      self.allorefs[border.exid].append(lorder.oref)
+                      self.allorefs[lorder.exid].append(lorder.oref)
                   else:
                       print 'warning: could not find lorder in dictionary!'
 
@@ -198,10 +204,10 @@ class MMStrategy(strategy.Strategy):
         return False
 
     def back_bet_matched(self):
-        return self.border.status == order.MATCHED
+        return (order.MATCHED == self.border.status)
 
     def lay_bet_matched(self):
-        return self.lorder.status == order.MATCHED
+        return (order.MATCHED == self.lorder.status)
 
     def create_orders(self):
         """Create both back and lay orders."""
@@ -288,8 +294,12 @@ class MMStrategy(strategy.Strategy):
             self.border.update(price=bodds)
             self.toupdate[exid] = [self.border]
         else:
-            # neither bet matched, cancel both
-            self.tocancel[exid] = [self.border, self.lorder]
+            # neither bet matched, cancel both.  First check if both
+            # orders have order refs: it could be that the orders were
+            # never placed successfully, hence we have nothing to
+            # cancel.
+            if hasattr(self.border, 'oref') and hasattr(self.lorder, 'oref'):
+                self.tocancel[exid] = [self.border, self.lorder]
 
 class MMStateNoOpp(strategy.State):
     """No betting opportunity."""
