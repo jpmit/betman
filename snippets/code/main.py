@@ -10,8 +10,8 @@ using the APIs.
 import operator
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
-import betman.matchmarkets.marketmatcher as marketmatcher
-import betman.matchmarkets.matchconst as matchconst
+import betman.matching.marketmatcher as marketmatcher
+import betman.matching.matchconst as matchconst
 from betman import database, const
 
 # list of events (BDAQ names) that we are interested in.  See

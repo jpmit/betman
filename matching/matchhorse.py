@@ -32,6 +32,7 @@ COURSES = {
            'DownR' : 'Down Royal',
            # Dundalk is in Ireland
            'Dund'  : 'Dundalk',
+           'Fake'  : 'Fakenham',
            # Greyville is in RSA
            'Grey'  : 'Greyville',
            # Gulf is a US course
@@ -40,6 +41,8 @@ COURSES = {
            'Kemp'  : 'Kempton',
            # Kenilworth is in RSA
            'Kenil' : 'Kenilworth',
+           # Laurel Park is USA
+           'Laurel': 'Laurel Park',
            # Leopardstown is in Ireland
            'Leop'  : 'Leopardstown',
            'Ling'  : 'Lingfield',
@@ -56,6 +59,8 @@ COURSES = {
            'Parx'  : 'Parx Racing',
            # Pau is in France
            'Pau'   : 'Pau',
+           # Penn National is USA
+           'Penn'   : 'Pen National',
            # Punchestown is IRE
            'Punch' : 'Punchestown',
            'Plump' : 'Plumpton',
