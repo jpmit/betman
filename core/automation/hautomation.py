@@ -1,9 +1,10 @@
-import models
 from automation import Automation
 import datetime
 from betman.strategy.bothmmstrategy import BothMMStrategy
 from betman.strategy.mmstrategy import MMStrategy
 from betman.core import managers, stores
+from betman.core.stores import updaters
+from betman.all.betexception import InternalError
 import wx
 
 # note class must be named MyAutomation for GUI loader
@@ -29,6 +30,8 @@ class MyAutomation(Automation):
 
     UFREQ   = 2  # update frequency in ticks of strategies added.
 
+    EXID    = 'BF' # either BF or BDAQ
+
     # when adding a market, should we use the API to get matching
     # selections? If False, we will simply query the DB.
     REFRESH_SELECTIONS = False
@@ -39,6 +42,7 @@ class MyAutomation(Automation):
         # we access data on markets and selections through the 'stores'
         self.mstore = stores.MarketStore.Instance()
         self.sstore = stores.SelectionStore.Instance()
+        self._supdater = updaters.SelectionUpdater.Instance()
 
         # store time deltas for figuring out when strategies start/end
         self.starttdelta = datetime.timedelta(minutes=self.STARTT)
@@ -157,27 +161,33 @@ class MyAutomation(Automation):
         strategies for a single pair of matching markets only.
 
         """
+        
+        bdaqmid = hmatch[0].id
+        
+        # force update of selection information for the matching
+        # market.
+        self._supdater.update_selection_information(bdaqmid)
 
-        # warning, this could fail if we are adding many strategies at
-        # once (calling this function multiple times in close
-        # succession), since we call BDAQ and BF api once for each
-        # pair of mids.  if so, try refresh = False, although then
-        # beware since we will use 'stale' data.
         bdaqsels, bfsels = self.sstore.\
-                           get_matching_selections(hmatch[0].id)
+                           get_matching_selections(bdaqmid)
 
         # we want to add market making strategy on both exchanges, for
         # all selections that have prices < some certain number (we
         # don't want to make markets on horses whose odds are, say
         # 120, as this is too risky.
         for (s1, s2) in zip(bdaqsels, bfsels):
-            # only add strategies for which are within our limits on
-            # both BDAQ (and maybe also BF).
-            if ((s1.best_lay() < self.MAXLAY) and (s1.best_back() < self.MAXBACK)):
-                #and (s2.best_lay() < self.MAXLAY) and (s2.best_back() < self.MAXBACK)):
+            if (self.EXID == 'BDAQ'):
+                sbet = s1
+            elif (self.EXID == 'BF'):
+                sbet = s2
+            else:
+                raise InternalError, 'EXID must be either BDAQ or BF'
+                
+            # only add strategies for which are within our limits
+            if ((sbet.best_lay() < self.MAXLAY) and (sbet.best_back() < self.MAXBACK)):
                 # debug
-                print s1.name, 'best lay', s1.best_lay(), s1.name, 'best back', s1.best_back()
-                strat = MMStrategy(s1, auto=True)#BothMMStrategy(s1, s2)
+                print sbet.name, 'best lay', sbet.best_lay(), sbet.name, 'best back', sbet.best_back()
+                strat = MMStrategy(sbet, auto=True)
                 # set update frequency 
                 setattr(strat, managers.UTICK, self.UFREQ)
                 
