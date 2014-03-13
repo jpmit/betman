@@ -55,6 +55,9 @@ class OrderModel(AbstractModel):
         # we don't want to view them in the panel (just like BDAQ
         # does).
         self._lorders = []
+        
+        # order refs tracked
+        self._orefs = {}
 
         self._neworders = []
 
@@ -88,19 +91,30 @@ class OrderModel(AbstractModel):
                 # might need to add a few more things from the old
                 # order object
                 self._lorders[i] = newo
-        
-        #torem.reverse()
-        #for i in torem:
-        #    self._lorders.pop(i)
 
         # add new orders.
         self._neworders = []
+
+        # from newly placed orders.
         if newords:
             self._neworders = []
             for o in newords[const.BDAQID].values() + newords[const.BFID].values():
                 self._neworders.append(o)
-            # new orders appear at start of list
-            self._lorders = self._lorders + self._neworders
+                # track the order reference number
+                self._orefs[o.oref] = None
+
+        # we might also have new orders for BF in the updated
+        # dictionary (but we won't have new orders for BDAQ, since
+        # updating a BDAQ order does not create a new one)!
+        if uords:
+            for oref in uords[const.BFID]:
+                if oref not in self._orefs:
+                    self._neworders.append(o)
+                    # track the order reference number
+                    self._orefs[o.oref] = None
+                    
+        # new orders appear at end of list
+        self._lorders = self._lorders + self._neworders
 
         if (cords or uords or newords or updated[const.BDAQID] or updated[const.BFID]):
             self.UpdateViews()

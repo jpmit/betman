@@ -11,6 +11,7 @@
 # other
 ** Fix 'withdrawal selection number invalid' problem
 * get rid of / refactor guifunctions.py
+* Rename private (_) and non-private variables consistently
 * finish sorting out how and when info is written to the DB
 * Test updating and cancelling orders on BF
 * Don't crash application if error in thread (close thread and raise

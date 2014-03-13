@@ -4,6 +4,7 @@
 
 """Functions for parsing the response that comes from the BF api."""
 
+from copy import deepcopy
 from betman import const, Market, Event, order, betlog
 from betman.all.betexception import ApiError
 import datetime
@@ -157,7 +158,7 @@ def ParseupdateBets(res, olist):
     # cancel.
     odict = {o.oref: o for o in olist}
     
-    if isinstance(res.betResults.UpdatesBetsResult, list):
+    if isinstance(res.betResults.UpdateBetsResult, list):
         data = res.betResults.UpdateBetsResult
     else:
         data = [res.betResults.UpdateBetsResult]
