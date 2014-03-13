@@ -213,6 +213,7 @@ class SelectionStore(object):
 
         # mapping from BF sid (for this mid) to BDAQ sid
         for s1, s2 in zip(bdaqsels, bfsels):
+            print self._BFmap_cache.keys()
             self._BFmap_cache[bfmid][s2.id] = s1.id
 
             # mapping from BDAQ sid to selection object

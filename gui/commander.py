@@ -7,7 +7,7 @@ This will load an automation and run using the engine until finished.
 import const
 from betman.core import engine, config
 from betman.core.automation import hautomation
-import models
+from betman.core.stores import updaters
 from betman import clock
 
 # configure engine and clock
@@ -17,10 +17,9 @@ clk = clock.Clock(const.TICK_LENGTH_MS / 1000.0)
 # first tick initialises clock
 clk.tick()
 
-# make sure we have up to date matching markets (slightly hackish
-# since the model is really designed for the GUI)
-mmod = models.MatchMarketsModel.Instance()
-mmod.Update('Horse Racing', True)
+# update matching markets for horse racing
+mupd = updaters.MarketUpdater.Instance()
+mupd.update_market_information('Horse Racing')
 
 # get automation to the engine
 eng.add_automation(hautomation.MyAutomation())

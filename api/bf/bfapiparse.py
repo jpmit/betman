@@ -147,8 +147,38 @@ def ParseplaceBets(res, olist):
     
     return allorders
 
+def ParseupdateBets(res, olist):
+    """Return dict with key order id, value order."""
+
+    _check_errors(res)
+    tstamp = res.header.timestamp
+
+    # we should get information back for every order we tried to
+    # cancel.
+    odict = {o.oref: o for o in olist}
+    
+    if isinstance(res.betResults.UpdatesBetsResult, list):
+        data = res.betResults.UpdateBetsResult
+    else:
+        data = [res.betResults.UpdateBetsResult]
+    for o in data:
+        # TODO: work out whether the original order is part matched,
+        # fully matched or cancelled (?)
+        myo = odict[o.betId]
+        myo.sizeCancelled = o.sizeCancelled
+        myo.status = order.CANCELLED
+        myo.tupdated = tstamp
+        # create a new order with the new order id
+        newo = deepcopy(myo)
+        newo.stake = o.newSize
+        newo.price = o.newPrice
+        newo.oref = o.newBetId
+        # add new order to the order dictionary
+        odict[newo.oref] = newo
+    return odict
+
 def ParsecancelBets(res, olist):
-    """Return dict with key order id, value cancelled stake."""
+    """Return dict with key order id, value order."""
 
     _check_errors(res)
     tstamp = res.header.timestamp

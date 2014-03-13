@@ -284,6 +284,10 @@ class MMStrategy(strategy.Strategy):
             # we aren't 'locking in a loss'.
             lodds = exchangedata.next_longer_odds(exid, self.sel.best_lay())
             self.lorder.update(price=lodds)
+            # we also need to update the selection reset count and
+            # withdrawal selection number
+            self.lorder.wsn = self.sel.wsn
+            self.lorder.src = self.sel.src
             self.toupdate[exid] = [self.lorder]
         elif self.lay_bet_matched():
             # adjust back bet, make it a 'market' order so it will get
@@ -292,6 +296,10 @@ class MMStrategy(strategy.Strategy):
             # don't adjust the stake so we aren't 'locking in a loss'.
             bodds = exchangedata.next_shorter_odds(exid, self.sel.best_back())
             self.border.update(price=bodds)
+            # we also need to update the selection reset count and
+            # withdrawal selection number
+            self.border.wsn = self.sel.wsn
+            self.border.src = self.sel.src
             self.toupdate[exid] = [self.border]
         else:
             # neither bet matched, cancel both.  First check if both

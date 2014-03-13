@@ -249,6 +249,8 @@ class ApiupdateBets(ApiMethod):
         print self.req
         response = self.client.service.updateBets(self.req)
         print response
+        allorders = bfapiparse.ParseupdateBets(response, olist)
+        return allorders
 
 class ApigetMUBets(ApiMethod):
     def __init__(self, apiclient, dbman):
@@ -299,13 +301,9 @@ class ApigetMUBets(ApiMethod):
         betids = sorted([o.oref for o in orders])
         self.fillreq(betids, marketid)
 
-        response = self.client.service.getMUBets(self.req)
         betlog.betlog.info('calling BF Api getMUBets')            
+        response = self.client.service.getMUBets(self.req)
         allorders = bfapiparse.ParsegetMUBets(response, odict)
-
-        if const.WRITEDB:
-            self.dbman.write_orders(allorders.values(),
-                                    response.header.timestamp)
             
         return allorders
 

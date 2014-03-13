@@ -9,13 +9,12 @@
 - convert this document to proper markdown
 
 # other
-
+** Fix 'withdrawal selection number invalid' problem
+* get rid of / refactor guifunctions.py
 * finish sorting out how and when info is written to the DB
 * Test updating and cancelling orders on BF
-
 * Don't crash application if error in thread (close thread and raise
   exception when back in single thread land?)
-
 * Make the GUI functional as a 'live' trading machine
 - make all network calls use new threads so we don't block GUI
 - add agressive setting(s) to MM strategy 

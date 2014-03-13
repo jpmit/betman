@@ -192,13 +192,13 @@ class OrderStore(object):
 
         """
 
-        # add the moment, this method doesn't support raising the
-        # stake in BF.  Therefore, the currently supported method of
-        # upping the stake for BF is to cancel the bet and then place
-        # a new one at the larger stake.  For all other order updates,
-        # we should be ok here.
+        # this won't actually add any new orders, since updating a
+        # BDAQ order doesn't produce new orders on BDAQ.
+        self._orders[const.BDAQID].update(odict.get(const.BDAQID, {}))
 
-        pass
+        # but this will add new orders, and the status of the old
+        # orders will be set to CANCELLED.
+        self._orders[const.BFID].update(odict.get(const.BFID, {}))
 
     def get_unmatched_orders(self, exid):
         """Return list of unmatched orders for exchange exid."""
