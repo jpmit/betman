@@ -18,43 +18,53 @@ class MyAutomation(Automation):
 
     """
 
-    STARTT  = 30 # time in minutes before race start that we will
-                 # begin market marking.
-    ENDT    = 2  # time in minutes before race start to finish market
-                 # making.
-    MAXLAY  = 8  # only make markets on selections with lay price <
-                 # this number at the time which they are added
-                 # (STARTT mins before the race start).
-    MAXBACK = 8  # same but for back, this means we won't make markets
-                 # when there are no backers yet.
+    # TODO(?): at some point, all of the hard coded parameters below
+    # could be selected via the GUI.
 
-    UFREQ   = 2  # update frequency in ticks of strategies added.
+    _STARTT  = 30 # time in minutes before race start that we will
+                  # begin market marking.
+    _ENDT    = 2  # time in minutes before race start to finish market
+                  # making.
+    _MAXLAY  = 8  # only make markets on selections with lay price <
+                  # this number at the time which they are added
+                  # (STARTT mins before the race start).
+    _MAXBACK = 8  # same but for back, this means we won't make markets
+                  # when there are no backers yet.
 
-    EXID    = 'BF' # either BF or BDAQ
+    _UFREQ   = 2  # update frequency in ticks of strategies added.
+
+    _EXCHANGE = 'BF' # BF, BDAQ or BOTH
+
+    _COUNTRIES = 'UKIRE' # currently can be either UKIRE or ALL
+
+    _STRATNAME = {'BF': 'Make BF', # mapping from _EXCHANGE to GUI name.
+                  'BDAQ': 'Make BDAQ',
+                  'BOTH': 'Make Both'}
 
     # when adding a market, should we use the API to get matching
     # selections? If False, we will simply query the DB.
-    REFRESH_SELECTIONS = False
+    _REFRESH_SELECTIONS = False
 
     def __init__(self):
         super(MyAutomation, self).__init__('Horse MM Automation')
         
         # we access data on markets and selections through the 'stores'
-        self.mstore = stores.MarketStore.Instance()
-        self.sstore = stores.SelectionStore.Instance()
+        self._mstore = stores.MarketStore.Instance()
+        self._sstore = stores.SelectionStore.Instance()
         self._supdater = updaters.SelectionUpdater.Instance()
 
         # store time deltas for figuring out when strategies start/end
-        self.starttdelta = datetime.timedelta(minutes=self.STARTT)
-        self.endtdelta = datetime.timedelta(minutes=self.ENDT)
+        self._starttdelta = datetime.timedelta(minutes=self._STARTT)
+        self._endtdelta = datetime.timedelta(minutes=self._ENDT)
 
-        # get all matching horse racing events from DB
-        self.hmatches = self.get_all_markets()
+        # get all matching horse racing events; this will filter out
+        # those we aren't interested in
+        self._hmatches = self.get_all_markets()
 
         # print all markets
-        if self.hmatches:
+        if self._hmatches:
             print 'Automation has markets:'
-            for hm in self.hmatches:
+            for hm in self._hmatches:
                 # this is the bdaq name
                 print hm[0].name
         
@@ -75,21 +85,35 @@ class MyAutomation(Automation):
         except:
             self.app = None
 
+    def filter_market_country(self, bdaqmark):
+        """Return True if the market country is ok, False otherwise."""
+
+        if self._COUNTRIES == 'UKIRE':
+            nm = bdaqmark.name.split('|')[2]
+            if (nm == 'UK Racing') or (nm == 'Irish Racing'):
+                return True
+            else:
+                return False
+        elif self._COUNTRIES == 'ALL':
+            return True
+        else:
+            raise InternalError, 'countries must be \'UKIRE\' or \'ALL\''
+
     def get_all_markets(self):
 
         # get all matching horse racing events
-        allhmatches = self.mstore.get_matches('Horse Racing')
+        allhmatches = self._mstore.get_matches('Horse Racing')
 
         curtime = datetime.datetime.now()
 
-        # restrict to all horse races happening at least ENDT mins
-        # in the future.
+        # restrict to all horse races happening at least ENDT mins in
+        # the future, and use _COUNTRIES to filter out some races.
         hmatches = []
         for hmatch in allhmatches:
-            # zeroth item is BDAQ market (but both should work since
-            # they should have the same start time).
-            if (curtime + self.endtdelta < hmatch[0].starttime):
-                hmatches.append(hmatch)
+            bdaqmark = hmatch[0]
+            if self.filter_market_country(bdaqmark):
+                if (curtime + self._endtdelta < bdaqmark.starttime):
+                    hmatches.append(hmatch)
 
         # list of tuples (m1, m2) where m1 is BDAQ market and m2 is BF
         # market.
@@ -111,11 +135,11 @@ class MyAutomation(Automation):
 
         curtime = datetime.datetime.now()
 
-        # remove strategies with < ENDT mins to go until start time.
+        # remove strategies with < _ENDT mins to go until start time.
         strats_finished = []
         for i, (s, m) in enumerate(self._strategies):
             # time left to live in seconds
-            ttl = (m.starttime - curtime - self.endtdelta).total_seconds()
+            ttl = (m.starttime - curtime - self._endtdelta).total_seconds()
 
             if (ttl < 0):
                 # remove strategy from app/engine
@@ -133,8 +157,8 @@ class MyAutomation(Automation):
 
         # add strategies with < STARTT mins to go until start time.
         strats_seen = []
-        for (i, hmatch) in enumerate(self.hmatches):
-            if (curtime + self.starttdelta > hmatch[0].starttime):
+        for (i, hmatch) in enumerate(self._hmatches):
+            if (curtime + self._starttdelta > hmatch[0].starttime):
                 # add the strategies for this market pair
                 print 'adding strategies for', hmatch
                 self.add_strategy(engine, hmatch)
@@ -142,7 +166,7 @@ class MyAutomation(Automation):
                 strats_seen.append(i)
         strats_seen.reverse()
         for i in strats_seen:
-            self.hmatches.pop(i)
+            self._hmatches.pop(i)
 
     def remove_strategy(self, engine, s):
         """Remove strategy s."""
@@ -168,7 +192,7 @@ class MyAutomation(Automation):
         # market.
         self._supdater.update_selection_information(bdaqmid)
 
-        bdaqsels, bfsels = self.sstore.\
+        bdaqsels, bfsels = self._sstore.\
                            get_matching_selections(bdaqmid)
 
         # we want to add market making strategy on both exchanges, for
@@ -176,23 +200,24 @@ class MyAutomation(Automation):
         # don't want to make markets on horses whose odds are, say
         # 120, as this is too risky.
         for (s1, s2) in zip(bdaqsels, bfsels):
-            if (self.EXID == 'BDAQ'):
+            if (self._EXCHANGE == 'BDAQ'):
                 sbet = s1
-            elif (self.EXID == 'BF'):
+            elif (self._EXCHANGE == 'BF'):
                 sbet = s2
             else:
-                raise InternalError, 'EXID must be either BDAQ or BF'
+                raise InternalError, '_EXCHANGE must be either BDAQ or BF'
                 
             # only add strategies for which are within our limits
-            if ((sbet.best_lay() < self.MAXLAY) and (sbet.best_back() < self.MAXBACK)):
+            if ((sbet.best_lay() < self._MAXLAY) and (sbet.best_back() < self._MAXBACK)):
                 # debug
                 print sbet.name, 'best lay', sbet.best_lay(), sbet.name, 'best back', sbet.best_back()
                 strat = MMStrategy(sbet, auto=True)
                 # set update frequency 
-                setattr(strat, managers.UTICK, self.UFREQ)
+                setattr(strat, managers.UTICK, self._UFREQ)
                 
                 if self.app:
-                    self.app.AddStrategy('Make BDAQ', s1.name, strat, s1, s2)#'Make Both', s1.name, strat, s1, s2)
+                    self.app.AddStrategy(self._STRATNAME[self._EXCHANGE], 
+                                         s1.name, strat, s1, s2)
                 else:
                     engine.add_strategy(strat)
 

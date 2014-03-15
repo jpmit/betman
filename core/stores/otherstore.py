@@ -211,9 +211,13 @@ class SelectionStore(object):
         # get the BF mid from bdaq mid
         bfmid = self._mstore.get_BFmid_from_BDAQmid(bdaqmid)
 
+        # bfmid will not be in the cache unless we got it from the
+        # DB on initialization.
+        if bfmid not in self._BFmap_cache:
+            self._BFmap_cache[bfmid] = {}
+
         # mapping from BF sid (for this mid) to BDAQ sid
         for s1, s2 in zip(bdaqsels, bfsels):
-            print self._BFmap_cache.keys()
             self._BFmap_cache[bfmid][s2.id] = s1.id
 
             # mapping from BDAQ sid to selection object

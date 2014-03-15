@@ -17,6 +17,7 @@ COURSES = {
            'Ayr'   : 'Ayr',
            'Bang'  : 'Bangor',
            'Bath'  : 'Bath',
+           'Carl'  : 'Carlisle',
            'Catt'  : 'Catterick',
            # Charlestown is a US course
            'CharlT': 'Charles Town', 
@@ -33,6 +34,7 @@ COURSES = {
            # Dundalk is in Ireland
            'Dund'  : 'Dundalk',
            'Fake'  : 'Fakenham',
+           'FfosL' : 'Ffos Las',
            # Greyville is in RSA
            'Grey'  : 'Greyville',
            # Gulf is a US course
@@ -45,6 +47,7 @@ COURSES = {
            'Laurel': 'Laurel Park',
            # Leopardstown is in Ireland
            'Leop'  : 'Leopardstown',
+           'Lim'   : 'Limerick',
            'Ling'  : 'Lingfield',
            'List'  : 'Listowel',
            'Ludl'  : 'Ludlow',

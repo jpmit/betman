@@ -1,5 +1,7 @@
 # list of easy things TODO when I need a break or to waste an hour or two
 
+- make unmatched bets in live bets panel display as 0.00 and not -0.00
+- change color of pricepanel when have/dont have prices and don't write 'None'
 - allow changing timebase in GUI (global config)
 - make everything prettier
 - get new logo / start image
@@ -9,7 +11,8 @@
 - convert this document to proper markdown
 
 # other
-** Fix 'withdrawal selection number invalid' problem
+* button on GUI to force close of automation
+* keep indexes correct on matching market panel and allow reverse sorting
 * get rid of / refactor guifunctions.py
 * Rename private (_) and non-private variables consistently
 * finish sorting out how and when info is written to the DB

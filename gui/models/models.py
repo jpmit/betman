@@ -10,19 +10,21 @@ import numpy as np
 import datetime
 
 class AbstractModel(object):
-    """
-    Modified version from Robin Dunn's book, page 137.  Used as a base
-    class for the other models below, used in the MVC design.
+    """Modified from Robin Dunn's book, page 137.  
+
+    This is used as a base class for the other models below, used in
+    the MVC design.
+
     """
 
     def __init__(self):
-        self.listeners = []
+        self._listeners = []
 
     def AddListener(self, listenerf):
-        self.listeners.append(listenerf)
+        self._listeners.append(listenerf)
 
     def RemoveListener(self, listenerf):
-        self.listeners.remove(listenerf)
+        self._listeners.remove(listenerf)
 
     def Update(self):
         """
@@ -39,7 +41,7 @@ class AbstractModel(object):
         Execute all the listener functions, thus updating the views.
         """
         
-        for eachf in self.listeners:
+        for eachf in self._listeners:
             eachf(self)
 
 @Singleton
@@ -59,8 +61,6 @@ class OrderModel(AbstractModel):
         # order refs tracked
         self._orefs = {}
 
-        self._neworders = []
-
     def Update(self, ostore):
         # see if any of the orders we are currently tracking were
         # updated on the last tick
@@ -70,7 +70,7 @@ class OrderModel(AbstractModel):
         # placed using the API.
         cords, uords, newords = ostore.latest
 
-        # remove/update orders I currently hold.
+        # update orders I currently hold.
         torem = []
         for i, o in enumerate(self._lorders):
             oref = o.oref
@@ -86,7 +86,7 @@ class OrderModel(AbstractModel):
                 # order object
                 self._lorders[i] = newo
             if oref in uords[exid]:
-                newo = uords[oref]
+                newo = uords[exid][oref]
                 newo._DRAW = True
                 # might need to add a few more things from the old
                 # order object
@@ -96,57 +96,48 @@ class OrderModel(AbstractModel):
         self._neworders = []
 
         # from newly placed orders.
-        if newords:
-            self._neworders = []
-            for o in newords[const.BDAQID].values() + newords[const.BFID].values():
-                self._neworders.append(o)
-                # track the order reference number
-                self._orefs[o.oref] = None
+        for o in newords[const.BDAQID].values() + newords[const.BFID].values():
+            self._neworders.append(o)
+            # track the order reference number
+            self._orefs[o.oref] = None
 
         # we might also have new orders for BF in the updated
         # dictionary (but we won't have new orders for BDAQ, since
         # updating a BDAQ order does not create a new one)!
-        if uords:
-            for oref in uords[const.BFID]:
-                if oref not in self._orefs:
-                    self._neworders.append(o)
-                    # track the order reference number
-                    self._orefs[o.oref] = None
+        for oref in uords[const.BFID]:
+            if oref not in self._orefs:
+                o = uords[const.BFID][oref]
+                self._neworders.append(o)
+                # track the order reference number
+                self._orefs[o.oref] = None
                     
         # new orders appear at end of list
         self._lorders = self._lorders + self._neworders
 
-        if (cords or uords or newords or updated[const.BDAQID] or updated[const.BFID]):
-            self.UpdateViews()
+        self.UpdateViews()
 
-    # def HaveMadeOrders(self):
-    #     """Have we made any orders since starting the application?"""
+    def GetLiveOrders(self):
+        """Return list of all live orders."""
 
-    #     return bool(self._ostore.get_current_orders(const.BDAQID) or
-    #                 self._ostore.get_current_orders(const.BFID))
+        return self._lorders
 
-    # def GetBDAQOrders(self):
-    #     """Return dict of BDAQ orders."""
+    def GetNewOrders(self):
+        """Return list of new orders."""
 
-    #     return self._ostore.get_current_orders(const.BDAQID)
-
-    # def GetBFOrders(self):
-    #     """Return dict of BF orders."""
-
-    #     return self._ostore.get_current_orders(const.BFID)
+        return self._neworders
 
 @Singleton
 class PriceModel(AbstractModel):
+    """Model used for displaying market prices on the main panel.  
 
-    """
-    Model used for displaying market prices on the main panel.  The
-    model currently manages only a single market id, with the main
+    The model currently manages only a single market id, with the main
     pricepanel view in mind.
 
     The model is linked to an 'UpdateStrategy', which means that the
     application will automatically collect new market prices.  This
     class needs to do some bookkeeping so that the view looks okay,
     e.g. it needs to store the ordering of the selections.
+
     """
     
     def __init__(self):
@@ -213,7 +204,7 @@ class PriceModel(AbstractModel):
         """
         
         if self._bdaqmid != None:
-            # check that we got new prices for this selection this tick.
+            # check that we got new prices for this market this tick.
             if (self._bdaqmid in prices[const.BDAQID] and
                 self._bfmid in prices[const.BFID]):
                 self._bdaqsels = [prices[const.BDAQID][self._bdaqmid][i]
@@ -228,9 +219,9 @@ class PriceModel(AbstractModel):
 class MatchMarketsModel(AbstractModel):
     """Model used for the matching markets view.
 
-    Note the model is responsible for filtering the matching markets,
-    e.g. so that we don't display historical markets in the matching
-    markets panel.
+    Note the model (rather than the view) is currently responsible for
+    filtering the matching markets, e.g. so that we don't display
+    historical markets in the matching markets panel.
 
     """
     
@@ -243,7 +234,7 @@ class MatchMarketsModel(AbstractModel):
         AbstractModel.__init__(self)
 
         # the market store holds the actual data about markets
-        self.mstore = stores.MarketStore.Instance()
+        self._mstore = stores.MarketStore.Instance()
 
         # we simply need to keep track of the event name, e.g. 'Horse
         # Racing' and a mapping between indices of data on the list
@@ -261,9 +252,9 @@ class MatchMarketsModel(AbstractModel):
         if refresh:
             # use BDAQ and BF api to get list of matching markets
             self._mmarks = guifunctions.match_markets(ename)
-            self.mstore.add_matching_markets(ename, self._mmarks)
+            self._mstore.add_matching_markets(ename, self._mmarks)
         else:
-            self._mmarks = self.mstore.get_matches(ename)
+            self._mmarks = self._mstore.get_matches(ename)
 
         # remove matching markets that don't concern the view
         # (e.g. historical markets).
@@ -297,9 +288,8 @@ class MatchMarketsModel(AbstractModel):
     def GetEventName(self):
         return self._ename
 
-# not a singleton as we want multiple instances
 class StrategyModel(AbstractModel):
-    """Holds information for a single strategy."""
+    """Model for the strategy monitor frame."""
 
     def __init__(self, bdaqsel, bfsel):
         super(StrategyModel, self).__init__() 
@@ -378,7 +368,7 @@ class StrategyModel(AbstractModel):
 
 # not a singleton as we want multiple instances
 class GraphPriceModel(AbstractModel):
-    """Holds information for a single graph."""
+    """Model for graph of selection price as a function of time."""
     
     NPOINTS = 100
     COMMISSION = cxstrategy._COMMISSION
