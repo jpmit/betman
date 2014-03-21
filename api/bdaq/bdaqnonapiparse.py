@@ -124,7 +124,8 @@ def ParseNonApiGetPrices(resp, mids):
             
     # construct error list - market ids we did not get any selection
     # information for. Presumably these have finished etc.
-    errormids = []    
+    errormids = [] 
+
     if lsels != lmids:
         for m in mids:
             if m not in selections:

@@ -18,11 +18,10 @@ class NonApiGetPrices(NonApiMethod):
     BDAQ API.
     """
     
-    def __init__(self, urlclient, dbman):
+    def __init__(self, urlclient):
         super(NonApiGetPrices, self).__init__(urlclient)
-        self.dbman = dbman
     
-    def call(self, mids, writedb = False):
+    def call(self, mids):
         """
         mids should be list of market ids.
 
@@ -55,12 +54,6 @@ class NonApiGetPrices(NonApiMethod):
                                                      ids)
             allselections.update(selections)
             allemids = allemids + emids
-
-        if writedb:
-            # get single flat list of selection objects from dict of dicts
-            sels = [m.values() for m in allselections.values()]
-            allsels = [item for subl in sels for item in subl]
-            self.dbman.write_selections(allsels, datetime.datetime.now())
 
         # return selection dictionary and the list of erroneous market ids
         return allselections, allemids

@@ -97,7 +97,7 @@ class BDAQNonApiClient(object):
     def __init__(self):
         # this is the 'base' URL got getting the prices.  We can add
         # other 'base' URLs here for different functionality.
-        self.pricesurl = ('http://www.betdaq.com/UI/3.57/MDC/PPMarkets'
+        self.pricesurl = ('http://www.betdaq.com/UI/3.65/MDC/PPMarkets'
                           '.aspx?')
 
         # headers for http requests

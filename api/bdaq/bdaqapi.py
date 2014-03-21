@@ -11,7 +11,7 @@ from betman.api import apiclient
 
 # time in seconds to sleep between calling ApiGetPrices (when called
 # with > 50 market ids).
-_PRICETHROTTLE = 10
+_PRICETHROTTLE = 1
 
 # create suds clients.  There is only 1 WSDL file, but this has two
 # 'services'.  The services are for 'readonly' methods and 'secure'
@@ -90,4 +90,4 @@ ListBlacklistInformation = bdaqapimethod.\
 # suffixed with _nApi.
 
 # get prices for some market ids
-GetPrices_nApi = bdaqnonapimethod.NonApiGetPrices(_ncl, _dbman).call
+GetPrices_nApi = bdaqnonapimethod.NonApiGetPrices(_ncl).call
