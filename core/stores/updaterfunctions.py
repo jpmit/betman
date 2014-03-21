@@ -1,4 +1,4 @@
-# matchguifunctions.py
+# updaterfunctions.py
 # James Mithen
 # jamesmithen@gmail.com
 
@@ -15,12 +15,9 @@ from betman.api.bdaq import bdaqapi
 from betman.matching import marketmatcher, matchconst
 from betman import database, const
 
-class GuiError(Exception):
-    pass
-
 # cache the event list
-BDAQ_EVENTS = []
-BF_EVENTS = []
+_BDAQ_EVENTS = []
+_BF_EVENTS = []
 
 # interface for writing the the DB
 _dbman = database.DBMaster()
@@ -70,7 +67,9 @@ def market_prices(bdaqmid, bfmid):
     # non-empty (they will contain the single market id only).
     # Returned below is a dictionary of selections with keys that are
     # the sids.
-    bdaqsels = bdaqapi.GetPrices_nApi([bdaqmid])[0].values()[0]
+    bdaqprices = bdaqapi.GetPrices_nApi([bdaqmid])
+    print bdaqprices
+    bdaqsels = bdaqprices[0].values()[0]
     bfsels = bfapi.GetPrices_nApi([bfmid])[0].values()[0]
 
     # write selections to the DB
@@ -112,21 +111,21 @@ def market_prices(bdaqmid, bfmid):
     return bdaqorder, bforder
 
 def match_markets(bdaqename):
-    global BDAQ_EVENTS, BF_EVENTS
+    global _BDAQ_EVENTS, _BF_EVENTS
 
     # get corresponding BF event name
     bfename = matchconst.EVENTMAP[bdaqename]
 
-    if not BDAQ_EVENTS:
+    if not _BDAQ_EVENTS:
         # get top level events for BF and BDAQ
-        BDAQ_EVENTS = bdaqapi.ListTopLevelEvents()
-        BF_EVENTS = bfapi.GetActiveEventTypes()
+        _BDAQ_EVENTS = bdaqapi.ListTopLevelEvents()
+        _BF_EVENTS = bfapi.GetActiveEventTypes()
     
     # get markets for the selected event type
     bdaqmarkets = bdaqapi.\
-                  GetEventSubTreeNoSelections([ev.id for ev in BDAQ_EVENTS
+                  GetEventSubTreeNoSelections([ev.id for ev in _BDAQ_EVENTS
                                                if ev.name == bdaqename])
-    bfmarkets = bfapi.GetAllMarketsUK([ev.id for ev in BF_EVENTS
+    bfmarkets = bfapi.GetAllMarketsUK([ev.id for ev in _BF_EVENTS
                                        if ev.name == bfename])
 
     # get matching markets: note, for horse racing, this takes a long time

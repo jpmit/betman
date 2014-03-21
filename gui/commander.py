@@ -18,7 +18,7 @@ clk = clock.Clock(const.TICK_LENGTH_MS / 1000.0)
 clk.tick()
 
 # update matching markets for horse racing
-mupd = updaters.MarketUpdater.Instance()
+mupd = updaters.MatchMarketUpdater.Instance()
 mupd.update_market_information('Horse Racing')
 
 # get automation to the engine

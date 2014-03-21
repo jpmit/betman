@@ -23,7 +23,7 @@ class MarketPanel(wx.Panel):
         self.mmodel = models.MatchMarketsModel.Instance()
 
         # market store has information about the markets such as name etc.
-        self.mstore = stores.MarketStore.Instance()
+        self.mstore = stores.MatchMarketStore.Instance()
         
         # The listener will update the view
         self.mmodel.AddListener(self.lst.OnGetMatchEvents)
@@ -172,7 +172,7 @@ class MatchListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
 
         # we use the event name in the model to access the matching
         # markets for that event in the Market Store.
-        mstore = stores.MarketStore.Instance()
+        mstore = stores.MatchMarketStore.Instance()
         mmarks = mstore.get_matches(mmodel.GetEventName())
 
         # Clear any existing items on the ListCtrl

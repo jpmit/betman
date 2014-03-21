@@ -1,8 +1,8 @@
 """Models used in MVC style for the GUI."""
 
 from operator import itemgetter
-from betman.gui import guifunctions
 from betman.core import stores, managers
+from betman.core.stores import updaters
 from betman.strategy import strategy, cxstrategy, mmstrategy, position
 from betman import const, exchangedata, database, order
 from betman.all.singleton import Singleton
@@ -149,8 +149,13 @@ class PriceModel(AbstractModel):
         self._bdaqsels = []
         self._bfsels = []
 
-        self._mstore = stores.MarketStore.Instance()
-        self._sstore = stores.SelectionStore.Instance()
+        # stores
+        self._mstore = stores.MatchMarketStore.Instance()
+        self._sstore = stores.MatchSelectionStore.Instance()
+
+        # updaters
+        self._supdater = updaters.MatchSelectionUpdater.Instance()
+        self._mupdater = updaters.MatchMarketUpdater.Instance()
 
         # We set these once the user has clicked on a matching market.
         self._bdaqmid = None
@@ -172,12 +177,8 @@ class PriceModel(AbstractModel):
 
         if (not self._bdaqsels) or (refresh):
             # call BDAQ and BF api to get selections
-            bfmid = self._mstore.get_BFmid_from_BDAQmid(self._bdaqmid)
-            self._bdaqsels, self._bfsels = guifunctions.\
-                                           market_prices(self._bdaqmid, bfmid)
-            # write this back to the selection store.
-            self._sstore.add_matching_selections(self._bdaqmid, self._bdaqsels,
-                                                 self._bfsels)
+            self._bdaqsels, self._bfsels = self._supdater.\
+                                           update_selection_information(self._bdaqmid)
 
         # store mapping of BDAQ selection name to index into sel list
         self._selindx = dict([(s.name, i) for (i, s) in enumerate(self._bdaqsels)])
@@ -233,8 +234,11 @@ class MatchMarketsModel(AbstractModel):
 
         AbstractModel.__init__(self)
 
+        # updater for getting new prices
+        self._mupdater = updaters.MatchMarketUpdater.Instance()
+
         # the market store holds the actual data about markets
-        self._mstore = stores.MarketStore.Instance()
+        self._mstore = stores.MatchMarketStore.Instance()
 
         # we simply need to keep track of the event name, e.g. 'Horse
         # Racing' and a mapping between indices of data on the list
@@ -251,8 +255,7 @@ class MatchMarketsModel(AbstractModel):
 
         if refresh:
             # use BDAQ and BF api to get list of matching markets
-            self._mmarks = guifunctions.match_markets(ename)
-            self._mstore.add_matching_markets(ename, self._mmarks)
+            self._mmarks = self._mupdater.update_market_information(ename)
         else:
             self._mmarks = self._mstore.get_matches(ename)
 

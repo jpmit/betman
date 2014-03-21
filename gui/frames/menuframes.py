@@ -123,7 +123,7 @@ class CurrentStrategiesFrame(wx.Frame):
         self.app = wx.GetApp()
 
         # market store
-        self.mstore = stores.MarketStore.Instance()
+        self.mstore = stores.MatchMarketStore.Instance()
 
         self.Draw()
 

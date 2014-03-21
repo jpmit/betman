@@ -10,7 +10,9 @@
 - don't let current strategies frame truncate text
 - convert this document to proper markdown
 
-# other
+# other 
+** go deeper down order book when closing out MM strategy:
+build better system for getting delta prices
 * button on GUI to force close of automation
 * keep indexes correct on matching market panel and allow reverse sorting
 * get rid of / refactor guifunctions.py

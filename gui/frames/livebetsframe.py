@@ -102,10 +102,10 @@ class BetListCtrl(Ulc.UltimateListCtrl):
         self.SetColumnWidth(8, 70)
 
         # used to map mids to market names
-        self._mstore = stores.MarketStore.Instance()
+        self._mstore = stores.MatchMarketStore.Instance()
 
         # used to map sids to selection names
-        self._sstore = stores.SelectionStore.Instance()
+        self._sstore = stores.MatchSelectionStore.Instance()
 
         # dict mapping item number to order object
         self._curords = {}
@@ -186,7 +186,7 @@ class BetListCtrl(Ulc.UltimateListCtrl):
 
         # new orders
         neworders = omodel.GetNewOrders()
-        nnew = len(neword)
+        nnew = len(neworders)
 
         # add any new orders
         if nnew:

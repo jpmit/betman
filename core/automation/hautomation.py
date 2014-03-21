@@ -49,9 +49,9 @@ class MyAutomation(Automation):
         super(MyAutomation, self).__init__('Horse MM Automation')
         
         # we access data on markets and selections through the 'stores'
-        self._mstore = stores.MarketStore.Instance()
-        self._sstore = stores.SelectionStore.Instance()
-        self._supdater = updaters.SelectionUpdater.Instance()
+        self._mstore = stores.MatchMarketStore.Instance()
+        self._sstore = stores.MatchSelectionStore.Instance()
+        self._supdater = updaters.MatchSelectionUpdater.Instance()
 
         # store time deltas for figuring out when strategies start/end
         self._starttdelta = datetime.timedelta(minutes=self._STARTT)

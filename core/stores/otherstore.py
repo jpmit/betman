@@ -1,9 +1,10 @@
 """All other stores except for OrderStore and Pricing Store.
 
-At present we have a MarketStore, which stores details of the markets
-for both BDAQ and BF (including mapping between mids), and a
-SelectionStore, which does the same for selections.  The
-SelectionStore also stores the display order of the selections.
+At present we have a MatchMarketStore, which stores details of the
+markets for both BDAQ and BF (including mapping between mids), and a
+MatchSelectionStore, which does the same for selections.  The
+MatchSelectionStore stores the selections in the BDAQ display order,
+so is useful for the GUI.
 
 """
 
@@ -12,7 +13,9 @@ from betman.all.singleton import Singleton
 from betman.matching.matchconst import EVENTMAP
 
 @Singleton
-class MarketStore(object):
+class MatchMarketStore(object):
+
+    """Map markets between the exchanges."""
     
     # if True, we will initialise the the store with information in
     # the sqlite database.
@@ -124,7 +127,9 @@ class MarketStore(object):
         return self._match_cache[ename]
 
 @Singleton
-class SelectionStore(object):
+class MatchSelectionStore(object):
+
+    """Map selections between the exchanges."""
 
     # if True, init the selection store with information in the DB.
     # Note: we probably don't want to do this, or at least we should
@@ -157,7 +162,7 @@ class SelectionStore(object):
         # we need to access the market store since when we add
         # matching selections, we need to find the BF mid that matches
         # the given BDAQ mid.
-        self._mstore = MarketStore.Instance()
+        self._mstore = MatchMarketStore.Instance()
 
         # singleton that controls DB access
         self._dbman = database.DBMaster()
