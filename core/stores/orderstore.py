@@ -14,8 +14,8 @@ from betman.all.singleton import Singleton
 class OrderStore(object):
     """Class for storing information on orders made.
 
-    Note this model encapsulates the data for ALL orders, not just a
-    single order.
+    Note this store holds the data for ALL orders, not just a single
+    order.
 
     """
 
@@ -144,9 +144,7 @@ class OrderStore(object):
         self._orders[const.BFID].update(odict.get(const.BFID, {}))
 
         # save to DB
-        ords = [o.values() for o in odict.values()]
-        allords = [item for subl in ords for item in subl]
-        self._dbman.write_orders(allords)
+        self._dbman.write_orders(util.flattendict(odict))
 
     def add_new_orders(self, odict):
         """Add newly placed orders to the store.  
@@ -171,7 +169,7 @@ class OrderStore(object):
         # get flat list of all order objects
         ordlist = util.flattendict(odict)
 
-        # store time placed
+        # add to cache of time placed
         for o in ordlist:
             self._tplaced[o.exid][o.oref] = o.tplaced
 
@@ -199,6 +197,9 @@ class OrderStore(object):
         # but this will add new orders, and the status of the old
         # orders will be set to CANCELLED.
         self._orders[const.BFID].update(odict.get(const.BFID, {}))
+
+        # save to DB
+        self._dbman.write_orders(util.flattendict(odict))
 
     def get_unmatched_orders(self, exid):
         """Return list of unmatched orders for exchange exid."""
@@ -236,10 +237,6 @@ class OrderStore(object):
                 if oid not in odict:
                     print 'order id {0} was CANCELLED'.format(oid), self._orders[exid][oid]
                     self._orders[exid][oid].status = order.CANCELLED
-
-        # next, for all of the orders we got back from either BDAQ or
-        # BF, we want to put in the market id, since this information
-        # isn't returned by the API.
                                         
         # update main order dictionary
         self._orders[exid].update(odict)
@@ -250,3 +247,6 @@ class OrderStore(object):
         # we need to seach this dict to get oref of placed order
         if (exid == const.BDAQID):
             self.orders_tosearch[exid] = odict
+
+        # save to DB
+        self._dbman.write_orders({exid: odict.values()})
