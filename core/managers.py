@@ -10,7 +10,7 @@ pull the order status from the manager.
 """
 
 import datetime
-from betman import const, database, order, betlog
+from betman import const, order, betlog
 from betman.core import multi
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi

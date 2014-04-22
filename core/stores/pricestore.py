@@ -6,7 +6,9 @@ writing order and price information to the database.
 
 """
 
-from betman import const
+import datetime
+
+from betman import const, database, util
 from betman.all.singleton import Singleton
 
 @Singleton
@@ -21,8 +23,17 @@ class PriceStore(object):
         # engine; it will be fed to the strategies.
         self.newprices = {const.BDAQID: {}, const.BFID: {}}
 
+        # for writing to database
+        self._dbman = database.DBMaster()
+
     def add_prices(self, prices):
-        """Add prices to the store."""
+        """Add prices to the store.
+
+        Note this currently gets called by the PricingManager even
+        when prices is {const.BDAQID: {}, const.BFID: {}} (i.e. no
+        prices)
+
+        """
 
         # we store the most recent prices in their own dict
         self.newprices = prices
@@ -30,10 +41,8 @@ class PriceStore(object):
         self._prices.update(prices)
 
         # write prices to database
-        print 'prices from pricestore:'
-        print prices
-
-            # get single flat list of selection objects from dict of dicts
-            #sels = [m.values() for m in allselections.values()]
-            #allsels = [item for subl in sels for item in subl]
-            #self.dbman.write_selections(allsels, datetime.datetime.now())
+        if prices[const.BDAQID] or prices[const.BFID]:
+            bdaqsels = util.flattendict(prices[const.BDAQID])
+            bfsels = util.flattendict(prices[const.BFID])
+            self._dbman.write_selections(bdaqsels + bfsels, 
+                                         datetime.datetime.now())
