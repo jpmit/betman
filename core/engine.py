@@ -58,22 +58,14 @@ class Engine(object):
         return self.stratgroup.strategies
 
     def have_strategies(self):
-        """Do we have at least one currently executing strategy?
-
-        If so, return True, otherwise return False.
-
-        """
+        """Do we have at least one currently executing strategy?"""
 
         if self.stratgroup.strategies:
             return True
         return False
 
     def have_automations(self):
-        """Do we have at least one currently executing automation?
-
-        If so, return True, otherwise return False.
-
-        """
+        """Do we have at least one currently executing automation?"""
 
         if self.automations:
             return True

@@ -150,7 +150,7 @@ class MatchListCtrl(wx.ListCtrl, listmix.ColumnSorterMixin):
 
         # add column headings
         self.InsertColumn(0, "Market Name")
-        self.InsertColumn(1, "Start Time")
+        self.InsertColumn(1, "Start Time (GMT)")
         self.InsertColumn(2, "BDAQ Matched")
         self.InsertColumn(3, "BF Matched")
 

@@ -66,7 +66,7 @@ class Selection(object):
     def __init__(self, exid, name, myid, marketid, mback, mlay,
                  lastmatched, lastmatchedprice, lastmatchedamount,
                  backprices, layprices, src=None, wsn=None, dorder=None,
-                 **kwargs):
+                 tstamp = None, **kwargs):
 
         self.exid = exid
 
@@ -90,6 +90,9 @@ class Selection(object):
 
         # display order is display order for BDAQ
         self.dorder = dorder
+
+        # timestamp 
+        self.tstamp = tstamp
 
         # list of prices and stakes [(p1,s1), (p2,s2) ...,]
         self.backprices = backprices

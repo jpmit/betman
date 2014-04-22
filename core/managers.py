@@ -64,9 +64,6 @@ class OrderManager(object):
         # information to the database as required.
         self.ostore = OrderStore.Instance()
 
-        # we do store a ref to current order dictionary
-        #self.orders = self.ostore._orders
-
         # call startup routine to bootstap BDAQ order information, and
         # login to betfair.
         self.bootstrap()
@@ -177,6 +174,9 @@ class OrderManager(object):
         # get list of unmatched orders on BF
         bfunmatched = self.ostore.get_unmatched_orders(const.BFID)
 
+        # set latest_updates dict in order store to be empty
+        self.ostore.latest_updates.update({const.BDAQID: {}, const.BFID: {}})
+
         # only want to call BDAQ API if we have unmatched bets
         if bdaqunmatched:
             # this should automatically keep track of a 'sequence
@@ -186,18 +186,16 @@ class OrderManager(object):
             # debug
             for o in bdaqors.values():
                 print o.__dict__
-        else:
-            bdaqors = {}
-        self.ostore.process_order_updates(const.BDAQID, bdaqors, 
-                                          bdaqunmatched)
+
+            self.ostore.process_order_updates(const.BDAQID, bdaqors, 
+                                              bdaqunmatched)
 
         if bfunmatched:
             # we pass this function the list of order objects;
             bfors = bfapi.GetBetStatus(bfunmatched)
-        else:
-            bfors = {}
-        self.ostore.process_order_updates(const.BFID, bfors, 
-                                          bfunmatched)
+
+            self.ostore.process_order_updates(const.BFID, bfors, 
+                                              bfunmatched)
 
 class PricingManager(object):
     def __init__(self, stratgroup):
@@ -206,13 +204,6 @@ class PricingManager(object):
 
         # the price store actually holds the data
         self.pstore = PriceStore.Instance()
-
-        # current prices
-        #self.prices = {const.BDAQID: {}, const.BFID: {}}
-
-        # same as above but only contains mids that were updated in
-        # the last tick.
-        #self.new_prices = {const.BDAQID: {}, const.BFID: {}}
 
     def get_strategy_with_mid(bdaqmid):
         """

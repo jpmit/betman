@@ -6,7 +6,7 @@ import re
 import time
 import datetime
 from betman.api.bf import bfapi
-from betman import betlog
+from betman import betlog, betexception
 
 # conversion from BF course name to BDAQ course name.  BF course names
 # on left, BDAQ course names on right.
@@ -88,55 +88,94 @@ COURSES = {
            'Winc'  : 'Wincanton',
            'Wolv'  : 'Wolverhampton'}
 
+_BDAQ_COURSES = {i: None for i in COURSES.values()}
+_BF_COURSES = {i: None for i in COURSES.keys()}
+
+def _is_bst():
+    """Are we currently in BST (British Summer Time)"""
+
+    ltime = time.localtime()
+    ctime = time.gmtime()
+
+    if (ltime.tm_hour == ctime.tm_hour + 1):
+        return True
+    elif (ltime.tm_hour == ctime.tm_hour):
+        return False
+    else:
+        raise betexception.BetmanError, 'unable to determine local time'
+
+def _add_course_BDAQ(m):
+    """Add course attribute to BDAQ market"""
+
+    # we determine the course from the market name
+    names = m.name.split('|')
+
+    # first, assume the race is named like so:
+    # |Horse Racing|UK Racing|Wolverhampton (7th February 2014)|19:00 Wolverhampton|Win Market
+    # getting the course is easy, we simply get all the text following the time.
+    course = names[-2][6:]
+
+    if course not in _BDAQ_COURSES:
+        # ok, assume races names like so:
+        # |Horse Racing|US Racing|Turfway Park (7th February 2014)|01:11 Turfway Park Race 5|Place Market
+        # in which case we need to remove the 'Race 5' part
+        mat = re.search('Race \d+', course)
+        if mat:
+            course = course[:mat.start() - 1]
+        if course not in _BDAQ_COURSES:
+            # finally, perhaps the race named like so:
+            # |Horse Racing|Ante Post|Cheltenham (12th March 2014)|Neptune Novices Hurdle|Win Market
+            # in which case we need to look at a level deeper
+            # i.e. names[-3], and remove everything after the bracket (and the space before).
+            course = names[-3]
+            mat = re.search('\(', course)
+            if mat:
+                course = course[:mat.start() - 1]
+
+    # assign course to the market object
+    m.course = course
+
+# NOTES for matching horse racing markets (using the method below):
+#
+# * If two horse races are at the same course, are both 'Win' markets,
+#   and start at the same time, they match.
+#
+# * For BDAQ markets, the time in the market name m.name is the local
+#   time (either GMT or BST), but the time stored in the market object
+#   m.starttime is always GMT.  But for BF markets (which don't have a
+#   time in the name), the time stored in the market object
+#   m.starttime is the local time (either GMT or BST).  Therefore, if
+#   the local time is BST, we add one hour to the start time of the
+#   BDAQ methodfor matching purposes (though the GMT starttime only is
+#   stored in the database).
+
 def match_horse(bdaqmarkets, bfmarkets):
     """
     Return list of tuples (m1,m2) where m1 and m2 are the matching
     markets.
     """
 
-    # dicts with bdaq and bf courses as keys (values not needed)
-    bf_courses = {i:None for i in COURSES.keys()}
-    bdaq_courses = {i:None for i in COURSES.values()}
-
     # we will only match 'win' markets, and not 'place markets'
     bdaqwinmarkets = [m for m in bdaqmarkets if
                       m.name.split('|')[-1] == 'Win Market']
-    bdaqmarks = []
+
+    # are we in BST (British Summer Time)
+    inbst = _is_bst()
+    deltat = datetime.timedelta(hours = 1)
+
     for m in bdaqwinmarkets:
-        names = m.name.split('|')
-        stime = m.starttime
-        # extract course from BDAQ name
 
-        # first, assume the race is named like so:
-        # |Horse Racing|UK Racing|Wolverhampton (7th February 2014)|19:00 Wolverhampton|Win Market
-        # getting the course is easy, we simply get all the text following the time.
-        course = names[-2][6:]
+        # add an hour to the BDAQ (GMT) starttime if we are in BST
+        # (see above NOTES).
+        if inbst:
+            m.starttime += deltat
 
-        if course not in bdaq_courses:
-            # ok, assume races names like so:
-            # |Horse Racing|US Racing|Turfway Park (7th February 2014)|01:11 Turfway Park Race 5|Place Market
-            # in which case we need to remove the 'Race 5' part
-            mat = re.search('Race \d+', course)
-            if mat:
-                course = course[:mat.start() - 1]
-            if course not in bdaq_courses:
-                # finally, perhaps the race named like so:
-                # |Horse Racing|Ante Post|Cheltenham (12th March 2014)|Neptune Novices Hurdle|Win Market
-                # in which case we need to look at a level deeper
-                # i.e. names[-3], and remove everything after the bracket (and the space before).
-                course = names[-3]
-                mat = re.search('\(', course)
-                if mat:
-                    course = course[:mat.start() - 1]
+        # add the course as an attribute of the market object
+        _add_course_BDAQ(m)
 
-        # assign course to the market object
-        m.course = course
-        # add to list for comparison with BF
-        bdaqmarks.append(m)
-
-    # get dictionary of all the courses for BDAQ
+    # get dictionary of all the courses for BDAQ markets
     allcourses = {}
-    for c in [m.course for m in bdaqmarks]:
+    for c in [m.course for m in bdaqwinmarkets]:
         if c not in allcourses:
             allcourses[c] = None
 
@@ -188,7 +227,7 @@ def match_horse(bdaqmarkets, bfmarkets):
     # go through each bdaq market in turn, try to find a matching bf
     # market.
     matchmarks = []
-    for m1 in bdaqmarks:
+    for m1 in bdaqwinmarkets:
         for m2 in bfmarks:
             # check races are happening on same course
             if m1.course == m2.course:
