@@ -100,14 +100,9 @@ class NonApigetPrices(NonApiMethod):
         super(NonApigetPrices, self).__init__(urlclient)
         self.dbman = dbman
     
-    def call(self, mids, writedb = False):
+    def call(self, mids):
         """
         mids should be list of market ids.
-
-        Note that by default we don't write selection information to
-        the database.  This is because for multithreaded applications
-        writing to the DB asynchronously is problematic (as well as a
-        bit time consuming).
         """
         
         # unsure what MAXMIDS should be.  BF returns HTTP 400 return
@@ -126,7 +121,7 @@ class NonApigetPrices(NonApiMethod):
                                            '_PRICES_BEST'
                                            '&marketIds={0}'.format(midstring))
 
-            #betlog.betlog.debug('BF Selection URL: {0}'.format(url))
+            betlog.betlog.debug('BF Selection URL: {0}'.format(url))
 
             # make the HTTP request
             betlog.betlog.info('calling BF nonApi getPrices')            
@@ -139,11 +134,5 @@ class NonApigetPrices(NonApiMethod):
  
             allselections.update(selections)
             allemids = allemids + emids
-
-        if writedb:
-            # get single flat list of selection objects from dict of dicts
-            sels = [m.values() for m in allselections.values()]
-            allsels = [item for subl in sels for item in subl]
-            self.dbman.write_selections(allsels, datetime.datetime.now())
 
         return allselections, allemids

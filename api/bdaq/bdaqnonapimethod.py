@@ -24,11 +24,6 @@ class NonApiGetPrices(NonApiMethod):
     def call(self, mids):
         """
         mids should be list of market ids.
-
-        Note that by default we don't write selection information to
-        the database.  This is because for multithreaded applications
-        writing to the DB asynchronously is problematic (as well as a
-        bit time consuming).
         """
 
         # unsure what MAXMIDS should be.  BDAQ returns HTTP 400 return

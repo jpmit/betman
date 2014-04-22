@@ -292,14 +292,14 @@ class DBMaster(object):
                 'selection_id, name, b_1, bvol_1, b_2, bvol_2, b_3, '
                 'bvol_3, b_4, bvol_4, b_5, bvol_5, lay_1, lvol_1, '
                 'lay_2, lvol_2, lay_3, lvol_3, lay_4, lvol_4, '
-                'lay_5, lvol_5, src, wsn, dorder, last_checked) values '
+                'lay_5, lvol_5, src, wsn, dorder, tstamp) values '
                 '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,'
                 ' ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         qupd = ('UPDATE {0} SET b_1=?, bvol_1=?, b_2=?, bvol_2=?, '
                 'b_3=?, bvol_3=?, b_4=?, bvol_4=?, b_5=?, bvol_5=?, '
                 'lay_1=?, lvol_1=?, lay_2=?, lvol_2=?, lay_3=?, lvol_3=?, '
                 'lay_4=?, lvol_4=?, lay_5=?, lvol_5=?, src=?, wsn=?, dorder=?,'
-                'last_checked=? '
+                'tstamp=? '
                 'WHERE exchange_id=? and market_id=? and selection_id=?'\
                 .format(schema.SELECTIONS))
 
@@ -326,8 +326,8 @@ class DBMaster(object):
                 # update prices
                 self.cursor.execute(qupd, d[4:] + d[:3])
 
-        # write to the historical prices table
-        self.cursor.executemany(qins.format(schema.HISTPRICES), alldata)
+        # write to the historical selections table
+        self.cursor.executemany(qins.format(schema.HISTSELECTIONS), alldata)
             
         self.conn.commit()
 
@@ -460,7 +460,8 @@ class DBMaster(object):
                                 [y for y in util.pairwise(s[14:24])],
                                 s[24], # selection reset count
                                 s[25], # withdrawal selection number
-                                s[26]) # display order 
+                                s[26], # display order 
+                                s[27]) # time stamp
                       for s in seldata]
         
         return selections
@@ -606,8 +607,8 @@ class DBMaster(object):
         # accountinfo stores balance, available funds etc
         self.cursor.execute(schema.getschema(schema.ACCOUNTINFO))
 
-        # histprices stores historical price information
-        self.cursor.execute(schema.getschema(schema.HISTPRICES))
+        # histselections stores historical selection (price) information
+        self.cursor.execute(schema.getschema(schema.HISTSELECTIONS))
 
         # historders stores historical order information
         self.cursor.execute(schema.getschema(schema.HISTORDERS))

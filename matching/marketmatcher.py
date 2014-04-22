@@ -7,7 +7,7 @@ Functionality for finding pairs of matching markets, i.e. the same
 market on BDAQ and BF.
 """
 
-from betman import const, database, betlog
+from betman import const, betlog
 from betman.all.betexception import MatchError
 from matchconst import EVENTMAP
 import matchformula1
@@ -64,15 +64,6 @@ def get_match_markets(m1s, m2s):
         betlog.betlog.debug("Matched {0}/{1} BDAQ {2} markets"\
                             .format(len(matchms), len(bdaqms),
                                     name))
-
-        # write the markets not matched to log
-        #nmstr = '\n'.join(nomatch)
-        #betlog.betlog.debug("Markets not matched:\n{0}"\
-        #                    .format(nmstr))
-        
-    # write matching markets to DB
-    if const.WRITEDB:
-        database.DBMaster().write_market_matches(matchms)
     
     return matchms
 
@@ -126,7 +117,7 @@ def get_match_selections(m1sels, m2sels):
     """
     Get matching selections.
     sel1s are BDAQ markets
-    sel2s are BF markets.
+    sel2s are BF markets
     """
 
     # sel1s and sel2s should be [[s1,s2,s3m...],[s1,s2,s3,...]]
@@ -148,9 +139,5 @@ def get_match_selections(m1sels, m2sels):
             else:
                 betlog.betlog.info(('No match found for BDAQ selection '
                                     '{0}').format(sel))
-                
-    # write matching selections to DB
-    if const.WRITEDB:
-        database.DBMaster().write_selection_matches(matchsels)
 
     return matchsels

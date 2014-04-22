@@ -21,7 +21,7 @@ class MatchSelectionUpdater(object):
     def update_selection_information(self, bdaqmid):
         bfmid = self._mstore.get_BFmid_from_BDAQmid(bdaqmid)
         
-        bdaqsels, bfsels = updaterfunctions.market_prices(bdaqmid, bfmid)
+        bdaqsels, bfsels = updaterfunctions.get_ordered_selections(bdaqmid, bfmid)
         self._sstore.add_matching_selections(bdaqmid, bdaqsels, bfsels)
 
         return bdaqsels, bfsels
@@ -32,7 +32,7 @@ class MatchMarketUpdater(object):
         self._mstore = stores.MatchMarketStore.Instance()
 
     def update_market_information(self, ename):
-        mmarks = updaterfunctions.match_markets(ename)
+        mmarks = updaterfunctions.get_matching_markets(ename)
         self._mstore.add_matching_markets(ename, mmarks)
 
         return mmarks

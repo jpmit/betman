@@ -18,7 +18,7 @@ SELECTIONS = 'selections'
 ORDERS = 'orders'
 MATCHORDERS = 'matchorders'
 ACCOUNTINFO = 'accountinfo'
-HISTPRICES = 'histprices'
+HISTSELECTIONS = 'histselections'
 HISTORDERS = 'historders'
 
 # keys are table name, value is schema
@@ -82,7 +82,7 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                            # so it is likely to be set by updating a
                            # currently existing selection.
                            ' dorder       int,'
-                           ' last_checked timestamp)'),
+                           ' tstamp       timestamp)'),
               # strategy is the strategy type
               # polarity can be either 1 (back) or 2 (lay)
               # matched is the amount (up to stake) that has been matched
@@ -113,35 +113,36 @@ _SQLSCHEMA = {EXCHANGES:  ('(id   integer primary key,'
                             ' credit      real NOT NULL,'
                             ' exposure    real NOT NULL,'
                             ' tstamp      timestamp NOT NULL)'),
-              # HISTPRICES has the same schema as SELECTIONS
-              HISTPRICES: ('(exchange_id  int  NOT NULL,'
-                           ' market_id    long NOT NULL,'
-                           ' selection_id long NOT NULL,'
-                           ' name         text NOT NULL,'
-                           ' b_1          real,'
-                           ' bvol_1       real,'
-                           ' b_2          real,'
-                           ' bvol_2       real,'
-                           ' b_3          real,'
-                           ' bvol_3       real,'
-                           ' b_4          real,'
-                           ' bvol_4       real,'
-                           ' b_5          real,'
-                           ' bvol_5       real,'
-                           ' lay_1        real,'
-                           ' lvol_1       real,'
-                           ' lay_2        real,'
-                           ' lvol_2       real,'
-                           ' lay_3        real,'
-                           ' lvol_3       real,'
-                           ' lay_4        real,'
-                           ' lvol_4       real,'
-                           ' lay_5        real,'
-                           ' lvol_5       real,'
-                           ' src          int,'
-                           ' wsn          int,'
-                           ' dorder       int,'
-                           ' last_checked timestamp)'),
+              # HISTSELECTIONS has the same schema as SELECTIONS
+              HISTSELECTIONS: \
+                           ('(exchange_id  int  NOT NULL,'
+                            ' market_id    long NOT NULL,'
+                            ' selection_id long NOT NULL,'
+                            ' name         text NOT NULL,'
+                            ' b_1          real,'
+                            ' bvol_1       real,'
+                            ' b_2          real,'
+                            ' bvol_2       real,'
+                            ' b_3          real,'
+                            ' bvol_3       real,'
+                            ' b_4          real,'
+                            ' bvol_4       real,'
+                            ' b_5          real,'
+                            ' bvol_5       real,'
+                            ' lay_1        real,'
+                            ' lvol_1       real,'
+                            ' lay_2        real,'
+                            ' lvol_2       real,'
+                            ' lay_3        real,'
+                            ' lvol_3       real,'
+                            ' lay_4        real,'
+                            ' lvol_4       real,'
+                            ' lay_5        real,'
+                            ' lvol_5       real,'
+                            ' src          int,'
+                            ' wsn          int,'
+                            ' dorder       int,'
+                            ' tstamp       timestamp)'),
               # HISTORDERS has the same schema as ORDERS
               HISTORDERS:     ('(order_id     int  NOT NULL, '
                                ' exchange_id  int  NOT NULL,'

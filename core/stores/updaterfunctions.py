@@ -3,9 +3,8 @@
 # jamesmithen@gmail.com
 
 """
-A lot of ugly stuff that goes on behind the scenes...  TODO: sort
-this out a bit.  It should be possible to get rid of this entire
-module really...
+Functions for getting matching markets (using the APIs) and
+matching selections (also using the APIs).
 """
 
 import datetime
@@ -13,21 +12,19 @@ from operator import itemgetter
 from betman.api.bf import bfapi
 from betman.api.bdaq import bdaqapi
 from betman.matching import marketmatcher, matchconst
-from betman import database, const
+from betman import const
 
-# cache the event list
-_BDAQ_EVENTS = []
-_BF_EVENTS = []
-
-# interface for writing the the DB
-_dbman = database.DBMaster()
+# dict mapping event name to event id for each exchange, this is built
+# the first time match_markets below is called.
+_BDAQ_EVENTS = {}
+_BF_EVENTS = {}
 
 def _sort_match(item):
     """Key for sorting matching markets by BDAQ start time"""
     
     return item[0].starttime
 
-def display_order(bdaqmid):
+def _display_order(bdaqmid):
     """
     Return list of selection id's in the order given by the BDAQ API
     (which is the display order on the website).
@@ -56,7 +53,7 @@ def display_order(bdaqmid):
 
     return flist
 
-def market_prices(bdaqmid, bfmid):
+def get_ordered_selections(bdaqmid, bfmid):
     """
     Return bdaqsels, bfsels, lists of selection objects for BDAQ and
     BF respectively, ordered by bdaq display ordering.
@@ -68,16 +65,10 @@ def market_prices(bdaqmid, bfmid):
     # Returned below is a dictionary of selections with keys that are
     # the sids.
     bdaqprices = bdaqapi.GetPrices_nApi([bdaqmid])
-    print bdaqprices
     bdaqsels = bdaqprices[0].values()[0]
-    bfsels = bfapi.GetPrices_nApi([bfmid])[0].values()[0]
-
-    # write selections to the DB
-    # TODO: write convenience function somewhere so this is a single
-    # line, and fix and document APIs so we know where we should be
-    # saving this information.
-    _dbman.write_selections(bdaqsels.values() + bfsels.values(),
-                            datetime.datetime.now())    
+    bfprices = bfapi.GetPrices_nApi([bfmid])
+    print bfprices
+    bfsels = bfprices[0].values()[0]
 
     # get lists of selections
     bdaqsellist = bdaqsels.values()
@@ -91,45 +82,47 @@ def market_prices(bdaqmid, bfmid):
     mseldict = {k.id : v.id for (k, v) in msels}
 
     # get the BDAQ display order of selections
-    dorder = display_order(bdaqmid)
+    dorder = _display_order(bdaqmid)
 
-    # add sorting info to the cache
+    # add display order to each BDAQ selection
     mlist = []
-    tnow = datetime.datetime.now()
     for (i, d) in enumerate(dorder):
         # note d will not be in mseldict if we failed to match the
-        # selection!
+        # selection.
         if d in mseldict:
             mlist.append((d, mseldict[d]))
             bdaqsels[d].dorder = i
-            # update the selection in the database so that we have
-            # the display order stored for next time we start-up.
-            _dbman.write_selections([bdaqsels[d]], tnow)
 
+    # build and return ordered list of BDAQ selections
     bdaqorder = [bdaqsels[s[0]] for s in mlist]
     bforder = [bfsels[s[1]] for s in mlist]
     return bdaqorder, bforder
 
-def match_markets(bdaqename):
-    global _BDAQ_EVENTS, _BF_EVENTS
+def get_matching_markets(bdaqename):
+    """Get matching markets for a BetDaq event name."""
 
-    # get corresponding BF event name
-    bfename = matchconst.EVENTMAP[bdaqename]
+    global _BDAQ_EVENTS, _BF_EVENTS
 
     if not _BDAQ_EVENTS:
         # get top level events for BF and BDAQ
-        _BDAQ_EVENTS = bdaqapi.ListTopLevelEvents()
-        _BF_EVENTS = bfapi.GetActiveEventTypes()
-    
-    # get markets for the selected event type
-    bdaqmarkets = bdaqapi.\
-                  GetEventSubTreeNoSelections([ev.id for ev in _BDAQ_EVENTS
-                                               if ev.name == bdaqename])
-    bfmarkets = bfapi.GetAllMarketsUK([ev.id for ev in _BF_EVENTS
-                                       if ev.name == bfename])
+        bdaqevents = bdaqapi.ListTopLevelEvents()
+        bfevents = bfapi.GetActiveEventTypes()
+        _BDAQ_EVENTS = {e.name : e.id for e in bdaqevents}
+        _BF_EVENTS = {e.name : e.id for e in bfevents}
 
-    # get matching markets: note, for horse racing, this takes a long time
-    # since it needs to call the BF API, which is heavily throttled.
+    # check we were passed a valid event name
+    if bdaqename not in _BDAQ_EVENTS:
+        return []
+
+    # get corresponding BF event name
+    bfename = matchconst.EVENTMAP[bdaqename]
+    
+    # get all markets for the selected event type
+    bdaqmarkets = bdaqapi.\
+                  GetEventSubTreeNoSelections([_BDAQ_EVENTS[bdaqename]])
+    bfmarkets = bfapi.GetAllMarketsUK([_BF_EVENTS[bfename]])
+
+    # use matching engine to get matching markets
     matchmarks = marketmatcher.get_match_markets(bdaqmarkets, bfmarkets)
 
     # get prices for all BDAQ markets, in order to get the total
@@ -150,13 +143,6 @@ def match_markets(bdaqename):
             matchmarks[i][0].totalmatched = sels[0].\
                                             properties['totalmatched']
 
-    # Write market stuff to the DB
-    # (i) write details of the matching markets
-    _dbman.write_market_matches(matchmarks)
-    # (ii) update the bdaqmarkets, since now have totalmatched
-    bdmarks = [itemgetter(0)(i) for i in matchmarks]
-    _dbman.write_markets(bdmarks, datetime.datetime.now())
-        
     # sort matching markets by starttime; NB could sort them by the
     # BDAQ official display order at some point if necessary.
     matchmarks.sort(key=_sort_match)

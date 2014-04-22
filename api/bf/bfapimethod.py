@@ -85,9 +85,9 @@ class ApigetAllMarkets(ApiMethod):
         response = self.client.service.getAllMarkets(self.req)
         allmarkets = bfapiparse.ParsegetAllMarkets(response)
         
-        if const.WRITEDB:
-            self.dbman.write_markets(allmarkets,
-                                     response.header.timestamp)
+#        if const.WRITEDB:
+#            self.dbman.write_markets(allmarkets,
+#                                     response.header.timestamp)
         return allmarkets
 
 class ApiplaceBets(ApiMethod):

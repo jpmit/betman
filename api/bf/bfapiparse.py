@@ -216,8 +216,12 @@ def ParsegetActiveEventTypes(res):
 def ParsegetAllMarkets(res):
 
     _check_errors(res)
+
+    # both error codes can be "OK" but the method returns no data
+    if res.marketData is None:
+        return []
+
     markets = []
-        
     for mdata in res.marketData.split(':')[1:]:
         fields = mdata.split('~')
         # we will need to remove this erroneous Group D rubbish

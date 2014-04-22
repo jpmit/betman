@@ -28,3 +28,12 @@ class PriceStore(object):
         self.newprices = prices
 
         self._prices.update(prices)
+
+        # write prices to database
+        print 'prices from pricestore:'
+        print prices
+
+            # get single flat list of selection objects from dict of dicts
+            #sels = [m.values() for m in allselections.values()]
+            #allsels = [item for subl in sels for item in subl]
+            #self.dbman.write_selections(allsels, datetime.datetime.now())

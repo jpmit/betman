@@ -63,8 +63,8 @@ class ApiGetEventSubTreeNoSelections(ApiMethod):
         allmarkets = bdaqapiparse.\
                      ParseGetEventSubTreeNoSelections(response)
 
-        if const.WRITEDB:
-            self.dbman.write_markets(allmarkets, response.Timestamp)
+#        if const.WRITEDB:
+#            self.dbman.write_markets(allmarkets, response.Timestamp)
         return allmarkets
 
 # not fully implemented (do not use)
@@ -219,9 +219,9 @@ class ApiGetAccountBalances(ApiMethod):
         # accinfo is a dictionary of (_AvailableFunds, _Balance,
         # _Credit, _Exposure).
         accinfo = bdaqapiparse.ParseGetAccountBalances(result)
-        if const.WRITEDB:
-            self.dbman.write_account_balance(const.BDAQID, accinfo,
-                                             result.Timestamp)
+#        if const.WRITEDB:
+#            self.dbman.write_account_balance(const.BDAQID, accinfo,
+#                                             result.Timestamp)
 
         return accinfo
 

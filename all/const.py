@@ -46,7 +46,7 @@ MASTERDB = '{0}/database/masterdb.db'.format(_RPATH)
 LOGDIR = '{0}/logs/'.format(_RPATH)
 
 # write to database after results of every API call?
-WRITEDB = True
+WRITEDB = False
 
 # exchange ids of BDAQ and BF
 BDAQID = 1

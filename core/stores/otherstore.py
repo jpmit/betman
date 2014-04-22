@@ -8,6 +8,9 @@ so is useful for the GUI.
 
 """
 
+import datetime
+from operator import itemgetter
+
 from betman import const, database
 from betman.all.singleton import Singleton
 from betman.matching.matchconst import EVENTMAP
@@ -89,6 +92,8 @@ class MatchMarketStore(object):
         return self._BF_cache[bfmid].name
 
     def set_caches(self, ename, mmarks):
+        """Called if initialising from DB."""
+
         # ordered list of matching markets for event ename
         self._match_cache[ename] = mmarks
 
@@ -111,7 +116,8 @@ class MatchMarketStore(object):
         """Refresh the store of matching markets for a particular event.  
 
         Note that at the moment this replaces any existing matching
-        markets stored for the event.
+        markets stored for the event i.e. we simply overwrite the
+        cache for ename with mmarks.
 
         ename  - name of event e.g. 'Horse Racing'.
         mmarks - list of tuples (m1, m2) where m1 is a BDAQ market
@@ -120,6 +126,13 @@ class MatchMarketStore(object):
         """
 
         self.set_caches(ename, mmarks)
+
+        # write to the matching markets table of the DB
+        self._dbman.write_market_matches(mmarks)
+
+        # write each individual market to the market table of the DB
+        allmarks = [itemgetter(j)(i) for j in [0,1] for i in mmarks]
+        self._dbman.write_markets(allmarks, datetime.datetime.now())
 
     def get_matches(self, ename):
         """Return list of matching market tuples for a particular event."""
@@ -208,7 +221,12 @@ class MatchSelectionStore(object):
             self._match_cache[bdaqmid] = (sbdaqsels, sbfsels)
 
     def add_matching_selections(self, bdaqmid, bdaqsels, bfsels):
-        """Add matching selections, in the correct display order."""
+        """Add matching selections.
+
+        bdaqsels and bfsels should be sorted in the correct display
+        order.
+
+        """
         
         # add to match cache
         self._match_cache[bdaqmid] = (bdaqsels, bfsels)
@@ -227,6 +245,12 @@ class MatchSelectionStore(object):
 
             # mapping from BDAQ sid to selection object
             self._BDAQ_cache[s1.id] = s1
+
+        # write to the matching selections table of the DB
+        self._dbman.write_selection_matches(zip(bdaqsels, bfsels))
+        
+        # write each individual selection to the selections table of the DB
+        self._dbman.write_selections(bdaqsels + bfsels, datetime.datetime.now())
 
     def get_matching_selections(self, bdaqmid):
         """Return two lists bdaqsels, bfsels, of matching selections.
