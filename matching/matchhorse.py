@@ -11,13 +11,16 @@ from betman import betlog, betexception
 # conversion from BF course name to BDAQ course name.  BF course names
 # on left, BDAQ course names on right.
 COURSES = {
+           'Aint'  : 'Aintree',
            # Aqueduct is a US course
            'Aque'  : 'Aqueduct',
-           'Aint'  : 'Aintree',
+           'Ascot' : 'Royal Ascot',
            'Ayr'   : 'Ayr',
            'Bang'  : 'Bangor',
+           'Bev'   : 'Beverley',
            'Bath'  : 'Bath',
            'Carl'  : 'Carlisle',
+           'Cart'  : 'Cartmel',
            'Catt'  : 'Catterick',
            # Charlestown is a US course
            'CharlT': 'Charles Town', 
@@ -36,9 +39,11 @@ COURSES = {
            'Fake'  : 'Fakenham',
            'FfosL' : 'Ffos Las',
            # Greyville is in RSA
+           'Good'  : 'Goodwood',
            'Grey'  : 'Greyville',
            # Gulf is a US course
            'Gulf'  : 'Gulfstream Park',
+           'Hayd'  : 'Haydock',
            'Kelso' : 'Kelso',           
            'Kemp'  : 'Kempton',
            # Kenilworth is in RSA
@@ -50,6 +55,7 @@ COURSES = {
            'Lim'   : 'Limerick',
            'Ling'  : 'Lingfield',
            'List'  : 'Listowel',
+           'Long'  : 'Longchamp',
            'Ludl'  : 'Ludlow',
            'MrktR' : 'Market Rasen',
            'Naas'  : 'Naas',
